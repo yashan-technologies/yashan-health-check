@@ -1,0 +1,3 @@
+[submodule "yhc-doc"]
+	path = yhc-doc
+	url = git@git.yasdb.com:pandora/yhc-doc.git

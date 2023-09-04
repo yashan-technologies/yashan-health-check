@@ -1,0 +1,44 @@
+variables:
+  GIT_STRATEGY: clone
+  CI_RUNNER: 192.168.8.238
+  CI_SCRIPT: ./.gitlab-ci.sh
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+stages:
+  - prepare
+  - compile
+
+env:
+  stage: prepare
+  script:
+    - echo "TRIGGERED BY $CI_COMMIT_AUTHOR"
+    - echo "WORKSPACE $(pwd)"
+    - go version
+    - python3 --version
+    - make --version | grep "Make"
+    - gcc --version | grep "gcc"
+    - golangci-lint --version
+    - yapf --version
+    - mypy --version
+    - shellcheck --version | grep "version:"
+    - gotestsum --version
+    - command -v go-test-html-report
+    - command -v junit2html
+
+build:
+  stage: compile
+  script:
+    - python3 build.py build --clean --format-goimports
+  after_script:
+    - $CI_SCRIPT dump
+    - $CI_SCRIPT show
+  artifacts:
+    paths:
+      - code_check.txt
+      - build
+      - unittest
+    expire_in: 900s
+    when: always
