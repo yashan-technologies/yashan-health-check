@@ -3,6 +3,8 @@ package flags
 import (
 	"fmt"
 
+	"yhc/defs/compiledef"
+
 	"git.yasdb.com/go/yasutil/tabler"
 	"github.com/alecthomas/kong"
 )
@@ -24,5 +26,9 @@ func (s showFlag) genContent() string {
 		{Name: "VALUE"},
 	}
 	table := tabler.NewTable("App Information", titles...)
+	_ = table.AddColumn("App Version", compiledef.GetAPPVersion())
+	_ = table.AddColumn("Go Version", compiledef.GetGoVersion())
+	_ = table.AddColumn("Git Commit", compiledef.GetGitCommitID())
+	_ = table.AddColumn("Git Describe", compiledef.GetGitDescribe())
 	return table.String()
 }
