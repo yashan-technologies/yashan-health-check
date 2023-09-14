@@ -1,14 +1,11 @@
 # env defines
 GOOS=$(shell go env GOOS)
-GOARCH=$(shell go env GOARCH)
-ARCH_AMD=x86_64
-ARCH_ARM=aarch64
-OS=$(shell if [ $(GOOS)a != ""a ]; then echo $(GOOS); else echo "linux"; fi)
-ARCH=$(shell if [ $(GOARCH)a == "arm64"a ]; then echo $(ARCH_ARM); else echo $(ARCH_AMD); fi)
+ARCH=$(shell arch)
 VERSION=$(shell cat ./VERSION)
 GO_VERSION=$(shell go env GOVERSION)
 GIT_COMMIT_ID=$(shell git rev-parse HEAD)
 GIT_DESCRIBE=$(shell git describe --always)
+OS=$(if $(GOOS),$(GOOS),linux)
 
 # go command defines
 GO_BUILD=go build
@@ -37,18 +34,9 @@ BIN_FILES=$(BIN_YHCCTL)
 DIR_TO_MAKE=$(BIN_PATH) $(LOG_PATH) $(RESULTS_PATH) $(DOCS_PATH)
 FILE_TO_COPY=./config ./scripts ./static
 
+.PHONY: clean force go_build
+
 # functions
-clean:
-	rm -rf $(BUILD_PATH)
-
-define build_yhcctl
-	$(GO_BUILD_WITH_INFO) -o $(BIN_YHCCTL) ./cmd/yhcctl/*.go
-endef
-
-go_build: 
-	$(GO_MOD_TIDY)
-	$(call build_yhcctl)
-
 build: go_build
 	@mkdir -p $(DIR_TO_MAKE) 
 	@cp -r $(FILE_TO_COPY) $(PKG_PATH)
@@ -58,5 +46,12 @@ build: go_build
 	@> $(LOG_PATH)/yhcctl.log
 	@cd $(PKG_PATH);ln -s ./bin/yhcctl ./yhcctl
 	@cd $(BUILD_PATH);tar -cvzf $(PKG) $(PKG_PERFIX)/
+
+clean:
+	rm -rf $(BUILD_PATH)
+
+go_build: 
+	$(GO_MOD_TIDY)
+	$(GO_BUILD_WITH_INFO) -o $(BIN_YHCCTL) ./cmd/yhcctl/*.go
 
 force: clean build

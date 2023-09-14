@@ -1,1 +1,5 @@
-log_level="DEBUG"
+log_level = "DEBUG"
+max_duration = "30d"
+min_duration = "1m"
+output = "./results"
+range = "24h"

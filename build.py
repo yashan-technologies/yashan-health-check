@@ -31,7 +31,7 @@ def get_parser():
 
 
 def set_build_argument(subparser):
-    sp = subparser.add_parser("build", help="build ytc", formatter_class=HelpFormatter)
+    sp = subparser.add_parser("build", help="build yhc", formatter_class=HelpFormatter)
     sp.add_argument("--skip-check", action="store_true", default=False, help="build without checking code")
     sp.add_argument("--skip-test", action="store_true", default=False, help="build without running unit test")
     sp.add_argument("--format-goimports", action="store_true", default=False, help="format go imports")
@@ -45,7 +45,7 @@ def set_build_argument(subparser):
 
 
 def set_clean_argument(subparser):
-    sp = subparser.add_parser("clean", help="clean ytc", formatter_class=HelpFormatter)
+    sp = subparser.add_parser("clean", help="clean yhc", formatter_class=HelpFormatter)
     sp.set_defaults(func=clean)
 
 

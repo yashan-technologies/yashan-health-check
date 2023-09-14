@@ -210,7 +210,7 @@ python3 build.py test
 ### Quick Start
 
 ```bash
-cd yashan-trace-collector
+cd yashan-health-check
 export YHC_HOME=$(pwd)
 export YHC_DEBUG_MODE=true
 
