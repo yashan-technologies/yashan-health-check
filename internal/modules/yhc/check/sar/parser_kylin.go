@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"yhc/commons/constants"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/utils/stringutil"
 
@@ -107,28 +108,28 @@ func (k *KylinParser) ParseNetwork(m define.WorkloadItem, values []string) defin
 	networkIO := NetworkIO{}
 	var err error
 	networkIO.Iface = values[_kylin_network_iface_index]
-	if networkIO.Rxpck, err = strconv.ParseFloat(values[_kylin_network_rxpck_index], 64); err != nil {
+	if networkIO.Rxpck, err = strconv.ParseFloat(values[_kylin_network_rxpck_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if networkIO.Txpck, err = strconv.ParseFloat(values[_kylin_network_txpck_index], 64); err != nil {
+	if networkIO.Txpck, err = strconv.ParseFloat(values[_kylin_network_txpck_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if networkIO.RxkB, err = strconv.ParseFloat(values[_kylin_network_rxkb_index], 64); err != nil {
+	if networkIO.RxkB, err = strconv.ParseFloat(values[_kylin_network_rxkb_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if networkIO.TxkB, err = strconv.ParseFloat(values[_kylin_network_txkb_index], 64); err != nil {
+	if networkIO.TxkB, err = strconv.ParseFloat(values[_kylin_network_txkb_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if networkIO.Rxcmp, err = strconv.ParseFloat(values[_kylin_network_rxcmp_index], 64); err != nil {
+	if networkIO.Rxcmp, err = strconv.ParseFloat(values[_kylin_network_rxcmp_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if networkIO.Txcmp, err = strconv.ParseFloat(values[_kylin_network_txcmp_index], 64); err != nil {
+	if networkIO.Txcmp, err = strconv.ParseFloat(values[_kylin_network_txcmp_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if networkIO.Rxmcst, err = strconv.ParseFloat(values[_kylin_network_rxmcst_index], 64); err != nil {
+	if networkIO.Rxmcst, err = strconv.ParseFloat(values[_kylin_network_rxmcst_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if networkIO.Ifutil, err = strconv.ParseFloat(values[_kylin_network_ifutil_index], 64); err != nil {
+	if networkIO.Ifutil, err = strconv.ParseFloat(values[_kylin_network_ifutil_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
 	m[networkIO.Iface] = networkIO
@@ -150,28 +151,28 @@ func (k *KylinParser) ParseDisk(m define.WorkloadItem, values []string) define.W
 	diskIO := DiskIO{}
 	var err error
 	diskIO.Dev = values[_kylin_disk_dev_index]
-	if diskIO.Tps, err = strconv.ParseFloat(values[_kylin_disk_tps_index], 64); err != nil {
+	if diskIO.Tps, err = strconv.ParseFloat(values[_kylin_disk_tps_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if diskIO.RKBSec, err = strconv.ParseFloat(values[_kylin_disk_rkb_index], 64); err != nil {
+	if diskIO.RKBSec, err = strconv.ParseFloat(values[_kylin_disk_rkb_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if diskIO.WKBSec, err = strconv.ParseFloat(values[_kylin_disk_wkb_index], 64); err != nil {
+	if diskIO.WKBSec, err = strconv.ParseFloat(values[_kylin_disk_wkb_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if diskIO.DKBSec, err = strconv.ParseFloat(values[_kylin_disk_dkb_index], 64); err != nil {
+	if diskIO.DKBSec, err = strconv.ParseFloat(values[_kylin_disk_dkb_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if diskIO.AvgrqSz, err = strconv.ParseFloat(values[_kylin_disk_areqsz_index], 64); err != nil {
+	if diskIO.AvgrqSz, err = strconv.ParseFloat(values[_kylin_disk_areqsz_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if diskIO.AvgquSz, err = strconv.ParseFloat(values[_kylin_disk_aqusz_index], 64); err != nil {
+	if diskIO.AvgquSz, err = strconv.ParseFloat(values[_kylin_disk_aqusz_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if diskIO.Await, err = strconv.ParseFloat(values[_kylin_disk_await_index], 64); err != nil {
+	if diskIO.Await, err = strconv.ParseFloat(values[_kylin_disk_await_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if diskIO.Util, err = strconv.ParseFloat(values[_kylin_disk_util_index], 64); err != nil {
+	if diskIO.Util, err = strconv.ParseFloat(values[_kylin_disk_util_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
 	m[diskIO.Dev] = diskIO
@@ -192,37 +193,37 @@ func (k *KylinParser) ParseMemory(m define.WorkloadItem, values []string) define
 	}
 	memoryUsage := MemoryUsage{}
 	var err error
-	if memoryUsage.KBMemFree, err = strconv.ParseInt(values[_kylin_memory_kbmemfree_index], 10, 64); err != nil {
+	if memoryUsage.KBMemFree, err = strconv.ParseInt(values[_kylin_memory_kbmemfree_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBAvail, err = strconv.ParseInt(values[_kylin_memory_kbavail_index], 10, 64); err != nil {
+	if memoryUsage.KBAvail, err = strconv.ParseInt(values[_kylin_memory_kbavail_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBmemUsed, err = strconv.ParseInt(values[_kylin_memory_kbmemused_index], 10, 64); err != nil {
+	if memoryUsage.KBmemUsed, err = strconv.ParseInt(values[_kylin_memory_kbmemused_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.MemUsed, err = strconv.ParseFloat(values[_kylin_memory_memused_index], 64); err != nil {
+	if memoryUsage.MemUsed, err = strconv.ParseFloat(values[_kylin_memory_memused_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBBuffers, err = strconv.ParseInt(values[_kylin_memory_kbbuffers_index], 10, 64); err != nil {
+	if memoryUsage.KBBuffers, err = strconv.ParseInt(values[_kylin_memory_kbbuffers_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBCached, err = strconv.ParseInt(values[_kylin_memory_kbcached_index], 10, 64); err != nil {
+	if memoryUsage.KBCached, err = strconv.ParseInt(values[_kylin_memory_kbcached_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBCommit, err = strconv.ParseInt(values[_kylin_memory_kbcommit_index], 10, 64); err != nil {
+	if memoryUsage.KBCommit, err = strconv.ParseInt(values[_kylin_memory_kbcommit_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.Commit, err = strconv.ParseFloat(values[_kylin_memory_commit_index], 64); err != nil {
+	if memoryUsage.Commit, err = strconv.ParseFloat(values[_kylin_memory_commit_index], constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBActive, err = strconv.ParseInt(values[_kylin_memory_kbactive_index], 10, 64); err != nil {
+	if memoryUsage.KBActive, err = strconv.ParseInt(values[_kylin_memory_kbactive_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBInact, err = strconv.ParseInt(values[_kylin_memory_kbinact_index], 10, 64); err != nil {
+	if memoryUsage.KBInact, err = strconv.ParseInt(values[_kylin_memory_kbinact_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
-	if memoryUsage.KBDirty, err = strconv.ParseInt(values[_kylin_memory_kbdirty_index], 10, 64); err != nil {
+	if memoryUsage.KBDirty, err = strconv.ParseInt(values[_kylin_memory_kbdirty_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		k.base.log.Error(err)
 	}
 	memoryUsage.RealMemUsed = memoryUsage.MemUsed // no need to calculate

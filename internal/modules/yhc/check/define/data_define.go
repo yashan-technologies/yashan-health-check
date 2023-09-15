@@ -1,6 +1,11 @@
 package define
 
-import "sync"
+import (
+	"sync"
+	"time"
+
+	"yhc/commons/yasdb"
+)
 
 const (
 	DATATYPE_SAR      DataType = "sar"
@@ -40,6 +45,28 @@ type YHCModule struct {
 	Module string `json:"-"`
 	mtx    sync.RWMutex
 	items  map[MetricName]*YHCItem
+}
+
+type NoNeedCheckMetric struct {
+	Name        string
+	Description string
+	Error       error
+}
+
+type CheckerBase struct {
+	DBInfo *yasdb.YashanDB
+	Start  time.Time
+	End    time.Time
+	Output string
+	// TODO: add other struct which checker needed
+}
+
+func NewNoNeedCheckMetric(name string, err error, desc string) *NoNeedCheckMetric {
+	return &NoNeedCheckMetric{
+		Name:        name,
+		Error:       err,
+		Description: desc,
+	}
 }
 
 func (c *YHCModule) Set(item *YHCItem) {

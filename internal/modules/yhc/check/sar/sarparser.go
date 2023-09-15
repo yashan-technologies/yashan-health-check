@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"yhc/commons/constants"
 	"yhc/defs/regexpdef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/utils/stringutil"
@@ -134,22 +135,22 @@ func (b *baseParser) ParseCpu(m define.WorkloadItem, values []string) define.Wor
 	cpuUsage := CPUUsage{}
 	var err error
 	cpuUsage.CPU = values[_base_cpu_cpu_index]
-	if cpuUsage.User, err = strconv.ParseFloat(values[_base_cpu_user_index], 64); err != nil {
+	if cpuUsage.User, err = strconv.ParseFloat(values[_base_cpu_user_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if cpuUsage.Nice, err = strconv.ParseFloat(values[_base_cpu_nice_index], 64); err != nil {
+	if cpuUsage.Nice, err = strconv.ParseFloat(values[_base_cpu_nice_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if cpuUsage.System, err = strconv.ParseFloat(values[_base_cpu_system_index], 64); err != nil {
+	if cpuUsage.System, err = strconv.ParseFloat(values[_base_cpu_system_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if cpuUsage.IOWait, err = strconv.ParseFloat(values[_base_cpu_iowait_index], 64); err != nil {
+	if cpuUsage.IOWait, err = strconv.ParseFloat(values[_base_cpu_iowait_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if cpuUsage.Steal, err = strconv.ParseFloat(values[_base_cpu_steal_index], 64); err != nil {
+	if cpuUsage.Steal, err = strconv.ParseFloat(values[_base_cpu_steal_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if cpuUsage.Idle, err = strconv.ParseFloat(values[_base_cpu_idle_index], 64); err != nil {
+	if cpuUsage.Idle, err = strconv.ParseFloat(values[_base_cpu_idle_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
 	m[cpuUsage.CPU] = cpuUsage
@@ -171,25 +172,25 @@ func (b *baseParser) ParseNetwork(m define.WorkloadItem, values []string) define
 	networkIO := NetworkIO{}
 	var err error
 	networkIO.Iface = values[_base_network_iface_index] // fill data
-	if networkIO.Rxpck, err = strconv.ParseFloat(values[_base_network_rxpck_index], 64); err != nil {
+	if networkIO.Rxpck, err = strconv.ParseFloat(values[_base_network_rxpck_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if networkIO.Txpck, err = strconv.ParseFloat(values[_base_network_txpck_index], 64); err != nil {
+	if networkIO.Txpck, err = strconv.ParseFloat(values[_base_network_txpck_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if networkIO.RxkB, err = strconv.ParseFloat(values[_base_network_rxkb_index], 64); err != nil {
+	if networkIO.RxkB, err = strconv.ParseFloat(values[_base_network_rxkb_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if networkIO.TxkB, err = strconv.ParseFloat(values[_base_network_txkb_index], 64); err != nil {
+	if networkIO.TxkB, err = strconv.ParseFloat(values[_base_network_txkb_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if networkIO.Rxcmp, err = strconv.ParseFloat(values[_base_network_rxcmp_index], 64); err != nil {
+	if networkIO.Rxcmp, err = strconv.ParseFloat(values[_base_network_rxcmp_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if networkIO.Txcmp, err = strconv.ParseFloat(values[_base_network_txcmp_index], 64); err != nil {
+	if networkIO.Txcmp, err = strconv.ParseFloat(values[_base_network_txcmp_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if networkIO.Rxmcst, err = strconv.ParseFloat(values[_base_network_rxmcst_index], 64); err != nil {
+	if networkIO.Rxmcst, err = strconv.ParseFloat(values[_base_network_rxmcst_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
 	m[networkIO.Iface] = networkIO
@@ -210,34 +211,34 @@ func (b *baseParser) ParseMemory(m define.WorkloadItem, values []string) define.
 	}
 	memoryUsage := MemoryUsage{}
 	var err error
-	if memoryUsage.KBMemFree, err = strconv.ParseInt(values[_base_memory_kbmemfree_index], 10, 64); err != nil {
+	if memoryUsage.KBMemFree, err = strconv.ParseInt(values[_base_memory_kbmemfree_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.KBmemUsed, err = strconv.ParseInt(values[_base_memory_kbmemused_index], 10, 64); err != nil {
+	if memoryUsage.KBmemUsed, err = strconv.ParseInt(values[_base_memory_kbmemused_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.MemUsed, err = strconv.ParseFloat(values[_base_memory_memused_index], 64); err != nil {
+	if memoryUsage.MemUsed, err = strconv.ParseFloat(values[_base_memory_memused_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.KBBuffers, err = strconv.ParseInt(values[_base_memory_kbbuffers_index], 10, 64); err != nil {
+	if memoryUsage.KBBuffers, err = strconv.ParseInt(values[_base_memory_kbbuffers_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.KBCached, err = strconv.ParseInt(values[_base_memory_kbcached_index], 10, 64); err != nil {
+	if memoryUsage.KBCached, err = strconv.ParseInt(values[_base_memory_kbcached_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.KBCommit, err = strconv.ParseInt(values[_base_memory_kbcommit_index], 10, 64); err != nil {
+	if memoryUsage.KBCommit, err = strconv.ParseInt(values[_base_memory_kbcommit_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.Commit, err = strconv.ParseFloat(values[_base_memory_commit_index], 64); err != nil {
+	if memoryUsage.Commit, err = strconv.ParseFloat(values[_base_memory_commit_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.KBActive, err = strconv.ParseInt(values[_base_memory_kbactive_index], 10, 64); err != nil {
+	if memoryUsage.KBActive, err = strconv.ParseInt(values[_base_memory_kbactive_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.KBInact, err = strconv.ParseInt(values[_base_memory_kbinact_index], 10, 64); err != nil {
+	if memoryUsage.KBInact, err = strconv.ParseInt(values[_base_memory_kbinact_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if memoryUsage.KBDirty, err = strconv.ParseInt(values[_base_memory_kbdirty_index], 10, 64); err != nil {
+	if memoryUsage.KBDirty, err = strconv.ParseInt(values[_base_memory_kbdirty_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
 	m[memoryUsageKey] = b.calculateRealMemUsed(memoryUsage)
@@ -266,28 +267,28 @@ func (b *baseParser) ParseDisk(m define.WorkloadItem, values []string) define.Wo
 	diskIO := DiskIO{}
 	var err error
 	diskIO.Dev = values[_base_disk_dev_index]
-	if diskIO.Tps, err = strconv.ParseFloat(values[_base_disk_tps_index], 64); err != nil {
+	if diskIO.Tps, err = strconv.ParseFloat(values[_base_disk_tps_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if diskIO.RdSec, err = strconv.ParseFloat(values[_base_disk_rdsec_index], 64); err != nil {
+	if diskIO.RdSec, err = strconv.ParseFloat(values[_base_disk_rdsec_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if diskIO.WrSec, err = strconv.ParseFloat(values[_base_disk_wrsec_index], 64); err != nil {
+	if diskIO.WrSec, err = strconv.ParseFloat(values[_base_disk_wrsec_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if diskIO.AvgrqSz, err = strconv.ParseFloat(values[_base_disk_avgrqsz_index], 64); err != nil {
+	if diskIO.AvgrqSz, err = strconv.ParseFloat(values[_base_disk_avgrqsz_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if diskIO.AvgquSz, err = strconv.ParseFloat(values[_base_disk_avgqusz_index], 64); err != nil {
+	if diskIO.AvgquSz, err = strconv.ParseFloat(values[_base_disk_avgqusz_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if diskIO.Await, err = strconv.ParseFloat(values[_base_disk_await_index], 64); err != nil {
+	if diskIO.Await, err = strconv.ParseFloat(values[_base_disk_await_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if diskIO.Svctm, err = strconv.ParseFloat(values[_base_disk_svctm_index], 64); err != nil {
+	if diskIO.Svctm, err = strconv.ParseFloat(values[_base_disk_svctm_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
-	if diskIO.Util, err = strconv.ParseFloat(values[_base_disk_util_index], 64); err != nil {
+	if diskIO.Util, err = strconv.ParseFloat(values[_base_disk_util_index], constants.BIT_SIZE_64); err != nil {
 		b.log.Error(err)
 	}
 	m[diskIO.Dev] = diskIO

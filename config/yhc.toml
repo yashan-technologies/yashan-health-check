@@ -6,3 +6,4 @@ range = "24h"
 sql_timeout = 10
 scrape_interval = 1
 scrape_times = 30
+default_metric_path = "./config/default_metric.toml"

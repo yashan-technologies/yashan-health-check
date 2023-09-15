@@ -10,7 +10,7 @@ import (
 	"yhc/utils/execerutil"
 )
 
-func (c *YHCChecker) GenCustomCheckFunc(metric confdef.YHCMetric) (fn func() error, err error) {
+func (c *YHCChecker) GenCustomCheckFunc(metric *confdef.YHCMetric) (fn func() error, err error) {
 	if metric.Default {
 		return nil, fmt.Errorf("metric %s is not a custom metric", metric.Name)
 	}
@@ -24,7 +24,7 @@ func (c *YHCChecker) GenCustomCheckFunc(metric confdef.YHCMetric) (fn func() err
 	}
 }
 
-func (c *YHCChecker) genCustomBashFunc(metric confdef.YHCMetric) (fn func() error) {
+func (c *YHCChecker) genCustomBashFunc(metric *confdef.YHCMetric) (fn func() error) {
 	fn = func() (err error) {
 		data := &define.YHCItem{
 			Name: define.MetricName(metric.Name),
@@ -46,7 +46,7 @@ func (c *YHCChecker) genCustomBashFunc(metric confdef.YHCMetric) (fn func() erro
 	return
 }
 
-func (c *YHCChecker) genCustomSQLFunc(metric confdef.YHCMetric) (fn func() error) {
+func (c *YHCChecker) genCustomSQLFunc(metric *confdef.YHCMetric) (fn func() error) {
 	fn = func() (err error) {
 		data, err := c.queryMultiRows(define.MetricName(metric.Name), metric.SQL)
 		defer c.fillResult(data)

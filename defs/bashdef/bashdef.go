@@ -28,18 +28,6 @@ const (
 	COLOR_RESET  = "\033[0m"
 )
 
-func WithGreen(s string) string {
-	return fmt.Sprintf("%s%s%s", COLOR_GREEN, s, COLOR_RESET)
-}
-
-func WithBlue(s string) string {
-	return fmt.Sprintf("%s%s%s", COLOR_BLUE, s, COLOR_RESET)
-}
-
-func WithRed(s string) string {
-	return fmt.Sprintf("%s%s%s", COLOR_RED, s, COLOR_RESET)
-}
-
-func WithYellow(s string) string {
-	return fmt.Sprintf("%s%s%s", COLOR_YELLOW, s, COLOR_RESET)
+func WithColor(s string, color string) string {
+	return fmt.Sprintf("%s%s%s", color, s, COLOR_RESET)
 }

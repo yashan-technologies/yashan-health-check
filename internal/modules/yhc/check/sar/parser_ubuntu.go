@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"yhc/commons/constants"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/utils/stringutil"
 
@@ -102,28 +103,28 @@ func (u *UbuntuParser) ParseDisk(m define.WorkloadItem, values []string) define.
 	diskIO := DiskIO{}
 	var err error
 	diskIO.Dev = values[_ubuntu_disk_dev_index]
-	if diskIO.Tps, err = strconv.ParseFloat(values[_ubuntu_disk_tps_index], 64); err != nil {
+	if diskIO.Tps, err = strconv.ParseFloat(values[_ubuntu_disk_tps_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if diskIO.RKBSec, err = strconv.ParseFloat(values[_ubuntu_disk_rkb_index], 64); err != nil {
+	if diskIO.RKBSec, err = strconv.ParseFloat(values[_ubuntu_disk_rkb_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if diskIO.WKBSec, err = strconv.ParseFloat(values[_ubuntu_disk_wkb_index], 64); err != nil {
+	if diskIO.WKBSec, err = strconv.ParseFloat(values[_ubuntu_disk_wkb_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if diskIO.AvgrqSz, err = strconv.ParseFloat(values[_ubuntu_disk_areqsz_index], 64); err != nil {
+	if diskIO.AvgrqSz, err = strconv.ParseFloat(values[_ubuntu_disk_areqsz_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if diskIO.AvgquSz, err = strconv.ParseFloat(values[_ubuntu_disk_aqusz_index], 64); err != nil {
+	if diskIO.AvgquSz, err = strconv.ParseFloat(values[_ubuntu_disk_aqusz_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if diskIO.Await, err = strconv.ParseFloat(values[_ubuntu_disk_await_index], 64); err != nil {
+	if diskIO.Await, err = strconv.ParseFloat(values[_ubuntu_disk_await_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if diskIO.Svctm, err = strconv.ParseFloat(values[_ubuntu_disk_svctm_index], 64); err != nil {
+	if diskIO.Svctm, err = strconv.ParseFloat(values[_ubuntu_disk_svctm_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if diskIO.Util, err = strconv.ParseFloat(values[_ubuntu_disk_util_index], 64); err != nil {
+	if diskIO.Util, err = strconv.ParseFloat(values[_ubuntu_disk_util_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
 	m[diskIO.Dev] = diskIO
@@ -144,37 +145,37 @@ func (u *UbuntuParser) ParseMemory(m define.WorkloadItem, values []string) defin
 	}
 	memoryUsage := MemoryUsage{}
 	var err error
-	if memoryUsage.KBMemFree, err = strconv.ParseInt(values[_ubuntu_memory_kbmemfree_index], 10, 64); err != nil {
+	if memoryUsage.KBMemFree, err = strconv.ParseInt(values[_ubuntu_memory_kbmemfree_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBAvail, err = strconv.ParseInt(values[_ubuntu_memory_kbavail_index], 10, 64); err != nil {
+	if memoryUsage.KBAvail, err = strconv.ParseInt(values[_ubuntu_memory_kbavail_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBmemUsed, err = strconv.ParseInt(values[_ubuntu_memory_kbmemused_index], 10, 64); err != nil {
+	if memoryUsage.KBmemUsed, err = strconv.ParseInt(values[_ubuntu_memory_kbmemused_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.MemUsed, err = strconv.ParseFloat(values[_ubuntu_memory_memused_index], 64); err != nil {
+	if memoryUsage.MemUsed, err = strconv.ParseFloat(values[_ubuntu_memory_memused_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBBuffers, err = strconv.ParseInt(values[_ubuntu_memory_kbbuffers_index], 10, 64); err != nil {
+	if memoryUsage.KBBuffers, err = strconv.ParseInt(values[_ubuntu_memory_kbbuffers_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBCached, err = strconv.ParseInt(values[_ubuntu_memory_kbcached_index], 10, 64); err != nil {
+	if memoryUsage.KBCached, err = strconv.ParseInt(values[_ubuntu_memory_kbcached_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBCommit, err = strconv.ParseInt(values[_ubuntu_memory_kbcommit_index], 10, 64); err != nil {
+	if memoryUsage.KBCommit, err = strconv.ParseInt(values[_ubuntu_memory_kbcommit_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.Commit, err = strconv.ParseFloat(values[_ubuntu_memory_commit_index], 64); err != nil {
+	if memoryUsage.Commit, err = strconv.ParseFloat(values[_ubuntu_memory_commit_index], constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBActive, err = strconv.ParseInt(values[_ubuntu_memory_kbactive_index], 10, 64); err != nil {
+	if memoryUsage.KBActive, err = strconv.ParseInt(values[_ubuntu_memory_kbactive_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBInact, err = strconv.ParseInt(values[_ubuntu_memory_kbinact_index], 10, 64); err != nil {
+	if memoryUsage.KBInact, err = strconv.ParseInt(values[_ubuntu_memory_kbinact_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
-	if memoryUsage.KBDirty, err = strconv.ParseInt(values[_ubuntu_memory_kbdirty_index], 10, 64); err != nil {
+	if memoryUsage.KBDirty, err = strconv.ParseInt(values[_ubuntu_memory_kbdirty_index], constants.BASE_DECIMAL, constants.BIT_SIZE_64); err != nil {
 		u.base.log.Error(err)
 	}
 	m[memoryUsageKey] = u.base.calculateRealMemUsed(memoryUsage)

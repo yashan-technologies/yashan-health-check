@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+
+	"yhc/commons/constants"
 )
 
 const (
@@ -38,7 +40,7 @@ func init() {
 
 // GetUsernameById returns username by user ID.
 func GetUsernameById(id int) (username string, err error) {
-	u, err := user.LookupId(strconv.FormatInt(int64(id), 10))
+	u, err := user.LookupId(strconv.FormatInt(int64(id), constants.BASE_DECIMAL))
 	if err != nil {
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"yhc/commons/constants"
 	"yhc/defs/confdef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
@@ -28,7 +29,7 @@ func (c *YHCChecker) GetYasdbSession() (err error) {
 	defer c.fillResult(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_SESSION))
-	yasdb := yasdbutil.NewYashanDB(log, &c.Yasdb)
+	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
 	var userSessions, backgroundSessions int
 	sessions, err := yasdb.QueryMultiRows(SQL_QUERY_SESSION, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
@@ -49,7 +50,7 @@ func (c *YHCChecker) GetYasdbSession() (err error) {
 		log.Error("query %s failed, err: %v", PARAMETER_MAX_SESSIONS, err)
 		return
 	}
-	maxSessions, err := strconv.ParseInt(maxSessionsStr, 10, 64)
+	maxSessions, err := strconv.ParseInt(maxSessionsStr, constants.BASE_DECIMAL, constants.BIT_SIZE_64)
 	if err != nil {
 		data.Error = err.Error()
 		log.Error("faid to parse string %s to int, err: %v", maxSessionsStr, err)

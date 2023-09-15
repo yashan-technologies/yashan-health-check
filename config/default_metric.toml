@@ -1,0 +1,180 @@
+includes = ["./custom_metric.toml"]
+
+[[metrics]]
+  name = "yasdb-instance"
+  name_alias = "实例信息"
+  module_name = "overview"
+  hidden = false
+  default = true
+  enabled = true
+  [metrics.alert_rules]
+    [metrics.alert_rules.info]
+      expression = "8>cores>2"
+      description = "核心数大于2并且小于8"
+      suggestion = "建议检查核心数"
+    [metrics.alert_rules.waring]
+      expression = "cores>8"
+      description = "核心数大于8"
+      suggestion = "无"
+
+[[metrics]]
+  name = "yasdb-database"
+  name_alias = "数据库信息"
+  module_name = "overview"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-file-permission"
+  name_alias = "数据库文件权限"
+  module_name = "overview"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-listen-address"
+  name_alias = "数据库IP及端口"
+  module_name = "overview"
+  hidden = false
+  default = true
+  enabled = true
+
+
+[[metrics]]
+  name = "host-info"
+  name_alias = "主机信息"
+  module_name = "host-check"
+  hidden = false
+  default = true
+  enabled = true
+
+
+[[metrics]]
+  name = "host-cpu-info"
+  name_alias = "CPU信息"
+  module_name = "host-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "host-cpu-usage"
+  name_alias = "CPU使用率"
+  module_name = "host-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-replication-status"
+  name_alias = "数据库主备连接状态"
+  module_name = "yasdb-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-parameter"
+  name_alias = "数据库参数检查"
+  module_name = "yasdb-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-tablespace"
+  name_alias = "表空间"
+  module_name = "yasdb-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-controlfile"
+  name_alias = "控制文件"
+  module_name = "yasdb-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-session"
+  name_alias = "会话数检查"
+  module_name = "yasdb-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-wait-event"
+  name_alias = "等待事件"
+  module_name = "yasdb-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-object-count"
+  name_alias = "对象总数"
+  module_name = "object-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-object-owner"
+  name_alias = "各owner对象统计"
+  module_name = "object-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-object-tablespace"
+  name_alias = "各tablespace对象统计"
+  module_name = "object-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-index-blevel"
+  name_alias = "超过三层的索引"
+  module_name = "object-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-index-column"
+  name_alias = "字段过多的索引"
+  module_name = "object-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-index-invisible"
+  name_alias = "任务"
+  module_name = "object-check"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-redo-log"
+  name_alias = "redo日志分析"
+  module_name = "log-analysis"
+  hidden = false
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb-run-log-error"
+  name_alias = "run.log错误分析"
+  module_name = "log-analysis"
+  hidden = false
+  default = true
+  enabled = true

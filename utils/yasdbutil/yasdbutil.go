@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"yhc/commons/constants"
 	"yhc/commons/yasdb"
 	"yhc/defs/runtimedef"
 	"yhc/utils/execerutil"
@@ -63,7 +64,7 @@ func (y *YashanDB) genArgs(cmdType, sql string, timeout int) []string {
 		"-s", sql,
 		"-a", y.ListenAddr,
 		"-d", y.YasdbData,
-		"--timeout=" + strconv.FormatInt(int64(timeout), 10),
+		"--timeout=" + strconv.FormatInt(int64(timeout), constants.BASE_DECIMAL),
 	}
 	return args
 }

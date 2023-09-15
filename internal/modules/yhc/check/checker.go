@@ -40,45 +40,52 @@ var MetricNameToWorkloadTypeMap = map[define.MetricName]define.WorkloadType{
 type logTimeParseFunc func(date time.Time, line string) (time.Time, error)
 
 type Checker interface {
-	CheckFuncs(item []string) map[define.MetricName]func() error
+	CheckFuncs(metrics []*confdef.YHCMetric) map[string]func() error
+	GetResult() *define.YHCModule
 }
 
 type YHCChecker struct {
-	Result     define.YHCModule
-	Yasdb      yasdb.YashanDB
+	Result     *define.YHCModule
+	Yasdb      *yasdb.YashanDB
 	FailedItem map[define.MetricName]error
 	StartTime  time.Time
 	EndTime    time.Time
 }
 
-func NewYHCChecker(yasdb yasdb.YashanDB, startTime, endTime time.Time) *YHCChecker {
+func NewYHCChecker(base *define.CheckerBase) *YHCChecker {
 	return &YHCChecker{
-		Yasdb:     yasdb,
-		Result:    define.YHCModule{},
-		StartTime: startTime,
-		EndTime:   endTime,
+		Yasdb:     base.DBInfo,
+		Result:    new(define.YHCModule),
+		StartTime: base.Start,
+		EndTime:   base.End,
 	}
 }
 
 // [Interface Func]
-func (c *YHCChecker) CheckFuncs(names []string, customMetrics []confdef.YHCMetric) (res map[define.MetricName]func() error) {
-	res = make(map[define.MetricName]func() error)
+func (c *YHCChecker) GetResult() *define.YHCModule {
+	return c.Result
+}
+
+// [Interface Func]
+func (c *YHCChecker) CheckFuncs(metrics []*confdef.YHCMetric) (res map[string]func() error) {
+	res = make(map[string]func() error)
 	defaultFuncMap := c.funcMap()
-	for _, name := range names {
-		fn, ok := defaultFuncMap[define.MetricName(name)]
-		if !ok {
-			log.Module.Errorf("failed to find function of default metric %s", name)
+	for _, metric := range metrics {
+		if metric.Default {
+			fn, ok := defaultFuncMap[define.MetricName(metric.Name)]
+			if !ok {
+				log.Module.Errorf("failed to find function of default metric %s", metric.Name)
+				continue
+			}
+			res[metric.Name] = fn
 			continue
 		}
-		res[define.MetricName(name)] = fn
-	}
-	for _, customMetric := range customMetrics {
-		fn, err := c.GenCustomCheckFunc(customMetric)
+		fn, err := c.GenCustomCheckFunc(metric)
 		if err != nil {
-			log.Module.Errorf("failed to gen function of custom metric %s", customMetric.Name)
+			log.Module.Errorf("failed to gen function of custom metric %s", metric.Name)
 			continue
 		}
-		res[define.MetricName(customMetric.Name)] = fn
+		res[metric.Name] = fn
 	}
 	return
 }
@@ -118,7 +125,7 @@ func (c *YHCChecker) querySingleRow(name define.MetricName, sql string) (*define
 		Name: name,
 	}
 	log := log.Module.M(string(name))
-	yasdb := yasdbutil.NewYashanDB(log, &c.Yasdb)
+	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
 	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
 		log.Errorf("failed to get data with sql %s, err: %v", sql, err)
@@ -140,8 +147,8 @@ func (c *YHCChecker) queryMultiRows(name define.MetricName, sql string) (*define
 		Name: name,
 	}
 	log := log.Module.M(string(name))
-	yasdb := yasdbutil.NewYashanDB(log, &c.Yasdb)
-	res, err := yasdb.QueryMultiRows(SQL_QUERY_INSTANCE, confdef.GetYHCConf().SqlTimeout)
+	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
+	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
 		log.Errorf("failed to get data with sql '%s', err: %v", sql, err)
 		data.Error = err.Error()
@@ -153,7 +160,7 @@ func (c *YHCChecker) queryMultiRows(name define.MetricName, sql string) (*define
 
 func (c *YHCChecker) querySingleParameter(log yaslog.YasLog, name string) (string, error) {
 	sql := fmt.Sprintf(SQL_QUERY_SINGLE_PARAMETER_FORMATER, name)
-	yasdb := yasdbutil.NewYashanDB(log, &c.Yasdb)
+	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
 	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
 		log.Errorf("failed to query value of parameter %s, err: %v", name, err)

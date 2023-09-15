@@ -28,10 +28,10 @@ func (c *YHCChecker) GetYasdbTablespace() (err error) {
 	defer c.fillResult(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_TABLESPACE))
-	yasdb := yasdbutil.NewYashanDB(log, &c.Yasdb)
+	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
 	tablespaces, err := yasdb.QueryMultiRows(SQL_QUERY_TABLESPACE, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
-		log.Errorf("failed to get data with sql %s, err: %v", SQL_QUERY_SESSION, err)
+		log.Errorf("failed to get data with sql %s, err: %v", SQL_QUERY_TABLESPACE, err)
 		data.Error = err.Error()
 		return
 	}

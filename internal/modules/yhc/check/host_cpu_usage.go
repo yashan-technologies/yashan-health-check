@@ -6,11 +6,11 @@ import (
 )
 
 func (c *YHCChecker) GetHostCPUUsage() (err error) {
-	data := define.YHCItem{
+	data := &define.YHCItem{
 		Name:     define.METRIC_HOST_CPU_USAGE,
 		Children: make(map[define.MetricName]define.YHCItem),
 	}
-	defer c.fillResult(&data)
+	defer c.fillResult(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_CPU_USAGE))
 	resp, err := c.hostWorkload(log, define.METRIC_HOST_CPU_USAGE)

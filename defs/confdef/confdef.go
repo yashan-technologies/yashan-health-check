@@ -11,6 +11,16 @@ import (
 )
 
 func InitYHCConf(yhcConf string) error {
+	if err := initYHCConf(yhcConf); err != nil {
+		return err
+	}
+	if err := initMetricConf(_yhcConf.DefaultMetricPath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func initYHCConf(yhcConf string) error {
 	if !path.IsAbs(yhcConf) {
 		yhcConf = path.Join(runtimedef.GetYHCHome(), yhcConf)
 	}
@@ -19,19 +29,6 @@ func InitYHCConf(yhcConf string) error {
 	}
 	if _, err := toml.DecodeFile(yhcConf, &_yhcConf); err != nil {
 		return &errdef.ErrFileParseFailed{FName: yhcConf, Err: err}
-	}
-	return nil
-}
-
-func InitYHCMetricConf(yhcMetricsConf string) error {
-	if !path.IsAbs(yhcMetricsConf) {
-		yhcMetricsConf = path.Join(runtimedef.GetYHCHome(), yhcMetricsConf)
-	}
-	if !fs.IsFileExist(yhcMetricsConf) {
-		return &errdef.ErrFileNotFound{FName: yhcMetricsConf}
-	}
-	if _, err := toml.DecodeFile(yhcMetricsConf, &_yhcMetricConfig); err != nil {
-		return &errdef.ErrFileParseFailed{FName: yhcMetricsConf, Err: err}
 	}
 	return nil
 }
