@@ -3,3 +3,6 @@ max_duration = "30d"
 min_duration = "1m"
 output = "./results"
 range = "24h"
+sql_timeout = 10
+scrape_interval = 1
+scrape_times = 30

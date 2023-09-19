@@ -9,11 +9,15 @@ import (
 var _yhcConf YHC
 
 type YHC struct {
-	LogLevel    string `toml:"log_level"`
-	Range       string `toml:"range"`
-	Output      string `toml:"output"`
-	MaxDuration string `toml:"max_duration"`
-	MinDuration string `toml:"min_duration"`
+	LogLevel       string `toml:"log_level"`
+	Range          string `toml:"range"`
+	Output         string `toml:"output"`
+	MaxDuration    string `toml:"max_duration"`
+	MinDuration    string `toml:"min_duration"`
+	SqlTimeout     int    `toml:"sql_timeout"`
+	SarDir         string `toml:"sar_dir"`
+	ScrapeInterval int    `toml:"scrape_interval"`
+	ScrapeTimes    int    `toml:"scrape_times"`
 }
 
 func GetYHCConf() YHC {
@@ -60,4 +64,20 @@ func (c YHC) GetRange() (r time.Duration) {
 		return time.Hour * 24
 	}
 	return
+}
+
+func (c YHC) GetSqlTimeout() (t int) {
+	return c.SqlTimeout
+}
+
+func (c YHC) GetSarDir() (dir string) {
+	return c.SarDir
+}
+
+func (c YHC) GetScrapeInterval() (interval int) {
+	return c.ScrapeInterval
+}
+
+func (c YHC) GetScrapeTimes() (times int) {
+	return c.ScrapeTimes
 }

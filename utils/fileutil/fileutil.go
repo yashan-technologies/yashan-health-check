@@ -243,3 +243,23 @@ func CheckDirAccess(dir string, excludeMap map[string]struct{}) (res map[string]
 	})
 	return
 }
+
+func GetFilesAccess(dir string) (map[string]os.FileMode, map[string]error) {
+	permissionsMap := make(map[string]os.FileMode)
+	errs := make(map[string]error)
+	_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			errs[dir] = err
+			return nil
+		}
+		if !info.IsDir() {
+			permissionsMap[path] = info.Mode().Perm()
+		}
+		return nil
+	})
+	return permissionsMap, errs
+}
+
+func CheckOtherWrite(fileMode os.FileMode) bool {
+	return (fileMode.Perm() & syscall.S_IWOTH) != 0
+}

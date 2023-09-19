@@ -51,6 +51,23 @@ func GetCurrentUser() (string, error) {
 	return GetUsernameById(os.Getuid())
 }
 
+// GetUserGroups return groups of the user
+func GetUserGroups(u *user.User) []string {
+	groupids, err := u.GroupIds()
+	if err != nil {
+		return nil
+	}
+	groups := []string{}
+	for _, gid := range groupids {
+		g, err := user.LookupGroupId(gid)
+		if err != nil {
+			return nil
+		}
+		groups = append(groups, g.Name)
+	}
+	return groups
+}
+
 // IsCurrentUserRoot checks whether the current user is root.
 func IsCurrentUserRoot() bool {
 	return os.Getuid() == ROOT_USER_UID

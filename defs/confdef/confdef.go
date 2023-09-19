@@ -22,3 +22,16 @@ func InitYHCConf(yhcConf string) error {
 	}
 	return nil
 }
+
+func InitYHCMetricConf(yhcMetricsConf string) error {
+	if !path.IsAbs(yhcMetricsConf) {
+		yhcMetricsConf = path.Join(runtimedef.GetYHCHome(), yhcMetricsConf)
+	}
+	if !fs.IsFileExist(yhcMetricsConf) {
+		return &errdef.ErrFileNotFound{FName: yhcMetricsConf}
+	}
+	if _, err := toml.DecodeFile(yhcMetricsConf, &_yhcMetricConfig); err != nil {
+		return &errdef.ErrFileParseFailed{FName: yhcMetricsConf, Err: err}
+	}
+	return nil
+}
