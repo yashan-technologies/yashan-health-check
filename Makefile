@@ -31,18 +31,26 @@ RESULTS_PATH=$(PKG_PATH)/results
 BIN_YHCCTL=$(BUILD_PATH)/yhcctl
 BIN_FILES=$(BIN_YHCCTL)
 
+SCRIPTS_PATH=$(PKG_PATH)/scripts
+SCRIPTS_YASDB_GO=$(BUILD_PATH)/yasdb-go
+SCRIPTS_FILES=$(SCRIPTS_YASDB_GO)
+
 DIR_TO_MAKE=$(BIN_PATH) $(LOG_PATH) $(RESULTS_PATH) $(DOCS_PATH)
 FILE_TO_COPY=./config ./scripts ./static
 
 .PHONY: clean force go_build
 
 # functions
+clean:
+	rm -rf $(BUILD_PATH)
+
 build: go_build
 	@mkdir -p $(DIR_TO_MAKE) 
 	@cp -r $(FILE_TO_COPY) $(PKG_PATH)
 	# @cp -r ./yhc-doc $(DOCS_PATH)/markdown
 	# @cp ./yhc.pdf $(DOCS_PATH)
 	@mv $(BIN_FILES) $(BIN_PATH)
+	@mv $(SCRIPTS_FILES) $(SCRIPTS_PATH)
 	@> $(LOG_PATH)/yhcctl.log
 	@cd $(PKG_PATH);ln -s ./bin/yhcctl ./yhcctl
 	@cd $(BUILD_PATH);tar -cvzf $(PKG) $(PKG_PERFIX)/
@@ -53,5 +61,6 @@ clean:
 go_build: 
 	$(GO_MOD_TIDY)
 	$(GO_BUILD_WITH_INFO) -o $(BIN_YHCCTL) ./cmd/yhcctl/*.go
+	$(GO_BUILD_WITH_INFO) -o $(SCRIPTS_YASDB_GO) ./cmd/yasdb-go/*.go
 
 force: clean build

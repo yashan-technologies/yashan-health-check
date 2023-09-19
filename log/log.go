@@ -46,6 +46,7 @@ var (
 	Handler    yaslog.YasLog
 	Module     yaslog.YasLog
 	Yasql      yaslog.YasLog
+	Execer     yaslog.YasLog
 	// TODO: more loggers
 )
 
@@ -96,8 +97,7 @@ func SetConsole(v bool) OptFunc {
 
 func DefaultLogOption() *Option {
 	return &Option{
-		level:           "DEBUG",
-		dir:             runtimedef.GetLogPath(),
+		level:           DEFAULT_LOG_LEVEL,
 		maxSizeBytes:    DEFAULT_MAX_SIZE_BYTES,
 		intervalSeconds: DEFAULT_INTERVAL_SECONDS,
 	}
