@@ -3,7 +3,7 @@ package check
 import "yhc/internal/modules/yhc/check/define"
 
 const (
-	SQL_QUERY_TOTAL_OBJECT = "select count(*) from dba_objects;"
+	SQL_QUERY_TOTAL_OBJECT = "select count(*) as total_count from dba_objects;"
 	SQL_QUERY_OWNER_OBJECT = `SELECT owner,object_type, COUNT(*) AS object_count FROM dba_objects
     WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%'
     GROUP BY owner, object_type

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"yhc/commons/constants"
 	"yhc/defs/regexpdef"
 )
 
@@ -66,7 +67,7 @@ func GetTimeDivBySepa(timeStr, sepa string) (time.Time, error) {
 	dateFields := [6]int{}
 	parts := strings.Split(timeStr, sepa)
 	for index := range parts {
-		field, err := strconv.ParseInt(parts[index], 10, 64)
+		field, err := strconv.ParseInt(parts[index], constants.BASE_DECIMAL, constants.BIT_SIZE_64)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("prase time err: %s", err.Error())
 		}
@@ -92,7 +93,7 @@ func GetDuration(s string) (d time.Duration, err error) {
 	var p int64
 	suffix := s[len(s)-1:]
 	prefix := s[:len(s)-1]
-	p, err = strconv.ParseInt(prefix, 10, 64)
+	p, err = strconv.ParseInt(prefix, constants.BASE_DECIMAL, constants.BIT_SIZE_64)
 	if err != nil {
 		return
 	}

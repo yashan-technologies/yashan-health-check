@@ -14,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 
+	"yhc/commons/constants"
 	"yhc/defs/errdef"
 	"yhc/defs/regexpdef"
 	"yhc/utils/userutil"
@@ -166,7 +167,7 @@ func GetPidByPidFile(filePath string) (string, error) {
 		return "", err
 	}
 	pidUint := binary.LittleEndian.Uint32(buffer)
-	return strconv.FormatUint(uint64(pidUint), 10), nil
+	return strconv.FormatUint(uint64(pidUint), constants.BIT_SIZE_32), nil
 }
 
 func IsAncestorDir(ancestorDir, dir string) bool {

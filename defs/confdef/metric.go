@@ -1,14 +1,32 @@
 package confdef
 
-var _yhcMetricConfig YHCMetricConfig
+import (
+	"path"
+
+	"yhc/defs/errdef"
+	"yhc/defs/runtimedef"
+
+	"git.yasdb.com/go/yasutil/fs"
+	"github.com/BurntSushi/toml"
+)
+
+const (
+	M_HOST     = "host"
+	M_DATABASE = "database"
+	M_OBJECTS  = "objects"
+	M_SAFETY   = "safety"
+	M_CUSTOM   = "custom"
+)
 
 type YHCMetricConfig struct {
-	Metrics []YHCMetric `toml:"metrics"`
+	Metrics  []*YHCMetric `toml:"metrics"`
+	Includes []string     `toml:"includes"`
 }
 
 type YHCMetric struct {
 	Name          string                  `toml:"name"`
 	NameAlias     string                  `toml:"name_alias,omitempty"`
+	ModuleName    string                  `toml:"module_name"`
 	MetricType    MetricType              `toml:"metric_type"`
 	Hidden        bool                    `toml:"hidden"`
 	Default       bool                    `toml:"default"`
@@ -53,3 +71,61 @@ const (
 	AL_WARING   = "waring"
 	AL_CRITICAL = "critical"
 )
+
+type AlertLevel string
+
+var _metricConfig *YHCMetricConfig
+
+func initMetricConf(p string) error {
+	if !path.IsAbs(p) {
+		p = path.Join(runtimedef.GetYHCHome(), p)
+	}
+	def, err := loadMetricConf(p)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_metricConfig = def
+	}()
+	if len(def.Includes) == 0 {
+		return nil
+	}
+	parent := path.Dir(p)
+	for _, include := range def.Includes {
+		custom, err := loadCustomMetricConf(parent, include)
+		if err != nil {
+			return err
+		}
+		for _, metric := range custom.Metrics {
+			if len(metric.ModuleName) == 0 {
+				metric.ModuleName = M_CUSTOM
+			}
+			def.Metrics = append(def.Metrics, metric)
+		}
+	}
+	return nil
+}
+
+func loadMetricConf(p string) (config *YHCMetricConfig, err error) {
+	config = new(YHCMetricConfig)
+	if !fs.IsFileExist(p) {
+		return config, &errdef.ErrFileNotFound{FName: p}
+	}
+	if _, err := toml.DecodeFile(p, config); err != nil {
+		return config, &errdef.ErrFileParseFailed{FName: p, Err: err}
+	}
+	return config, nil
+}
+
+func loadCustomMetricConf(parent string, include string) (customMetric *YHCMetricConfig, err error) {
+	target := include
+	if !path.IsAbs(include) {
+		target = path.Join(parent, include)
+	}
+	customMetric, err = loadMetricConf(target)
+	return
+}
+
+func GetMetricConf() *YHCMetricConfig {
+	return _metricConfig
+}

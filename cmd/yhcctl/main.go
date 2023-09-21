@@ -10,7 +10,6 @@ import (
 	"yhc/defs/confdef"
 	"yhc/defs/runtimedef"
 	"yhc/log"
-	"yhc/utils/jsonutil"
 
 	"git.yasdb.com/go/yaserr"
 	"github.com/alecthomas/kong"
@@ -48,7 +47,6 @@ func initApp(app App) error {
 	if err := confdef.InitYHCConf(app.Config); err != nil {
 		return err
 	}
-	fmt.Println(jsonutil.ToJSONString(confdef.GetYHCConf()))
 	if err := initLogger(runtimedef.GetLogPath(), confdef.GetYHCConf().LogLevel); err != nil {
 		return err
 	}
