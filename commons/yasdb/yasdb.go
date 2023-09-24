@@ -6,7 +6,9 @@ import (
 	constdef "yhc/defs/constants"
 	"yhc/defs/errdef"
 	"yhc/utils/stringutil"
-	"yhc/utils/yasqlutil"
+
+	"git.yasdb.com/go/yaslog"
+	"git.yasdb.com/pandora/yasqlgo"
 )
 
 type YashanDB struct {
@@ -50,7 +52,7 @@ func (y *YashanDB) ValidPassword() error {
 	return nil
 }
 
-func (y *YashanDB) ValidUserAndPwd() error {
+func (y *YashanDB) ValidUserAndPwd(log yaslog.YasLog) error {
 	if err := y.ValidHome(); err != nil {
 		return err
 	}
@@ -63,7 +65,7 @@ func (y *YashanDB) ValidUserAndPwd() error {
 	if err := y.ValidPassword(); err != nil {
 		return err
 	}
-	tx := yasqlutil.GetLocalInstance(y.YasdbUser, y.YasdbPassword, y.YasdbHome, y.YasdbData)
+	tx := yasqlgo.NewLocalInstance(y.YasdbUser, y.YasdbPassword, y.YasdbHome, y.YasdbData, log)
 	if err := tx.CheckPassword(); err != nil {
 		return err
 	}

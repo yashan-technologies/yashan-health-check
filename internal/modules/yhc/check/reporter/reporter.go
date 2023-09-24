@@ -72,12 +72,16 @@ func (r *YHCReport) getModuleResult() (res map[string]map[define.MetricName]*def
 	return
 }
 
-func (r *YHCReport) getPackageDir() string {
-	return path.Join(r.CheckBase.Output, fmt.Sprintf("yhc-%s", r.getTimeStr(r.BeginTime)))
+func (r *YHCReport) getPackageName() string {
+	return fmt.Sprintf("yhc-%s", r.getTimeStr(r.BeginTime))
 }
 
-func (r *YHCReport) getPackageTar() string {
-	return fmt.Sprintf("%s.tar.gz", r.getPackageDir())
+func (r *YHCReport) getPackageDir() string {
+	return path.Join(r.CheckBase.Output, r.getPackageName())
+}
+
+func (r *YHCReport) getPackageTarName() string {
+	return fmt.Sprintf("%s.tar.gz", r.getPackageName())
 }
 
 func (r *YHCReport) getDataDir() string {
@@ -89,12 +93,18 @@ func (r *YHCReport) getTimeStr(t time.Time) string {
 }
 
 func (r *YHCReport) mkdir() error {
-	return fs.Mkdir(r.getDataDir())
+	if err := fs.Mkdir(r.getPackageDir()); err != nil {
+		return err
+	}
+	if err := fs.Mkdir(r.getDataDir()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *YHCReport) tarResult() (path string, err error) {
-	tarName := r.getPackageTar()
-	packageDir := r.getPackageDir()
+	tarName := r.getPackageTarName()
+	packageDir := r.getPackageName()
 	command := fmt.Sprintf("cd %s;%s czvf %s %s;rm -rf %s", r.CheckBase.Output, bashdef.CMD_TAR, tarName, packageDir, packageDir)
 	executer := execerutil.NewExecer(log.Logger)
 	ret, _, stderr := executer.Exec(bashdef.CMD_BASH, "-c", command)

@@ -40,10 +40,6 @@ FILE_TO_COPY=./config ./scripts ./static
 
 .PHONY: clean force go_build
 
-# functions
-clean:
-	rm -rf $(BUILD_PATH)
-
 build: go_build
 	@mkdir -p $(DIR_TO_MAKE) 
 	@cp -r $(FILE_TO_COPY) $(PKG_PATH)
@@ -52,6 +48,7 @@ build: go_build
 	@mv $(BIN_FILES) $(BIN_PATH)
 	@mv $(SCRIPTS_FILES) $(SCRIPTS_PATH)
 	@> $(LOG_PATH)/yhcctl.log
+	@> $(LOG_PATH)/console.out
 	@cd $(PKG_PATH);ln -s ./bin/yhcctl ./yhcctl
 	@cd $(BUILD_PATH);tar -cvzf $(PKG) $(PKG_PERFIX)/
 

@@ -3,7 +3,7 @@ package yhcyasdb
 import (
 	"fmt"
 
-	"yhc/utils/yasqlutil"
+	"git.yasdb.com/pandora/yasqlgo"
 )
 
 const (
@@ -19,8 +19,8 @@ type VParameter struct {
 	Value string `json:"value"`
 }
 
-func QueryParameter(tx *yasqlutil.Yasql, item string) (string, error) {
-	tmp := &yasqlutil.SelectRaw{
+func QueryParameter(tx *yasqlgo.Yasql, item string) (string, error) {
+	tmp := &yasqlgo.SelectRaw{
 		RawSql: fmt.Sprintf(QUERY_YASDB_PARAMETER_BY_NAME, item),
 	}
 	pv := make([]*VParameter, 0)
@@ -29,7 +29,7 @@ func QueryParameter(tx *yasqlutil.Yasql, item string) (string, error) {
 		return "", err
 	}
 	if len(pv) == 0 {
-		return "", yasqlutil.ErrRecordNotFound
+		return "", yasqlgo.ErrRecordNotFound
 	}
 	return pv[0].Value, nil
 }

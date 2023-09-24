@@ -4,8 +4,10 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"yhc/commons/flags"
+	"yhc/commons/std"
 	"yhc/defs/compiledef"
 	"yhc/defs/confdef"
 	"yhc/defs/runtimedef"
@@ -27,6 +29,9 @@ func main() {
 	if err := initApp(app); err != nil {
 		ctx.FatalIfErrorf(err)
 	}
+	finalize := std.GetRedirecter().RedirectStd()
+	defer finalize()
+	std.WriteToFile(fmt.Sprintf("execute: %s %s\n", _APP_NAME, strings.Join(ctx.Args, " ")))
 	if err := ctx.Run(); err != nil {
 		fmt.Println(yaserr.Unwrap(err))
 	}
@@ -48,6 +53,9 @@ func initApp(app App) error {
 		return err
 	}
 	if err := initLogger(runtimedef.GetLogPath(), confdef.GetYHCConf().LogLevel); err != nil {
+		return err
+	}
+	if err := std.InitRedirecter(); err != nil {
 		return err
 	}
 	return nil
