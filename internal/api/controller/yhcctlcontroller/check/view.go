@@ -3,15 +3,20 @@ package checkcontroller
 import (
 	"reflect"
 
+	"yhc/commons/std"
 	"yhc/commons/yasdb"
 	"yhc/defs/confdef"
 	constdef "yhc/defs/constants"
 	"yhc/defs/errdef"
 	"yhc/internal/modules/yhc/check"
 	"yhc/internal/modules/yhc/check/define"
+	yhcyasdb "yhc/internal/modules/yhc/yasdb"
 	"yhc/log"
+	"yhc/utils/jsonutil"
 
+	"git.yasdb.com/go/yasutil/tabler"
 	"git.yasdb.com/pandora/tview"
+	"git.yasdb.com/pandora/yasqlgo"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -104,7 +109,7 @@ func index(app *tview.Application, yasdb *yasdb.YashanDB, modules []*constdef.Mo
 	f := newFlex(_header, true, tview.FlexRow)
 	yasdbPage := newYasdbPage(yasdb)
 	pages := newPages(yasdbPage)
-	f.AddItem(pages, 0, 1, false)
+	f.AddItem(pages, 0, 1, true)
 	f.AddItem(indexFooter(app, pages, f, modules), 3, 1, false)
 	return f
 }
@@ -244,6 +249,10 @@ func nextClickFunc(app *tview.Application, page *tview.Pages, button *tview.Butt
 				}
 				metricValidate(yasdbEnv, modules)
 				if len(moduleNoNeedCheckMetrics) != 0 {
+					// write no need check metrics to console.log
+					std.WriteToFile("the following metric will not be checked \n")
+					noNeedStr := genNoNeedCheckMetricsStr()
+					std.WriteToFile(noNeedStr)
 					page.AddAndSwitchToPage(_tips, tipsPage(), true)
 					return
 				}
@@ -342,14 +351,22 @@ func yasdbValidate(form *tview.Form) (*yasdb.YashanDB, error) {
 		return nil, err
 	}
 	yasdb := &yasdb.YashanDB{
-		YasdbHome:     res[constdef.YASDB_HOME],
-		YasdbData:     res[constdef.YASDB_DATA],
-		YasdbUser:     res[constdef.YASDB_USER],
-		YasdbPassword: res[constdef.YASDB_PASSWORD],
+		YasdbHome: res[constdef.YASDB_HOME],
+		YasdbData: res[constdef.YASDB_DATA],
+		YasdbUser: res[constdef.YASDB_USER],
 	}
-	if err := yasdb.ValidUserAndPwd(); err != nil {
+	std.WriteToFile("get yasdb info : \n")
+	std.WriteToFile(jsonutil.ToJSONString(yasdb) + "\n")
+	// after log fill password
+	yasdb.YasdbPassword = res[constdef.YASDB_PASSWORD]
+	if err := yasdb.ValidUserAndPwd(log.Controller); err != nil {
 		return nil, err
 	}
+	if err := fillListenAddr(yasdb); err != nil {
+		log.Controller.Errorf("fill listen addr err: %s", err.Error())
+		return nil, err
+	}
+
 	return yasdb, nil
 
 }
@@ -374,7 +391,7 @@ func metricValidate(env *yasdb.YashanDB, modules []*constdef.ModuleMetrics) {
 			}
 		}
 	}
-	globalFilterModule = filterNoNeedCheckMetric(modules)
+	globalFilterModule = filterNeedCheckMetric(modules)
 }
 
 func getFormData(form *tview.Form, label string) (string, error) {
@@ -398,7 +415,7 @@ func getFormDataByLabels(form *tview.Form, labels ...string) (res map[string]str
 	return
 }
 
-func filterNoNeedCheckMetric(modules []*constdef.ModuleMetrics) (result []*constdef.ModuleMetrics) {
+func filterNeedCheckMetric(modules []*constdef.ModuleMetrics) (result []*constdef.ModuleMetrics) {
 	result = make([]*constdef.ModuleMetrics, 0)
 	for _, module := range modules {
 		if _, ok := moduleNoNeedCheckMetrics[module.Name]; !ok {
@@ -422,4 +439,38 @@ func filterNoNeedCheckMetric(modules []*constdef.ModuleMetrics) (result []*const
 		}
 	}
 	return result
+}
+
+func genNoNeedCheckMetricsStr() string {
+	t := tabler.NewTable("",
+		tabler.NewRowTitle("module", 25),
+		tabler.NewRowTitle("metric", 25),
+		tabler.NewRowTitle("description", 10),
+		tabler.NewRowTitle("error", 10),
+	)
+	for _, module := range define.Level1ModuleOrder {
+		moduleStr := string(module)
+		if _, ok := moduleNoNeedCheckMetrics[moduleStr]; !ok {
+			continue
+		}
+		moduleAlias, _ := define.GetModuleDefaultAlias(module)
+		for _, metric := range moduleNoNeedCheckMetrics[moduleStr] {
+			if err := t.AddColumn(moduleAlias, metric.Name, metric.Description, metric.Error.Error()); err != nil {
+				log.Controller.Errorf("add columns err: %s", err.Error())
+				continue
+			}
+		}
+	}
+	return t.String()
+}
+
+func fillListenAddr(db *yasdb.YashanDB) error {
+	log := log.Controller.M("fill listen addr")
+	tx := yasqlgo.NewLocalInstance(db.YasdbUser, db.YasdbPassword, db.YasdbHome, db.YasdbData, log)
+	listenAddr, err := yhcyasdb.QueryParameter(tx, yhcyasdb.LISTEN_ADDR)
+	if err != nil {
+		return err
+	}
+	db.ListenAddr = trimSpace(listenAddr)
+	return nil
 }

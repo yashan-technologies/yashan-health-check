@@ -19,6 +19,7 @@ require (
 require github.com/stretchr/testify v1.8.4 // indirect
 
 require (
+	git.yasdb.com/pandora/yasqlgo v0.0.0-20230922070722-929be43c57d7 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect

@@ -88,7 +88,7 @@ func (c *CheckHandler) afterCheck() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Yashan health check has been %s and the result was saved to %s, thanks for your use\n", bashdef.WithColor("completed", bashdef.COLOR_GREEN), bashdef.WithColor(path, bashdef.COLOR_BLUE))
+	fmt.Printf("Yashan health check has been %s and the result was saved to %s, thanks for your use. \n", bashdef.WithColor("completed", bashdef.COLOR_GREEN), bashdef.WithColor(path, bashdef.COLOR_BLUE))
 	return nil
 }
 

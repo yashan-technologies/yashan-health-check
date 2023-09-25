@@ -4,20 +4,22 @@ import (
 	"errors"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
+	"yhc/commons/std"
 	"yhc/commons/yasdb"
 	"yhc/defs/confdef"
 	constdef "yhc/defs/constants"
 	checkhandler "yhc/internal/api/handler/yhcctlhandler/check"
 	"yhc/internal/modules/yhc/check/define"
-	yhcyasdb "yhc/internal/modules/yhc/yasdb"
 	"yhc/log"
 	"yhc/utils/processutil"
 	"yhc/utils/stringutil"
 	"yhc/utils/timeutil"
-	"yhc/utils/yasqlutil"
+
+	"git.yasdb.com/go/yasutil/tabler"
 )
 
 type CheckGlobal struct {
@@ -37,19 +39,21 @@ func (c *CheckCmd) Run() error {
 	if err := c.validate(); err != nil {
 		return err
 	}
-
-	metricConf := confdef.GetMetricConf()
-	modules := c.transferToModuleMetric(metricConf)
-	yasdb := c.newYasdb()
+	yasdb, modules := c.getViewModels()
 	StartTerminalView(modules, yasdb)
+	// globalExitCode will be fill after terminal view exit
 	if globalExitCode != EXIT_CONTINUE {
 		return errors.New(exitCodeMap[globalExitCode])
 	}
-	if err := c.fillListenAddr(yasdb); err != nil {
+	// use yasql query LISTEN_ADDR and fill yasdb
+	if err := fillListenAddr(yasdb); err != nil {
 		log.Controller.Errorf("fill listen addr err: %s", err.Error())
 		return err
 	}
 	checkerBase := c.genCheckBase(yasdb)
+	// write user choose yashan health check to console.log
+	c.writeUserChoose()
+	// globalFilterModule will be fill after user choose metrics
 	handler := checkhandler.NewCheckHandler(globalFilterModule, checkerBase)
 	if err := handler.Check(); err != nil {
 		return err
@@ -133,16 +137,6 @@ func (c *CheckCmd) newYasdb() *yasdb.YashanDB {
 	return yasdb
 }
 
-func (c *CheckCmd) fillListenAddr(db *yasdb.YashanDB) error {
-	tx := yasqlutil.GetLocalInstance(db.YasdbUser, db.YasdbPassword, db.YasdbHome, db.YasdbData)
-	listenAddr, err := yhcyasdb.QueryParameter(tx, yhcyasdb.LISTEN_ADDR)
-	if err != nil {
-		return err
-	}
-	db.ListenAddr = trimSpace(listenAddr)
-	return nil
-}
-
 func (c *CheckCmd) genCheckBase(db *yasdb.YashanDB) *define.CheckerBase {
 	start, end, _ := c.getStartAndEnd()
 	return &define.CheckerBase{
@@ -221,4 +215,40 @@ func (c *CheckCmd) getStartEndFlagTime(defRange time.Duration) (start, end time.
 	}
 	start = end.Add(-defRange)
 	return
+}
+
+func genUserChooseMetricsStr(modules []*constdef.ModuleMetrics) string {
+	t := tabler.NewTable("",
+		tabler.NewRowTitle("module", 25),
+		tabler.NewRowTitle("module checked", 10),
+		tabler.NewRowTitle("metric", 25),
+		tabler.NewRowTitle("metric check", 10),
+	)
+	for _, module := range modules {
+		moduleAlias, _ := define.GetModuleDefaultAlias(define.ModuleName(module.Name))
+		moduleChecked := strconv.FormatBool(module.Enabled)
+		for i, metric := range module.Metrics {
+			if i != 0 {
+				moduleAlias = ""
+				moduleChecked = ""
+			}
+			if err := t.AddColumn(moduleAlias, moduleChecked, metric.NameAlias, metric.Enabled); err != nil {
+				log.Module.Errorf("add column err: %s", err.Error())
+			}
+		}
+	}
+	return t.String()
+}
+
+func (c *CheckCmd) getViewModels() (*yasdb.YashanDB, []*constdef.ModuleMetrics) {
+	metricConf := confdef.GetMetricConf()
+	modules := c.transferToModuleMetric(metricConf)
+	yasdb := c.newYasdb()
+	return yasdb, modules
+}
+
+func (c *CheckCmd) writeUserChoose() {
+	std.WriteToFile("user choose module metric result: \n")
+	userChooseStr := genUserChooseMetricsStr(globalFilterModule)
+	std.WriteToFile(userChooseStr)
 }
