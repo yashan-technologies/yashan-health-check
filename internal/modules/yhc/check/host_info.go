@@ -20,6 +20,12 @@ func (c *YHCChecker) GetHostInfo() (err error) {
 		data.Error = err.Error()
 		return
 	}
-	data.Details = host
+	detail, err := c.convertObjectData(host)
+	if err != nil {
+		log.Errorf("failed to covert host info, err: %v", err)
+		data.Error = err.Error()
+		return
+	}
+	data.Details = detail
 	return
 }

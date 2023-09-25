@@ -2,18 +2,20 @@ package check
 
 import (
 	"bufio"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"yhc/commons/yasdb"
-	"yhc/defs/bashdef"
 	"yhc/defs/confdef"
 	"yhc/defs/timedef"
+	"yhc/internal/modules/yhc/check/alertgenner"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/internal/modules/yhc/check/gopsutil"
 	"yhc/internal/modules/yhc/check/sar"
@@ -34,36 +36,80 @@ const (
 )
 
 var MetricNameToWorkloadTypeMap = map[define.MetricName]define.WorkloadType{
-	define.METRIC_HOST_CPU_USAGE: define.WT_CPU,
+	define.METRIC_HOST_HISTORY_CPU_USAGE: define.WT_CPU,
+	define.METRIC_HOST_CURRENT_CPU_USAGE: define.WT_CPU,
+}
+
+var SQLMap = map[define.MetricName]string{
+	define.METRIC_YASDB_CONTROLFILE:        define.SQL_QUERY_CONTROLFILE,
+	define.METRIC_YASDB_CONTROLFILE_COUNT:  define.SQL_QUERY_CONTROLFILE_COUNT,
+	define.METRIC_YASDB_DATABASE:           define.SQL_QUERY_DATABASE,
+	define.METRIC_YASDB_INSTANCE:           define.SQL_QUERY_INSTANCE,
+	define.METRIC_YASDB_INDEX_BLEVEL:       define.SQL_QUERY_INDEX_BLEVEL,
+	define.METRIC_YASDB_INDEX_COLUMN:       define.SQL_QUERY_INDEX_COLUMN,
+	define.METRIC_YASDB_INDEX_INVISIBLE:    define.SQL_QUERY_INDEX_INVISIBLE,
+	define.METRIC_YASDB_LISTEN_ADDR:        define.SQL_QUERY_LISTEN_ADDR,
+	define.METRIC_YASDB_TABLESPACE:         define.SQL_QUERY_TABLESPACE,
+	define.METRIC_YASDB_WAIT_EVENT:         define.SQL_QUERY_WAIT_EVENT,
+	define.METRIC_YASDB_REPLICATION_STATUS: define.SQL_QUERY_REPLICATION_STATUS,
+	define.METRIC_YASDB_PARAMETER:          define.SQL_QUERY_PARAMETER,
+	define.METRIC_YASDB_OBJECT_COUNT:       define.SQL_QUERY_TOTAL_OBJECT,
+	define.METRIC_YASDB_OBJECT_OWNER:       define.SQL_QUERY_OWNER_OBJECT,
+	define.METRIC_YASDB_OBJECT_TABLESPACE:  define.SQL_QUERY_TABLESPACE_OBJECT,
+	define.METRIC_YASDB_REDO_LOG:           define.SQL_QUERY_LOGFILE,
+	define.METRIC_YASDB_REDO_LOG_COUNT:     define.SQL_QUERY_LOGFILE_COUNT,
 }
 
 type logTimeParseFunc func(date time.Time, line string) (time.Time, error)
 
 type Checker interface {
 	CheckFuncs(metrics []*confdef.YHCMetric) map[string]func() error
-	GetResult() *define.YHCModule
+	GetResult() map[define.MetricName]*define.YHCItem
 }
 
 type YHCChecker struct {
-	Result     *define.YHCModule
-	Yasdb      *yasdb.YashanDB
+	mtx        sync.RWMutex
+	base       *define.CheckerBase
+	metrics    []*confdef.YHCMetric
+	Result     map[define.MetricName]*define.YHCItem
 	FailedItem map[define.MetricName]error
-	StartTime  time.Time
-	EndTime    time.Time
 }
 
-func NewYHCChecker(base *define.CheckerBase) *YHCChecker {
+func NewYHCChecker(base *define.CheckerBase, metrics []*confdef.YHCMetric) *YHCChecker {
 	return &YHCChecker{
-		Yasdb:     base.DBInfo,
-		Result:    new(define.YHCModule),
-		StartTime: base.Start,
-		EndTime:   base.End,
+		base:       base,
+		metrics:    metrics,
+		Result:     map[define.MetricName]*define.YHCItem{},
+		FailedItem: map[define.MetricName]error{},
 	}
 }
 
 // [Interface Func]
-func (c *YHCChecker) GetResult() *define.YHCModule {
+func (c *YHCChecker) GetResult() map[define.MetricName]*define.YHCItem {
+	c.fillterFailed()
+	c.genAlerts()
 	return c.Result
+}
+
+func (c *YHCChecker) genAlerts() {
+	log := log.Module.M("gen-alert")
+	alertGenner := alertgenner.NewAlterGenner(log, c.metrics, c.Result)
+	c.Result = alertGenner.GenAlerts()
+}
+
+func (c *YHCChecker) fillterFailed() {
+	for _, metric := range c.metrics {
+		name := define.MetricName(metric.Name)
+		item, ok := c.Result[name]
+		if !ok {
+			c.FailedItem[name] = fmt.Errorf("could not find result of metric %s", name)
+			continue
+		}
+		if !stringutil.IsEmpty(item.Error) {
+			delete(c.Result, name)
+			c.FailedItem[name] = errors.New(item.Error)
+		}
+	}
 }
 
 // [Interface Func]
@@ -92,40 +138,58 @@ func (c *YHCChecker) CheckFuncs(metrics []*confdef.YHCMetric) (res map[string]fu
 
 func (c *YHCChecker) funcMap() (res map[define.MetricName]func() error) {
 	res = map[define.MetricName]func() error{
-		define.METRIC_HOST_INFO:               c.GetHostInfo,
-		define.METRIC_HOST_CPU_INFO:           c.GetHostCPUInfo,
-		define.METRIC_HOST_CPU_USAGE:          c.GetHostCPUUsage,
-		define.METRIC_YASDB_CONTROLFILE:       c.GetYasdbControlFile,
-		define.METRIC_YASDB_DATABASE:          c.GetYasdbDatabase,
-		define.METRIC_YASDB_FILE_PERMISSION:   c.GetYasdbFilePermission,
-		define.METRIC_YASDB_INDEX_BLEVEL:      c.GetYasdbIndexBlevel,
-		define.METRIC_YASDB_INDEX_COLUMN:      c.GetYasdbIndexColumn,
-		define.METRIC_YASDB_INDEX_INVISIBLE:   c.GetYasdbIndexInvisible,
-		define.METRIC_YASDB_INSTANCE:          c.GetYasdbInstance,
-		define.METRIC_YASDB_LISTEN_ADDR:       c.GetYasdbListenAddr,
-		define.METRIC_YASDB_RUN_LOG_ERROR:     c.GetYasdbRunLogError,
-		define.METRIC_YASDB_REDO_LOG:          c.GetYasdbRedoLog,
-		define.METRIC_YASDB_OBJECT_COUNT:      c.GetYasdbObjectCount,
-		define.METRIC_YASDB_OBJECT_OWNER:      c.GetYasdbOwnerObject,
-		define.METRIC_YASDB_OBJECT_TABLESPACE: c.GetYasdbTablespaceObject,
-		define.METRIC_YASDB_PARAMETER:         c.GetYasdbParameter,
-		define.METRIC_YASDB_SESSION:           c.GetYasdbSession,
-		define.METRIC_YASDB_TABLESPACE:        c.GetYasdbTablespace,
-		define.METRIC_YASDB_WAIT_EVENT:        c.GetYasdbWaitEvent,
+		define.METRIC_HOST_INFO:                c.GetHostInfo,
+		define.METRIC_HOST_CPU_INFO:            c.GetHostCPUInfo,
+		define.METRIC_HOST_HISTORY_CPU_USAGE:   c.GetHostHistoryCPUUsage,
+		define.METRIC_HOST_CURRENT_CPU_USAGE:   c.GetHostCurrentCPUUsage,
+		define.METRIC_YASDB_CONTROLFILE:        c.GetYasdbControlFile,
+		define.METRIC_YASDB_CONTROLFILE_COUNT:  c.GetYasdbControlFileCount,
+		define.METRIC_YASDB_DATABASE:           c.GetYasdbDatabase,
+		define.METRIC_YASDB_FILE_PERMISSION:    c.GetYasdbFilePermission,
+		define.METRIC_YASDB_INDEX_BLEVEL:       c.GetYasdbIndexBlevel,
+		define.METRIC_YASDB_INDEX_COLUMN:       c.GetYasdbIndexColumn,
+		define.METRIC_YASDB_INDEX_INVISIBLE:    c.GetYasdbIndexInvisible,
+		define.METRIC_YASDB_INSTANCE:           c.GetYasdbInstance,
+		define.METRIC_YASDB_LISTEN_ADDR:        c.GetYasdbListenAddr,
+		define.METRIC_YASDB_RUN_LOG_ERROR:      c.GetYasdbRunLogError,
+		define.METRIC_YASDB_REDO_LOG:           c.GetYasdbRedoLog,
+		define.METRIC_YASDB_REDO_LOG_COUNT:     c.GetYasdbRedoLogCount,
+		define.METRIC_YASDB_OBJECT_COUNT:       c.GetYasdbObjectCount,
+		define.METRIC_YASDB_OBJECT_OWNER:       c.GetYasdbOwnerObject,
+		define.METRIC_YASDB_OBJECT_TABLESPACE:  c.GetYasdbTablespaceObject,
+		define.METRIC_YASDB_REPLICATION_STATUS: c.GetYasdbReplicationStatus,
+		define.METRIC_YASDB_PARAMETER:          c.GetYasdbParameter,
+		define.METRIC_YASDB_SESSION:            c.GetYasdbSession,
+		define.METRIC_YASDB_TABLESPACE:         c.GetYasdbTablespace,
+		define.METRIC_YASDB_WAIT_EVENT:         c.GetYasdbWaitEvent,
 	}
 	return
 }
 
 func (c *YHCChecker) fillResult(data *define.YHCItem) {
-	c.Result.Set(data)
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+	c.Result[data.Name] = data
 }
 
-func (c *YHCChecker) querySingleRow(name define.MetricName, sql string) (*define.YHCItem, error) {
+func (c *YHCChecker) querySingleRow(name define.MetricName) (*define.YHCItem, error) {
 	data := &define.YHCItem{
 		Name: name,
 	}
 	log := log.Module.M(string(name))
-	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
+	sql, err := c.getSQL(name)
+	if err != nil {
+		log.Errorf("failed to get  sql of %s, err: %v", name, err)
+		data.Error = err.Error()
+		return data, err
+	}
+	metric, err := c.getMetric(name)
+	if err != nil {
+		log.Errorf("failed to get metric by name %s, err: %v", name, err)
+		data.Error = err.Error()
+		return data, err
+	}
+	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
 	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
 		log.Errorf("failed to get data with sql %s, err: %v", sql, err)
@@ -138,29 +202,41 @@ func (c *YHCChecker) querySingleRow(name define.MetricName, sql string) (*define
 		data.Error = err.Error()
 		return data, err
 	}
-	data.Details = res[0]
+	data.Details = c.convertSqlData(metric, res[0])
 	return data, nil
 }
 
-func (c *YHCChecker) queryMultiRows(name define.MetricName, sql string) (*define.YHCItem, error) {
+func (c *YHCChecker) queryMultiRows(name define.MetricName) (*define.YHCItem, error) {
 	data := &define.YHCItem{
 		Name: name,
 	}
 	log := log.Module.M(string(name))
-	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
+	sql, err := c.getSQL(name)
+	if err != nil {
+		log.Errorf("failed to get  sql of %s, err: %v", name, err)
+		data.Error = err.Error()
+		return data, err
+	}
+	metric, err := c.getMetric(name)
+	if err != nil {
+		log.Errorf("failed to get metric by name %s, err: %v", name, err)
+		data.Error = err.Error()
+		return data, err
+	}
+	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
 	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
 		log.Errorf("failed to get data with sql '%s', err: %v", sql, err)
 		data.Error = err.Error()
 		return data, err
 	}
-	data.Details = res
+	data.Details = c.convertMultiSqlData(metric, res)
 	return data, nil
 }
 
 func (c *YHCChecker) querySingleParameter(log yaslog.YasLog, name string) (string, error) {
 	sql := fmt.Sprintf(SQL_QUERY_SINGLE_PARAMETER_FORMATER, name)
-	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
+	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
 	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
 		log.Errorf("failed to query value of parameter %s, err: %v", name, err)
@@ -213,10 +289,10 @@ func (c *YHCChecker) collectLogError(log yaslog.YasLog, src string, date time.Ti
 			log.Error("skip line: %s, err: %s", txt, err.Error())
 			continue
 		}
-		if t.Before(c.StartTime) {
+		if t.Before(c.base.Start) {
 			continue
 		}
-		if t.After(c.EndTime) {
+		if t.After(c.base.End) {
 			break
 		}
 		res = append(res, txt)
@@ -224,7 +300,7 @@ func (c *YHCChecker) collectLogError(log yaslog.YasLog, src string, date time.Ti
 	return res, nil
 }
 
-func (c *YHCChecker) hostHistoryWorkload(log yaslog.YasLog, name define.MetricName, start, end time.Time) (resp define.WorkloadOutput, err error) {
+func (c *YHCChecker) hostHistoryWorkload(log yaslog.YasLog, name define.MetricName) (resp define.WorkloadOutput, err error) {
 	// get sar args
 	workloadType, ok := MetricNameToWorkloadTypeMap[name]
 	if !ok {
@@ -245,7 +321,7 @@ func (c *YHCChecker) hostHistoryWorkload(log yaslog.YasLog, name define.MetricNa
 		sarDir = sarCollector.GetSarDir()
 	}
 	sarOutput := make(define.WorkloadOutput)
-	args := c.genHistoryWorkloadArgs(start, end, sarDir)
+	args := c.genHistoryWorkloadArgs(c.base.Start, c.base.End, sarDir)
 	for _, arg := range args {
 		output, e := sarCollector.Collect(workloadType, sarArg, arg)
 		if e != nil {
@@ -312,35 +388,64 @@ func (c *YHCChecker) hostCurrentWorkload(log yaslog.YasLog, name define.MetricNa
 
 }
 
-func (c *YHCChecker) hostWorkload(log yaslog.YasLog, name define.MetricName) (resp define.HostWorkResponse, err error) {
-	details := map[string]interface{}{}
-	hasSar := c.CheckSarAccess() == nil
-	resp.DataType = define.DATATYPE_GOPSUTIL
-	resp.Errors = make(map[string]string)
-
-	// collect historyworkload
-	if hasSar {
-		resp.DataType = define.DATATYPE_SAR
-		if historyNetworkWorkload, e := c.hostHistoryWorkload(log, name, c.StartTime, c.EndTime); e != nil {
-			err = fmt.Errorf("failed to collect history %s, err: %s", name, e.Error())
-			resp.Errors[KEY_HISTORY] = err.Error()
-			log.Error(err)
-		} else {
-			details[KEY_HISTORY] = historyNetworkWorkload
-		}
-	} else {
-		e := fmt.Errorf("cannot find command '%s'", bashdef.CMD_SAR)
-		resp.Errors[KEY_HISTORY] = e.Error()
-		log.Error(e)
+func (c *YHCChecker) convertObjectData(object interface{}) (res map[string]any, err error) {
+	res = make(map[string]any)
+	bytes, err := json.Marshal(object)
+	if err != nil {
+		return nil, err
 	}
-	// collect current workload
-	if currentNetworkWorkload, e := c.hostCurrentWorkload(log, name, hasSar); e != nil {
-		err = fmt.Errorf("failed to collect current %s, err: %s", name, e.Error())
-		resp.Errors[KEY_CURRENT] = err.Error()
-		log.Error(err)
-	} else {
-		details[KEY_CURRENT] = currentNetworkWorkload
-	}
-	resp.Data = details
+	err = json.Unmarshal(bytes, &res)
 	return
+}
+
+func (c *YHCChecker) convertMultiSqlData(metric *confdef.YHCMetric, datas []map[string]string) []map[string]interface{} {
+	res := []map[string]interface{}{}
+	for _, data := range datas {
+		res = append(res, c.convertSqlData(metric, data))
+	}
+	return res
+}
+
+func (c *YHCChecker) convertSqlData(metric *confdef.YHCMetric, data map[string]string) map[string]interface{} {
+	log := log.Module.M("convert-sql-data")
+	res := make(map[string]interface{})
+	for _, col := range metric.NumberColumns {
+		value, ok := data[col]
+		if !ok {
+			log.Debugf("column %s not found, skip", col)
+			continue
+		}
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Errorf("failed to parse column %s to float64, value: %s, metric: %s, err: %v", col, value, metric.Name, err)
+			continue
+		}
+		res[col] = f
+	}
+	for k, v := range data {
+		if _, ok := res[k]; !ok {
+			res[k] = v
+		}
+	}
+	return res
+}
+
+func (c *YHCChecker) getMetric(name define.MetricName) (*confdef.YHCMetric, error) {
+	for _, metric := range c.metrics {
+		if metric.Name == string(name) {
+			return metric, nil
+		}
+	}
+	return nil, fmt.Errorf("failed to found metric by name %s", name)
+}
+
+func (c *YHCChecker) getSQL(name define.MetricName) (string, error) {
+	metric, err := c.getMetric(name)
+	if err != nil {
+		return "", err
+	}
+	if stringutil.IsEmpty(metric.SQL) {
+		return SQLMap[name], nil
+	}
+	return metric.SQL, nil
 }

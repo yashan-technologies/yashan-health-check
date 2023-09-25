@@ -48,7 +48,7 @@ func (c *YHCChecker) genCustomBashFunc(metric *confdef.YHCMetric) (fn func() err
 
 func (c *YHCChecker) genCustomSQLFunc(metric *confdef.YHCMetric) (fn func() error) {
 	fn = func() (err error) {
-		data, err := c.queryMultiRows(define.MetricName(metric.Name), metric.SQL)
+		data, err := c.queryMultiRows(define.MetricName(metric.Name))
 		defer c.fillResult(data)
 		return
 	}

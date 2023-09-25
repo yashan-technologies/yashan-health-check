@@ -225,7 +225,7 @@ func genUserChooseMetricsStr(modules []*constdef.ModuleMetrics) string {
 		tabler.NewRowTitle("metric check", 10),
 	)
 	for _, module := range modules {
-		moduleAlias, _ := define.GetModuleDefaultAlias(define.ModuleName(module.Name))
+		moduleAlias := confdef.GetModuleAlias(module.Name)
 		moduleChecked := strconv.FormatBool(module.Enabled)
 		for i, metric := range module.Metrics {
 			if i != 0 {

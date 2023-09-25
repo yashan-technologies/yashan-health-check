@@ -9,109 +9,112 @@ import (
 
 	"yhc/defs/bashdef"
 	"yhc/defs/timedef"
+	yhccommons "yhc/internal/modules/yhc/check/commons"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/execerutil"
 	"yhc/utils/fileutil"
 
-	"git.yasdb.com/go/yaslog"
 	"git.yasdb.com/go/yasutil/fs"
 )
 
+const (
+	_PACKAGE_NAME_FORMATTER = "ytc-%s"
+	_DATA_NAME_FORMATTER    = "data-%s.json"
+)
+
 type YHCReport struct {
-	BeginTime time.Time                    `json:"beginTime"`
-	EndTime   time.Time                    `json:"endTime"`
-	CheckBase *define.CheckerBase          `json:"checkBase"`
-	Modules   map[string]*define.YHCModule `json:"modules"`
+	BeginTime time.Time                             `json:"beginTime"`
+	EndTime   time.Time                             `json:"endTime"`
+	CheckBase *define.CheckerBase                   `json:"checkBase"`
+	Items     map[define.MetricName]*define.YHCItem `json:"items"`
 }
 
 func NewYHCReport(checkBase *define.CheckerBase) *YHCReport {
 	return &YHCReport{
 		CheckBase: checkBase,
-		Modules:   make(map[string]*define.YHCModule),
+		Items:     map[define.MetricName]*define.YHCItem{},
 	}
 }
 
-func (r *YHCReport) GenReport() (string, error) {
-	log := log.Module.M("gen result")
+func (r *YHCReport) GenResult() (string, error) {
+	log := log.Module.M("gen-result")
 	if err := r.mkdir(); err != nil {
 		log.Errorf("mkdir err: %s", err.Error())
 		return "", err
 	}
-	if err := r.genData(log); err != nil {
+	if err := r.genDataJson(); err != nil {
 		log.Errorf("gen data err: %s", err.Error())
 		return "", err
 	}
-	path, err := r.tarResult()
-	if err != nil {
-		log.Errorf("tar check result package err: %s", path)
+	// TODO write report
+	if err := r.tarResult(); err != nil {
+		log.Errorf("tar result failed: %s", err)
+		return "", err
 	}
-	return path, nil
+	if err := r.chownResult(); err != nil {
+		log.Errorf("chown result failed: %s", err)
+	}
+	return r.genPackageTarPath(), nil
 }
 
-func (r *YHCReport) genData(log yaslog.YasLog) error {
-	dataJson := path.Join(r.getDataDir(), "data.json")
-	result := r.getModuleResult()
-	bytes, err := json.MarshalIndent(result, "", "    ")
+func (r *YHCReport) genDataJson() error {
+	dataJson := path.Join(r.genDataPath(), fmt.Sprintf(_DATA_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
+	bytes, err := json.MarshalIndent(r.Items, "", "    ")
 	if err != nil {
-		log.Errorf("module data result marshal err: %s", err.Error())
 		return err
 	}
 	if err := fileutil.WriteFile(dataJson, bytes); err != nil {
-		log.Errorf("write data.json err: %s", err.Error())
 		return err
 	}
 	return nil
 }
 
-func (r *YHCReport) getModuleResult() (res map[string]map[define.MetricName]*define.YHCItem) {
-	res = make(map[string]map[define.MetricName]*define.YHCItem)
-	for moduleName, moduleData := range r.Modules {
-		res[moduleName] = moduleData.Items()
-	}
-	return
+func (r *YHCReport) genPackageTarPath() string {
+	return path.Join(r.CheckBase.Output, r.genPackageTarName())
 }
 
-func (r *YHCReport) getPackageName() string {
-	return fmt.Sprintf("yhc-%s", r.getTimeStr(r.BeginTime))
+func (r *YHCReport) genPackageName() string {
+	return fmt.Sprintf(_PACKAGE_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE))
 }
 
-func (r *YHCReport) getPackageDir() string {
-	return path.Join(r.CheckBase.Output, r.getPackageName())
+func (r *YHCReport) genPackageDir() string {
+	return path.Join(r.CheckBase.Output, r.genPackageName())
 }
 
-func (r *YHCReport) getPackageTarName() string {
-	return fmt.Sprintf("%s.tar.gz", r.getPackageName())
+func (r *YHCReport) genPackageTarName() string {
+	return fmt.Sprintf("%s.tar.gz", r.genPackageName())
 }
 
-func (r *YHCReport) getDataDir() string {
-	return path.Join(r.getPackageDir(), "data")
-}
-
-func (r *YHCReport) getTimeStr(t time.Time) string {
-	return t.Format(timedef.TIME_FORMAT_IN_FILE)
+func (r *YHCReport) genDataPath() string {
+	return path.Join(r.genPackageDir(), "data")
 }
 
 func (r *YHCReport) mkdir() error {
-	if err := fs.Mkdir(r.getPackageDir()); err != nil {
-		return err
+	if !fs.IsDirExist(r.CheckBase.Output) {
+		if err := fs.Mkdir(r.CheckBase.Output); err != nil {
+			return err
+		}
+		if err := yhccommons.ChownToExecuter(r.CheckBase.Output); err != nil {
+			log.Module.Warnf("chown %s failed: %s", r.CheckBase.Output, err)
+		}
 	}
-	if err := fs.Mkdir(r.getDataDir()); err != nil {
+	if err := fs.Mkdir(r.genDataPath()); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *YHCReport) tarResult() (path string, err error) {
-	tarName := r.getPackageTarName()
-	packageDir := r.getPackageName()
-	command := fmt.Sprintf("cd %s;%s czvf %s %s;rm -rf %s", r.CheckBase.Output, bashdef.CMD_TAR, tarName, packageDir, packageDir)
+func (r *YHCReport) tarResult() error {
+	command := fmt.Sprintf("cd %s;%s czvf %s %s;rm -rf %s", r.CheckBase.Output, bashdef.CMD_TAR, r.genPackageTarName(), r.genPackageName(), r.genPackageName())
 	executer := execerutil.NewExecer(log.Logger)
 	ret, _, stderr := executer.Exec(bashdef.CMD_BASH, "-c", command)
 	if ret != 0 {
-		err = errors.New(stderr)
-		return
+		return errors.New(stderr)
 	}
-	path = tarName
-	return
+	return nil
+}
+
+func (r *YHCReport) chownResult() error {
+	return yhccommons.ChownToExecuter(r.genPackageTarPath())
 }

@@ -1,180 +1,386 @@
-includes = ["./custom_metric.toml"]
+[[metrics]]
+  name = "host_info"
+  name_alias = "主机信息"
+  metric_type = "bash"
+  module_name = "overview"
+  default = true
+  enabled = true
+
 
 [[metrics]]
-  name = "yasdb-instance"
+  name = "host_cpu_info"
+  name_alias = "CPU信息"
+  module_name = "overview"
+  metric_type = "bash"
+  default = true
+  enabled = true
+
+
+[[metrics]]
+  name = "yasdb_instance"
   name_alias = "实例信息"
   module_name = "overview"
-  hidden = false
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select status as instance_status, version, startup_time from v$instance;"
+  [metrics.item_names]
+    INSTANCE_STATUS = "instance_status"
   [metrics.alert_rules]
-    [metrics.alert_rules.info]
-      expression = "8>cores>2"
-      description = "核心数大于2并且小于8"
-      suggestion = "建议检查核心数"
-    [metrics.alert_rules.waring]
-      expression = "cores>8"
-      description = "核心数大于8"
-      suggestion = "无"
+
+    [[metrics.alert_rules.critical]]
+      expression = "instance_status != 'OPEN'"
+      description = "实例状态异常"
+      suggestion = "建议检查实例状态"
+
 
 [[metrics]]
-  name = "yasdb-database"
+  name = "yasdb_database"
   name_alias = "数据库信息"
   module_name = "overview"
-  hidden = false
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
+  [metrics.item_names]
+    DATABASE_STATUS = "database_status"
+    OPEN_MODE = "open_mode"
+    LOG_MODE = "log_mode"
+    PROTECTION_MODE = "protection_mode"
+    PROTECTION_LEVEL = "protection_level"
+    DATABASE_ROLE = "database_role"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.critical]]
+      expression = "database_status != 'NORMAL'"
+      description = "数据库状态异常"
+      suggestion = "建议检查数据库状态"
+
+    [[metrics.alert_rules.critical]]
+      expression = "log_mode != 'ARCHIVELOG'"
+      description = "数据库归档模式未开启"
+      suggestion = "建议开启数据库归档模式"
+
+    [[metrics.alert_rules.critical]]
+      expression = "protection_mode != protection_level"
+      description = "数据库保护级别与保护模式不一致"
+      suggestion = "建议检查数据库保护级别和保护模式"
+
+    [[metrics.alert_rules.critical]]
+      expression = "database_role == 'PRIMARY' && open_mode != 'READ_WRITE'"
+      description = "主库打开模式非READ_WRITE"
+      suggestion = "建议检查数据库开启模式"
+
+    [[metrics.alert_rules.critical]]
+      expression = "database_role == 'STANDBY' && open_mode != 'READ_ONLY'"
+      description = "备库打开模式非READ_ONLY"
+      suggestion = "建议检查数据库开启模式"
+
 
 [[metrics]]
-  name = "yasdb-file-permission"
+  name = "yasdb_file_permission"
   name_alias = "数据库文件权限"
   module_name = "overview"
-  hidden = false
   default = true
   enabled = true
+  labels = ["filePath"]
+  [metrics.item_names]
+    permission = "file_permission"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "file_permission ~='^(.{8}w).'"
+      description = "数据库文件及目录权限要求过低"
+      suggestion = "建议调整数据库文件和目录权限，如果文件读写权限过低，存在文件被其他用户误删的风险"
+
 
 [[metrics]]
-  name = "yasdb-listen-address"
+  name = "yasdb_listen_address"
   name_alias = "数据库IP及端口"
   module_name = "overview"
-  hidden = false
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select VALUE as LISTEN_ADDR from v$parameter where name = 'LISTEN_ADDR';"
+
+
+[[metrics]]
+  name = "host_history_cpu_usage"
+  name_alias = "历史CPU使用率"
+  module_name = "host_check"
   default = true
   enabled = true
 
 
 [[metrics]]
-  name = "host-info"
-  name_alias = "主机信息"
-  module_name = "host-check"
-  hidden = false
+  name = "host_current_cpu_usage"
+  name_alias = "当前CPU使用率"
+  module_name = "host_check"
   default = true
   enabled = true
 
 
 [[metrics]]
-  name = "host-cpu-info"
-  name_alias = "CPU信息"
-  module_name = "host-check"
-  hidden = false
-  default = true
-  enabled = true
-
-[[metrics]]
-  name = "host-cpu-usage"
-  name_alias = "CPU使用率"
-  module_name = "host-check"
-  hidden = false
-  default = true
-  enabled = true
-
-[[metrics]]
-  name = "yasdb-replication-status"
+  name = "yasdb_replication_status"
   name_alias = "数据库主备连接状态"
-  module_name = "yasdb-check"
-  hidden = false
+  module_name = "yasdb_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select * from v$replication_status;"
+  [metrics.item_names]
+    CONNECTED = "replication_connected"
+    TRANSPORT_LAG = "replication_transport_lag"
+    APPLY_LAG = "replication_apply_lag"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.critical]]
+      expression = "database_role == 'SATNDBY' && replication_connected != 'CONNECTED'"
+      description = "数据库主备连接状态"
+      suggestion = "主备连接已断开，请检查高可用架构是否正常"
+    [[metrics.alert_rules.critical]]
+      expression = "database_role == 'SATNDBY' && replication_transport_lag > '0'"
+      description = "数据库备库应用日志存在延迟"
+      suggestion = "请检查业务活动强度与当前网络传输速度"
+
+    [[metrics.alert_rules.critical]]
+      expression = "database_role == 'SATNDBY' && replication_apply_lag > '0'"
+      description = "数据库备库应用日志存在延迟"
+      suggestion = "请检查业务活动强度与当前网络传输速度"
 
 [[metrics]]
-  name = "yasdb-parameter"
+  name = "yasdb_parameter"
   name_alias = "数据库参数检查"
-  module_name = "yasdb-check"
-  hidden = false
+  module_name = "yasdb_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select name, value from v$parameter where value is not null;" # 不要修改已有列名，可以新增列以及修改where条件
+  [metrics.item_names]
+    RECYCLEBIN_ENABLED = "parameter_recyclebin_enabled"
+    ARCH_CLEAN_IGNORE_MODE = "parameter_clean_ignore_mode"
+    UNIFIED_AUDITING = "parameter_unified_auditing"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.info]]
+      expression = "parameter_recyclebin_enabled == 'OFF'"
+      description = "数据库回收站已关闭"
+      suggestion = "数据库默认关闭回收站功能，关闭时无法使用闪回truncate和闪回drop。建议开启此功能"
+
+    [[metrics.alert_rules.info]]
+      expression = "parameter_clean_ignore_mode != 'NONE'"
+      description = "归档清理设置非NONE"
+      suggestion = "归档清理设置为NONE时，需评估是否影响备份恢复，设置为NONE可能会因为归档日志被清理而无法恢复到最新状态。但是设置为NONE后，可以不受限制进行归档清理，可以避免因归档目录满导致数据库挂起"
+
+    [[metrics.alert_rules.info]]
+      expression = "parameter_unified_auditing != 'TRUE'"
+      description = "数据库未开启审计"
+      suggestion = "审计开关未打开，此时无法进行数据库审计"
+
 
 [[metrics]]
-  name = "yasdb-tablespace"
+  name = "yasdb_tablespace"
   name_alias = "表空间"
-  module_name = "yasdb-check"
-  hidden = false
+  module_name = "yasdb_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  number_columns = ["USED_RATE"]
+  sql = "SELECT TABLESPACE_NAME, CONTENTS, STATUS, ALLOCATION_TYPE, TOTAL_BYTES _ USER_BYTES AS USED_BYTES, TOTAL_BYTES, (TOTAL_BYTES _ USER_BYTES) / TOTAL_BYTES * 100 AS USED_RATE FROM SYS.DBA_TABLESPACES;"
+  [metrics.item_names]
+    STATUS = "tablespace_status"
+    ALLOCATION_TYPE = "allocation_type"
+    USED_RATE = "tablespace_used_rate"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "tablespace_status != 'ONLINE'"
+      description = "表空间状态检查"
+      suggestion = "表空间状态不正常，建议检查表空间状态，确认异常原因"
+
+    [[metrics.alert_rules.warning]]
+      expression = "allocation_type == 'AUTO'"
+      description = "表空间开启自动扩展"
+      suggestion = "建议关闭此功能，避免有事务占用过多的UNDO导致磁盘空间不可用"
+
+    [[metrics.alert_rules.warning]]
+      expression = "tablespace_used_rate >= 80 && tablespace_used_rate < 90"
+      description = "表空间使用率"
+      suggestion = "表空间使用率过高，建议检查表空间使用情况并通过清理空间或者增加数据文件的方法降低表空间使用率，表空间完全满之后可能导致业务挂起或者数据库挂起"
+
+    [[metrics.alert_rules.critical]]
+      expression = "tablespace_used_rate >= 90"
+      description = "表空间使用率"
+      suggestion = "表空间使用率过高，建议检查表空间使用情况并通过清理空间或者增加数据文件的方法降低表空间使用率，表空间完全满之后可能导致业务挂起或者数据库挂起"
 
 [[metrics]]
-  name = "yasdb-controlfile"
+  name = "yasdb_controlfile"
   name_alias = "控制文件"
-  module_name = "yasdb-check"
-  hidden = false
+  module_name = "yasdb_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  number_columns = ['MBYTES']
+  sql = "select id, name, bytes/1024/1024 as MBYTES from v$controlfile;"
+  [metrics.item_names]
+    MBYTES = "controlfile_mbytes"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.info]]
+      expression = "controlfile_mbytes >= 50 && controlfile_mbytes < 100"
+      description = "控制文件大小检查"
+      suggestion = "控制文件过大可能会影响数据库性能"
+
+    [[metrics.alert_rules.waring]]
+      expression = "controlfile_mbytes >= 100"
+      description = "控制文件大小检查"
+      suggestion = "控制文件过大可能会影响数据库性能"
+
 
 [[metrics]]
-  name = "yasdb-session"
+  name = "yasdb_controlfile_count"
+  name_alias = "控制文件数量"
+  module_name = "yasdb_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  number_columns = ["TOTAL"]
+  sql = "select count(*) as total from v$controlfile;"
+  [metrics.item_names]
+    TOTAL = "controlfile_total"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "controlfile_total <= 1"
+      description = "控制文件数量检查"
+      suggestion = "控制文件数量较少，可能存在单点故障风险"
+
+
+[[metrics]]
+  name = "yasdb_session"
   name_alias = "会话数检查"
-  module_name = "yasdb-check"
-  hidden = false
+  module_name = "yasdb_check"
   default = true
   enabled = true
+  number_columns = ["SESSION_USAGE"]
+  [metrics.item_names]
+    SESSION_USAGE = "session_session_usage"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "session_session_usage >= 70 && session_session_usage < 80"
+      description = "当前会话占用率"
+      suggestion = "会话使用率过高。请检查原因"
+
+    [[metrics.alert_rules.critical]]
+      expression = "session_session_usage >= 80"
+      description = "当前会话占用率"
+      suggestion = "会话使用率过高。请检查原因"
+
 
 [[metrics]]
-  name = "yasdb-wait-event"
-  name_alias = "等待事件"
-  module_name = "yasdb-check"
-  hidden = false
-  default = true
-  enabled = true
-
-[[metrics]]
-  name = "yasdb-object-count"
+  name = "yasdb_object_count"
   name_alias = "对象总数"
-  module_name = "object-check"
-  hidden = false
+  module_name = "object_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select count(*) as total_count from dba_objects;"
 
 [[metrics]]
-  name = "yasdb-object-owner"
+  name = "yasdb_object_owner"
   name_alias = "各owner对象统计"
-  module_name = "object-check"
-  hidden = false
+  module_name = "object_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%' GROUP BY owner, object_type ORDER BY owner,object_type;"
+
 
 [[metrics]]
-  name = "yasdb-object-tablespace"
+  name = "yasdb_object_tablespace"
   name_alias = "各tablespace对象统计"
-  module_name = "object-check"
-  hidden = false
+  module_name = "object_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE') GROUP BY tablespace_name ORDER BY tablespace_name;"
+
 
 [[metrics]]
-  name = "yasdb-index-blevel"
+  name = "yasdb_index_blevel"
   name_alias = "超过三层的索引"
-  module_name = "object-check"
-  hidden = false
+  module_name = "object_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select OWNER, INDEX_NAME, BLEVEL from dba_indexes where BLEVEL>3;"
 
 [[metrics]]
-  name = "yasdb-index-column"
+  name = "yasdb_index_column"
   name_alias = "字段过多的索引"
-  module_name = "object-check"
-  hidden = false
+  module_name = "object_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select INDEX_OWNER, INDEX_NAME, count(*) from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"
+
 
 [[metrics]]
-  name = "yasdb-index-invisible"
-  name_alias = "任务"
-  module_name = "object-check"
-  hidden = false
+  name = "yasdb_index_invisible"
+  name_alias = "不可见索引"
+  module_name = "object_check"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select OWNER, INDEX_NAME, TABLE_OWNER, TABLE_NAME FROM dba_indexes where owner<> 'SYS' and VISIBILITY <> 'VISIBLE'"
+
 
 [[metrics]]
-  name = "yasdb-redo-log"
-  name_alias = "redo日志分析"
-  module_name = "log-analysis"
-  hidden = false
+  name = "yasdb_redo_log"
+  name_alias = "REDO日志分析"
+  module_name = "log_analysis"
+  metric_type = "sql"
   default = true
   enabled = true
+  sql = "select * from v$logfile;"
+
 
 [[metrics]]
-  name = "yasdb-run-log-error"
+  name = "yasdb_redo_log_count"
+  name_alias = "REDO日志数量分析"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  number_columns = ["TOTAL_COUNT", "CURRENT_COUNT", "ACTIVE_COUNT", "INACTIVE_COUNT"]
+  sql = "select count(*) as total_count, SUM(CASE WHEN STATUS = 'CURRENT' THEN 1 ELSE 0 END) AS current_count,SUM(CASE WHEN STATUS = 'ACTIVE' THEN 1 ELSE 0 END) AS active_count, SUM(CASE WHEN STATUS = 'INACTIVE' THEN 1 ELSE 0 END) AS inactive_count from v$logfile;"
+  [metrics.item_names]
+    TOTAL_COUNT = "redo_total_count"
+    CURRENT_COUNT = "redo_current_count"
+    ACTIVE_COUNT = "redo_active_count"
+    INACTIVE_COUNT = "redo_inactive_count"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.info]]
+      expression = "redo_active_count > 1"
+      description = "redo追尾风险"
+      suggestion = "存在redo追尾风险"
+
+    [[metrics.alert_rules.warning]]
+      expression = "redo_total_count < 4"
+      description = "REDO日志组数量检查"
+      suggestion = "REDO日志组数量过少，建议增加REDO日志组"
+
+    [[metrics.alert_rules.critical]]
+      expression = "(redo_current_count == 1) && (redo_active_count == redo_total_count - 1)"
+      description = "redo追尾风险"
+      suggestion = "存在redo追尾风险"
+
+
+[[metrics]]
+  name = "yasdb_run_log_error"
   name_alias = "run.log错误分析"
-  module_name = "log-analysis"
-  hidden = false
+  module_name = "log_analysis"
   default = true
   enabled = true

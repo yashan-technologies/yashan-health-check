@@ -1,10 +1,10 @@
 package define
 
 import (
-	"sync"
 	"time"
 
 	"yhc/commons/yasdb"
+	"yhc/defs/confdef"
 )
 
 const (
@@ -34,17 +34,18 @@ type HostWorkResponse struct {
 }
 
 type YHCItem struct {
-	Name     MetricName             `json:"-"` // 检查项名称
-	Error    string                 `json:"error,omitempty"`
-	Details  interface{}            `json:"details,omitempty"`  // 每个检查项包含的数据
-	DataType DataType               `json:"datatype,omitempty"` // 数据类型，在Details可能使用多种数据时使用
-	Children map[MetricName]YHCItem `json:"children,omitempty"`
+	Name     MetricName            `json:"-"` // 检查项名称
+	Error    string                `json:"error,omitempty"`
+	Details  interface{}           `json:"details,omitempty"`  // 每个检查项包含的数据
+	DataType DataType              `json:"datatype,omitempty"` // 数据类型，在Details可能使用多种数据时使用
+	Alerts   map[string][]YHCAlert `json:"alerts,omitempty"`
 }
 
-type YHCModule struct {
-	Module string `json:"-"`
-	mtx    sync.RWMutex
-	items  map[MetricName]*YHCItem
+type YHCAlert struct {
+	Level  string            `json:"level"`
+	Value  any               `json:"value"`
+	Labels map[string]string `json:"labels"`
+	confdef.AlertDetails
 }
 
 type NoNeedCheckMetric struct {
@@ -59,32 +60,4 @@ type CheckerBase struct {
 	End    time.Time
 	Output string
 	// TODO: add other struct which checker needed
-}
-
-func NewNoNeedCheckMetric(name string, err error, desc string) *NoNeedCheckMetric {
-	return &NoNeedCheckMetric{
-		Name:        name,
-		Error:       err,
-		Description: desc,
-	}
-}
-
-func (c *YHCModule) Set(item *YHCItem) {
-	c.mtx.Lock()
-	defer c.mtx.Unlock()
-	if c.items == nil {
-		c.items = make(map[MetricName]*YHCItem)
-	}
-	c.items[item.Name] = item
-}
-
-func (c *YHCModule) Items() map[MetricName]*YHCItem {
-	c.mtx.RLock()
-	defer c.mtx.RUnlock()
-	items := make(map[MetricName]*YHCItem)
-	for k, v := range c.items {
-		tmp := *v
-		items[k] = &tmp
-	}
-	return items
 }

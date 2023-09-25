@@ -50,7 +50,7 @@ const (
 
 	_check_list_width          = 30
 	_table_cell_max_width      = 50
-	_validate_dba_sql          = check.SQL_QUERY_TOTAL_OBJECT
+	_validate_dba_sql          = define.SQL_QUERY_TOTAL_OBJECT
 	_base_yasdb_process_format = `.*yasdb (?i:(nomount|mount|open))`
 )
 
@@ -185,13 +185,9 @@ func addItemList(itemList *tview.CheckList, moduleName string, metrics []*confde
 }
 
 func addModuleList(moduleList *tview.CheckList, modules []*constdef.ModuleMetrics) {
-	for _, item := range modules {
-		alias, err := define.GetModuleDefaultAlias(define.ModuleName(item.Name))
-		if err != nil {
-			log.Controller.Errorf("get module alias err: %s", err.Error())
-			continue
-		}
-		moduleList.AddItem(alias, "", 0, nil, item.Enabled)
+	for _, module := range modules {
+		alias := confdef.GetModuleAlias(module.Name)
+		moduleList.AddItem(alias, "", 0, nil, module.Enabled)
 	}
 }
 
@@ -277,12 +273,12 @@ func tipsPage() *tview.Flex {
 		Description string
 	}
 	tips := make([]interface{}, 0)
-	for _, module := range define.Level1ModuleOrder {
-		moduleStr := string(module)
+	for _, moduleName := range define.Level1ModuleOrder {
+		moduleStr := string(moduleName)
 		if _, ok := moduleNoNeedCheckMetrics[moduleStr]; !ok {
 			continue
 		}
-		moduleAlias, _ := define.GetModuleDefaultAlias(module)
+		moduleAlias := confdef.GetModuleAlias(moduleStr)
 		for _, notCheck := range moduleNoNeedCheckMetrics[moduleStr] {
 			tips = append(tips, &moduleMetric{
 				ModuleName:  moduleAlias,
@@ -297,7 +293,7 @@ func tipsPage() *tview.Flex {
 	return f
 }
 
-func drawAlertRuleTable(table *tview.Table, alertRules map[string]confdef.AlertDetails) {
+func drawAlertRuleTable(table *tview.Table, alertRules map[string][]confdef.AlertDetails) {
 	type rule struct {
 		Level       string
 		Expression  string
@@ -309,12 +305,14 @@ func drawAlertRuleTable(table *tview.Table, alertRules map[string]confdef.AlertD
 		if _, ok := alertRules[level]; !ok {
 			continue
 		}
-		rules = append(rules, rule{
-			Level:       level,
-			Expression:  alertRules[level].Expression,
-			Description: alertRules[level].Description,
-			Suggestion:  alertRules[level].Suggestion,
-		})
+		for _, alert := range alertRules[level] {
+			rules = append(rules, rule{
+				Level:       level,
+				Expression:  alert.Expression,
+				Description: alert.Description,
+				Suggestion:  alert.Suggestion,
+			})
+		}
 	}
 	fillTableCell(table, alarmTableColumns, rules)
 }
@@ -453,7 +451,7 @@ func genNoNeedCheckMetricsStr() string {
 		if _, ok := moduleNoNeedCheckMetrics[moduleStr]; !ok {
 			continue
 		}
-		moduleAlias, _ := define.GetModuleDefaultAlias(module)
+		moduleAlias := confdef.GetModuleAlias(moduleStr)
 		for _, metric := range moduleNoNeedCheckMetrics[moduleStr] {
 			if err := t.AddColumn(moduleAlias, metric.Name, metric.Description, metric.Error.Error()); err != nil {
 				log.Controller.Errorf("add columns err: %s", err.Error())
