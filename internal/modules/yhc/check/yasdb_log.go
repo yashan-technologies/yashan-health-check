@@ -15,8 +15,6 @@ import (
 )
 
 const (
-	SQL_QUERY_LOGFILE = "select * from v$logfile;"
-
 	PARAMETER_RUN_LOG_FILE_PATH = "RUN_LOG_FILE_PATH"
 
 	KEY_YASDB_RUN_LOG     = "run"
@@ -26,7 +24,14 @@ const (
 )
 
 func (c *YHCChecker) GetYasdbRedoLog() (err error) {
-	data, err := c.querySingleRow(define.METRIC_YASDB_REDO_LOG, SQL_QUERY_LOGFILE)
+	data, err := c.querySingleRow(define.METRIC_YASDB_REDO_LOG)
+	defer c.fillResult(data)
+	return
+}
+
+func (c *YHCChecker) GetYasdbRedoLogCount() (err error) {
+	data, err := c.querySingleRow(define.METRIC_YASDB_REDO_LOG_COUNT)
+	log.Module.Error(data.Details)
 	defer c.fillResult(data)
 	return
 }
@@ -83,7 +88,7 @@ func (c *YHCChecker) getYasdbRunLogError(log yaslog.YasLog, srcs []string) (res 
 				continue
 			}
 		}
-		if logEndTime.Before(c.StartTime) {
+		if logEndTime.Before(c.base.Start) {
 			// no need to write into dest
 			log.Debugf("skip run log file: %s", f)
 			continue
@@ -100,5 +105,5 @@ func (c *YHCChecker) getRunLogPath(log yaslog.YasLog) (path string, err error) {
 	if err != nil {
 		return
 	}
-	return strings.ReplaceAll(path, stringutil.STR_QUESTION_MARK, c.Yasdb.YasdbData), nil
+	return strings.ReplaceAll(path, stringutil.STR_QUESTION_MARK, c.base.DBInfo.YasdbData), nil
 }

@@ -53,7 +53,7 @@ func (c *YHCChecker) CheckSarAccess() error {
 }
 
 func checkYasdbObjectCount(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if _, err := yhccommons.QueryYasdb(log, db, SQL_QUERY_TOTAL_OBJECT, confdef.GetYHCConf().SqlTimeout); err != nil {
+	if _, err := yhccommons.QueryYasdb(log, db, define.SQL_QUERY_TOTAL_OBJECT, confdef.GetYHCConf().SqlTimeout); err != nil {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Error:       err,
@@ -64,7 +64,7 @@ func checkYasdbObjectCount(log yaslog.YasLog, db *yasdb.YashanDB, metric *confde
 }
 
 func checkYasdbObjectTablespace(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if _, err := yhccommons.QueryYasdb(log, db, SQL_QUERY_TABLESPACE_OBJECT, confdef.GetYHCConf().SqlTimeout); err != nil {
+	if _, err := yhccommons.QueryYasdb(log, db, define.SQL_QUERY_TABLESPACE_OBJECT, confdef.GetYHCConf().SqlTimeout); err != nil {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Error:       err,
@@ -75,7 +75,7 @@ func checkYasdbObjectTablespace(log yaslog.YasLog, db *yasdb.YashanDB, metric *c
 }
 
 func checkYasdbObjectOwner(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if _, err := yhccommons.QueryYasdb(log, db, SQL_QUERY_OWNER_OBJECT, confdef.GetYHCConf().SqlTimeout); err != nil {
+	if _, err := yhccommons.QueryYasdb(log, db, define.SQL_QUERY_OWNER_OBJECT, confdef.GetYHCConf().SqlTimeout); err != nil {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Error:       err,
@@ -86,7 +86,7 @@ func checkYasdbObjectOwner(log yaslog.YasLog, db *yasdb.YashanDB, metric *confde
 }
 
 func checkYasdbIndexBlevel(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if _, err := yhccommons.QueryYasdb(log, db, SQL_QUERY_INDEX_BLEVEL, confdef.GetYHCConf().SqlTimeout); err != nil {
+	if _, err := yhccommons.QueryYasdb(log, db, define.SQL_QUERY_INDEX_BLEVEL, confdef.GetYHCConf().SqlTimeout); err != nil {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Error:       err,
@@ -97,7 +97,7 @@ func checkYasdbIndexBlevel(log yaslog.YasLog, db *yasdb.YashanDB, metric *confde
 }
 
 func checkYasdbIndexColumn(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if _, err := yhccommons.QueryYasdb(log, db, SQL_QUERY_INDEX_COLUMN, confdef.GetYHCConf().SqlTimeout); err != nil {
+	if _, err := yhccommons.QueryYasdb(log, db, define.SQL_QUERY_INDEX_COLUMN, confdef.GetYHCConf().SqlTimeout); err != nil {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Error:       err,
@@ -108,7 +108,7 @@ func checkYasdbIndexColumn(log yaslog.YasLog, db *yasdb.YashanDB, metric *confde
 }
 
 func checkYasdbIndexInvisible(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if _, err := yhccommons.QueryYasdb(log, db, SQL_QUERY_INDEX_INVISIBLE, confdef.GetYHCConf().SqlTimeout); err != nil {
+	if _, err := yhccommons.QueryYasdb(log, db, define.SQL_QUERY_INDEX_INVISIBLE, confdef.GetYHCConf().SqlTimeout); err != nil {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Error:       err,
@@ -119,7 +119,7 @@ func checkYasdbIndexInvisible(log yaslog.YasLog, db *yasdb.YashanDB, metric *con
 }
 
 func checkYasdbTableSpace(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if _, err := yhccommons.QueryYasdb(log, db, SQL_QUERY_TABLESPACE, confdef.GetYHCConf().SqlTimeout); err != nil {
+	if _, err := yhccommons.QueryYasdb(log, db, define.SQL_QUERY_TABLESPACE, confdef.GetYHCConf().SqlTimeout); err != nil {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Error:       err,

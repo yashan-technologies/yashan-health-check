@@ -14,7 +14,10 @@ func InitYHCConf(yhcConf string) error {
 	if err := initYHCConf(yhcConf); err != nil {
 		return err
 	}
-	if err := initMetricConf(_yhcConf.DefaultMetricPath); err != nil {
+	if err := initMetricConf(_yhcConf.MetricPaths); err != nil {
+		return err
+	}
+	if err := initModuleConf(_yhcConf.DefaultModulePath); err != nil {
 		return err
 	}
 	return nil

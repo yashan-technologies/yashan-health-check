@@ -17,7 +17,7 @@ import (
 )
 
 type CheckHandler struct {
-	checkers map[string]yhccheck.Checker
+	checker  yhccheck.Checker
 	metrics  map[string][]*confdef.YHCMetric
 	base     *define.CheckerBase
 	reporter *reporter.YHCReport
@@ -26,10 +26,10 @@ type CheckHandler struct {
 func NewCheckHandler(modules []*constdef.ModuleMetrics, base *define.CheckerBase) *CheckHandler {
 	handler := &CheckHandler{
 		metrics:  make(map[string][]*confdef.YHCMetric),
-		checkers: make(map[string]yhccheck.Checker),
 		base:     base,
 		reporter: reporter.NewYHCReport(base),
 	}
+	metrics := []*confdef.YHCMetric{}
 	for _, module := range modules {
 		if !module.Enabled {
 			continue
@@ -37,14 +37,15 @@ func NewCheckHandler(modules []*constdef.ModuleMetrics, base *define.CheckerBase
 		if _, ok := handler.metrics[module.Name]; !ok {
 			handler.metrics[module.Name] = make([]*confdef.YHCMetric, 0)
 		}
-		handler.checkers[module.Name] = yhccheck.NewYHCChecker(base)
 		for _, metric := range module.Metrics {
 			if !metric.Enabled {
 				continue
 			}
+			metrics = append(metrics, metric)
 			handler.metrics[module.Name] = append(handler.metrics[module.Name], metric)
 		}
 	}
+	handler.checker = yhccheck.NewYHCChecker(base, metrics)
 	return handler
 }
 
@@ -80,11 +81,10 @@ func (c *CheckHandler) check() {
 
 func (c *CheckHandler) afterCheck() error {
 	c.reporter.EndTime = time.Now()
-	c.reporter.Modules = c.getModuleResult()
-	// TODO: calculate alarm
+	c.reporter.Items = c.getResults()
 
 	// TODO: gen report and return report path
-	path, err := c.reporter.GenReport()
+	path, err := c.reporter.GenResult()
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (c *CheckHandler) afterCheck() error {
 func (c *CheckHandler) moduleMetricsFunc() (moduleCheckFunc map[string]map[string]func() error) {
 	moduleCheckFunc = make(map[string]map[string]func() error)
 	for module, metrics := range c.metrics {
-		funcMap := c.checkers[module].CheckFuncs(metrics)
+		funcMap := c.checker.CheckFuncs(metrics)
 		if len(funcMap) == 0 {
 			continue
 		}
@@ -123,11 +123,8 @@ func (c *CheckHandler) newProgress(moduleCheckFunc map[string]map[string]func() 
 	return progress
 }
 
-func (c *CheckHandler) getModuleResult() (res map[string]*define.YHCModule) {
-	res = make(map[string]*define.YHCModule)
-	for module, checker := range c.checkers {
-		res[module] = checker.GetResult()
-	}
+func (c *CheckHandler) getResults() (res map[define.MetricName]*define.YHCItem) {
+	res = c.checker.GetResult()
 	return
 }
 

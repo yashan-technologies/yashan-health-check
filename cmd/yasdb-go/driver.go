@@ -95,21 +95,21 @@ func (y *YashanDB) Query(query string, timeout int) ([]map[string]string, error)
 
 	db, err := y.Driver()
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	defer db.Close()
 
 	rows, err := db.DB.QueryContext(ctx, query)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	defer rows.Close()
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return result, err
 	}
 	cols, err := rows.Columns()
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	for rows.Next() {
 		columnData := make([]interface{}, len(cols))
@@ -119,7 +119,7 @@ func (y *YashanDB) Query(query string, timeout int) ([]map[string]string, error)
 			scanArgs[i] = &columnData[i]
 		}
 		if err := rows.Scan(scanArgs...); err != nil {
-			return nil, err
+			return result, err
 		}
 		mapValue := make(map[string]string)
 		for i, colName := range cols {

@@ -6,6 +6,8 @@ git.yasdb.com/go/yaslog v0.0.0-20230531092234-0b27ba7c86fe h1:dbtJeQ8gfmL91W183z
 git.yasdb.com/go/yaslog v0.0.0-20230531092234-0b27ba7c86fe/go.mod h1:7/p80g19gsL3gTZxFnTFcyKbsqCU/pqSs7RDL05a3u8=
 git.yasdb.com/go/yasutil v0.0.0-20230913105631-0b301ec98247 h1:nsBzbq6gzalpBtstub1wrd/H+QaIRBkiUplKOmWKy3M=
 git.yasdb.com/go/yasutil v0.0.0-20230913105631-0b301ec98247/go.mod h1:SMFHKKIPjD5GiEqvO1YgihctvaYif7+FuGCt+/44bM8=
+git.yasdb.com/pandora/alertql v0.0.0-20230925070939-e6946fdb3d20 h1:lPB3tHn1iEftuIMBKhCVZJ5s2W9roiqxEmQTpAaDg7E=
+git.yasdb.com/pandora/alertql v0.0.0-20230925070939-e6946fdb3d20/go.mod h1:pQcqa0VKc0RKqgG99qn4O61NZsR9R6y7AxRgIMXdJHQ=
 git.yasdb.com/pandora/tview v0.0.0-20230915021201-898e1aeb8e10 h1:+KOhNl353G4iISS2iTZZqWPnrqcBXgzV2VT2f0G2VkI=
 git.yasdb.com/pandora/tview v0.0.0-20230915021201-898e1aeb8e10/go.mod h1:+7bixyx/itVLxxKTyLJy8kx9fLEQTTmoIt1GlwKZ60s=
 git.yasdb.com/pandora/yasqlgo v0.0.0-20230922070722-929be43c57d7 h1:J6Pj/zbDup/DsYzp//1HiULH00CCcodbTWeN4t5pJc8=

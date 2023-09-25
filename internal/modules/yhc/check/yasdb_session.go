@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	SQL_QUERY_SESSION = `select type from v$session`
-
 	PARAMETER_MAX_SESSIONS = "MAX_SESSIONS"
 
 	KEY_USER_SESSIONS       = "USER_SESSIONS"
@@ -29,11 +27,11 @@ func (c *YHCChecker) GetYasdbSession() (err error) {
 	defer c.fillResult(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_SESSION))
-	yasdb := yasdbutil.NewYashanDB(log, c.Yasdb)
+	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
 	var userSessions, backgroundSessions int
-	sessions, err := yasdb.QueryMultiRows(SQL_QUERY_SESSION, confdef.GetYHCConf().SqlTimeout)
+	sessions, err := yasdb.QueryMultiRows(define.SQL_QUERY_SESSION, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
-		log.Errorf("failed to get data with sql %s, err: %v", SQL_QUERY_SESSION, err)
+		log.Errorf("failed to get data with sql %s, err: %v", define.SQL_QUERY_SESSION, err)
 		data.Error = err.Error()
 		return
 	}
