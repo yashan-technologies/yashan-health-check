@@ -45,14 +45,14 @@ func (a *AlertGenner) GenAlerts() map[define.MetricName]*define.YHCItem {
 					continue
 				}
 				for _, alert := range alerts {
-					yhcAlert := define.YHCAlert{
+					yhcAlert := &define.YHCAlert{
 						Level:        alertLevel,
 						Value:        alert.Value,
 						Labels:       alert.Labels,
 						AlertDetails: rule,
 					}
 					if item.Alerts == nil {
-						item.Alerts = make(map[string][]define.YHCAlert)
+						item.Alerts = make(map[string][]*define.YHCAlert)
 					}
 					item.Alerts[yhcAlert.Level] = append(item.Alerts[yhcAlert.Level], yhcAlert)
 				}

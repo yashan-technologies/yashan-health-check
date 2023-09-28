@@ -1,3 +1,6 @@
 [submodule "yhc-doc"]
 	path = yhc-doc
 	url = git@git.yasdb.com:pandora/yhc-doc.git
+[submodule "html-template"]
+	path = html-template
+	url = git@git.yasdb.com:pandora/html-template.git

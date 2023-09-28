@@ -10,12 +10,20 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+var _metricConfig *YHCMetricConfig
+
 const (
 	M_HOST     = "host"
 	M_DATABASE = "database"
 	M_OBJECTS  = "objects"
 	M_SAFETY   = "safety"
 	M_CUSTOM   = "custom"
+)
+
+const (
+	MT_INVALID MetricType = "invalid"
+	MT_SQL     MetricType = "sql"
+	MT_BASH    MetricType = "bash"
 )
 
 type YHCMetricConfig struct {
@@ -31,6 +39,7 @@ type YHCMetric struct {
 	Default       bool                      `toml:"default"`
 	Enabled       bool                      `toml:"enabled"`
 	ColumnAlias   map[string]string         `toml:"column_alias,omitempty"`
+	ColumnOrder   []string                  `toml:"column_order,omitempty"`
 	ItemNames     map[string]string         `toml:"item_names,omitempty"`
 	NumberColumns []string                  `toml:"number_columns,omitempty"`
 	Labels        []string                  `toml:"labels,omitempty"`
@@ -45,12 +54,6 @@ type AlertDetails struct {
 	Suggestion  string `toml:"suggestion,omitempty"`
 }
 
-const (
-	MT_INVALID MetricType = "invalid"
-	MT_SQL     MetricType = "sql"
-	MT_BASH    MetricType = "bash"
-)
-
 type MetricType string
 
 const (
@@ -59,8 +62,6 @@ const (
 	AL_WARING   = "waring"
 	AL_CRITICAL = "critical"
 )
-
-var _metricConfig *YHCMetricConfig
 
 func initMetricConf(paths []string) error {
 	conf := YHCMetricConfig{}
