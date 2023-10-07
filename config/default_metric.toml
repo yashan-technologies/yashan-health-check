@@ -5,6 +5,17 @@
   module_name = "overview"
   default = true
   enabled = true
+  [metrics.column_alias]
+    hostname = "主机名称"
+    bootTime = "开机时间"
+    os = "操作系统名称"
+    platform = "操作系统标识符"
+    platformFamily = "操作系统家族"
+    platformVersion = "操作系统版本号"
+    kernelVersion = "内核版本号"
+    kernelArch = "内核架构"
+    uptime = "运行时间"
+    procs = "进程数"
 
 
 [[metrics]]
@@ -14,6 +25,13 @@
   metric_type = "bash"
   default = true
   enabled = true
+  [metrics.column_alias]
+    vendorId = "CPU厂商标识符"
+    modelName = "CPU型号名称"
+    GHz = "CPU主频(GHZ)"
+    flags = "CPU特性标识列表"
+    physicalCores = "CPU物理核心数"
+    logicalCores = "CPU逻辑核心数"
 
 
 [[metrics]]
@@ -24,6 +42,10 @@
   default = true
   enabled = true
   sql = "select status as instance_status, version, startup_time from v$instance;"
+  [metrics.column_alias]
+    INSTANCE_STATUS = "数据库实例状态"
+    STARTUP_TIME = "数据库实例启动时间"
+    VERSION = "数据库版本"
   [metrics.item_names]
     INSTANCE_STATUS = "instance_status"
   [metrics.alert_rules]
@@ -42,6 +64,15 @@
   default = true
   enabled = true
   sql = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
+  [metrics.column_alias]
+    CREATE_TIME = "数据库创建时间"
+    DATABASE_NAME = "数据库名称"
+    DATABASE_STATUS = "数据库状态"
+    DATABASE_ROLE = "数据库主备角色"
+    LOG_MODE = "数据库归档模式"
+    OPEN_MODE = "数据库打开模式"
+    PROTECTION_LEVEL = "保护级别"
+    PROTECTION_MODE = "保护模式"
   [metrics.item_names]
     DATABASE_STATUS = "database_status"
     OPEN_MODE = "open_mode"
@@ -84,6 +115,9 @@
   default = true
   enabled = true
   labels = ["filePath"]
+  [metrics.column_alias]
+    filePath = "文件路径"
+    permission = "文件权限"
   [metrics.item_names]
     permission = "file_permission"
   [metrics.alert_rules]
@@ -92,6 +126,11 @@
       expression = "file_permission ~='^(.{8}w).'"
       description = "数据库文件及目录权限要求过低"
       suggestion = "建议调整数据库文件和目录权限，如果文件读写权限过低，存在文件被其他用户误删的风险"
+
+    [[metrics.alert_rules.warning]]
+      expression = "file_permission ~='^.{,9}|.{11,}$'"
+      description = "数据库文件及目录权限检查失败"
+      suggestion = "建议根据提示信息查看是否有权限访问该文件或目录"
 
 
 [[metrics]]
@@ -102,6 +141,8 @@
   default = true
   enabled = true
   sql = "select VALUE as LISTEN_ADDR from v$parameter where name = 'LISTEN_ADDR';"
+  [metrics.column_alias]
+    LISTEN_ADDR = "数据库IP及端口"
 
 
 [[metrics]]
@@ -127,7 +168,15 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select * from v$replication_status;"
+  sql = "select connection, status, peer_role, peer_addr, transport_lag, apply_lag from v$replication_status;"
+  [metrics.column_alias]
+    CONNECTION = "主备连接状态"
+    STATUS = "日志同步状态"
+    PEER_ROLE = "对端数据库角色"
+    PEER_ADDR = "对端数据库地址"
+    TRANSPORT_LAG = "日志传输时延"
+    APPLY_LAG = "日志回放时延"
+
   [metrics.item_names]
     CONNECTED = "replication_connected"
     TRANSPORT_LAG = "replication_transport_lag"
@@ -186,7 +235,18 @@
   default = true
   enabled = true
   number_columns = ["USED_RATE"]
-  sql = "SELECT TABLESPACE_NAME, CONTENTS, STATUS, ALLOCATION_TYPE, TOTAL_BYTES _ USER_BYTES AS USED_BYTES, TOTAL_BYTES, (TOTAL_BYTES _ USER_BYTES) / TOTAL_BYTES * 100 AS USED_RATE FROM SYS.DBA_TABLESPACES;"
+  labels = ["TABLESPACE_NAME"]
+  sql = "SELECT TABLESPACE_NAME, CONTENTS, STATUS, ALLOCATION_TYPE, TOTAL_BYTES - USER_BYTES AS USED_BYTES, TOTAL_BYTES, (TOTAL_BYTES - USER_BYTES) / TOTAL_BYTES * 100 AS USED_RATE FROM SYS.DBA_TABLESPACES;"
+  column_order = ["TABLESPACE_NAME","CONTENTS","STATUS","ALLOCATION_TYPE","USED_BYTES","TOTAL_BYTES","USED_RATE","DATA_PERCENTAGE"]
+  [metrics.column_alias]
+    TABLESPACE_NAME = "表空间名称"
+    CONTENTS = "表空间类型"
+    STATUS = "表空间状态"
+    ALLOCATION_TYPE = "EXTEND分配方式"
+    USED_BYTES = "已使用字节数"
+    TOTAL_BYTES = "总字节数"
+    USED_RATE = "使用率"
+    DATA_PERCENTAGE = "数据段使用占比"
   [metrics.item_names]
     STATUS = "tablespace_status"
     ALLOCATION_TYPE = "allocation_type"
@@ -222,6 +282,10 @@
   enabled = true
   number_columns = ['MBYTES']
   sql = "select id, name, bytes/1024/1024 as MBYTES from v$controlfile;"
+  [metrics.column_alias]
+    ID = "ID"
+    NAME = "名称"
+    MBYTES = "大小(MB)"
   [metrics.item_names]
     MBYTES = "controlfile_mbytes"
   [metrics.alert_rules]
@@ -263,6 +327,11 @@
   default = true
   enabled = true
   number_columns = ["SESSION_USAGE"]
+  [metrics.column_alias]
+    USER_SESSIONS = "用户会话数"
+    BACKGROUND_SESSIONS = "系统会话数"
+    MAX_SESSIONS = "最大会话数"
+    SESSION_USAGE = "会话使用率"
   [metrics.item_names]
     SESSION_USAGE = "session_session_usage"
   [metrics.alert_rules]
@@ -295,7 +364,10 @@
   default = true
   enabled = true
   sql = "SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%' GROUP BY owner, object_type ORDER BY owner,object_type;"
-
+  [metrics.column_alias]
+    OWNER = "owner名称"
+    OBJECT_TYPE = "对象类型"
+    OWNER_OBJECT_COUNT = "owner拥有对象数"
 
 [[metrics]]
   name = "yasdb_object_tablespace"
@@ -305,6 +377,9 @@
   default = true
   enabled = true
   sql = "SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE') GROUP BY tablespace_name ORDER BY tablespace_name;"
+  [metrics.column_alias]
+    TABLESPACE_NAME = "表空间名称"
+    TABLESPACE_OBJECT_COUNT = "表空间拥有对象数"
 
 
 [[metrics]]
@@ -315,6 +390,11 @@
   default = true
   enabled = true
   sql = "select OWNER, INDEX_NAME, BLEVEL from dba_indexes where BLEVEL>3;"
+  [metrics.column_alias]
+    OWNER = "索引用户"
+    INDEX_NAME = "索引名称"
+    BLEVEL = "BTree高度"
+
 
 [[metrics]]
   name = "yasdb_index_column"
@@ -323,8 +403,11 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select INDEX_OWNER, INDEX_NAME, count(*) from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"
-
+  sql = "select INDEX_OWNER, INDEX_NAME, count(*) as column_count from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"
+  [metrics.column_alias]
+    INDEX_OWNER = "索引用户"
+    INDEX_NAME = "索引名称"
+    COLUMN_COUNT = "字段数量"
 
 [[metrics]]
   name = "yasdb_index_invisible"
@@ -333,8 +416,12 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select OWNER, INDEX_NAME, TABLE_OWNER, TABLE_NAME FROM dba_indexes where owner<> 'SYS' and VISIBILITY <> 'VISIBLE'"
-
+  sql = "select OWNER, INDEX_NAME, TABLE_OWNER, TABLE_NAME FROM dba_indexes where owner<> 'SYS' and VISIBILITY <> 'VISIBLE';"
+  [metrics.column_alias]
+    OWNER = "索引用户"
+    INDEX_NAME = "索引名称"
+    TABLE_OWNER = "表用户"
+    TABLE_NAME = "表名"
 
 [[metrics]]
   name = "yasdb_redo_log"
@@ -343,7 +430,15 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select * from v$logfile;"
+  sql = "select ID, NAME, STATUS, BLOCK_SIZE, BLOCK_COUNT, USED_BLOCKS, SEQUENCE# AS SEQUENCE from v$logfile;"
+  [metrics.column_alias]
+    ID = "ID"
+    NAME = "日志文件名"
+    STATUS = "状态"
+    BLOCK_SIZE = "块大小"
+    BLOCK_COUNT = "块数量"
+    USED_BLOCKS = "已使用块数量"
+    SEQUENCE = "序列号"
 
 
 [[metrics]]
@@ -355,6 +450,11 @@
   enabled = true
   number_columns = ["TOTAL_COUNT", "CURRENT_COUNT", "ACTIVE_COUNT", "INACTIVE_COUNT"]
   sql = "select count(*) as total_count, SUM(CASE WHEN STATUS = 'CURRENT' THEN 1 ELSE 0 END) AS current_count,SUM(CASE WHEN STATUS = 'ACTIVE' THEN 1 ELSE 0 END) AS active_count, SUM(CASE WHEN STATUS = 'INACTIVE' THEN 1 ELSE 0 END) AS inactive_count from v$logfile;"
+  [metrics.column_alias]
+    TOTAL_COUNT= "REDO日志文件总数"
+    CURRENT_COUNT = "current状态日志文件数"
+    ACTIVE_COUNT = "active状态日志文件数"
+    INACTIVE_COUNT = "inactive状态日志文件数"
   [metrics.item_names]
     TOTAL_COUNT = "redo_total_count"
     CURRENT_COUNT = "redo_current_count"

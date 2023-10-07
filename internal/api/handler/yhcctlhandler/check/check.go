@@ -7,6 +7,7 @@ import (
 	"yhc/defs/bashdef"
 	"yhc/defs/confdef"
 	constdef "yhc/defs/constants"
+	"yhc/defs/runtimedef"
 	yhccheck "yhc/internal/modules/yhc/check"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/internal/modules/yhc/check/reporter"
@@ -27,7 +28,7 @@ func NewCheckHandler(modules []*constdef.ModuleMetrics, base *define.CheckerBase
 	handler := &CheckHandler{
 		metrics:  make(map[string][]*confdef.YHCMetric),
 		base:     base,
-		reporter: reporter.NewYHCReport(base),
+		reporter: reporter.NewYHCReport(runtimedef.GetYHCHome(), base),
 	}
 	metrics := []*confdef.YHCMetric{}
 	for _, module := range modules {
@@ -81,7 +82,7 @@ func (c *CheckHandler) check() {
 
 func (c *CheckHandler) afterCheck() error {
 	c.reporter.EndTime = time.Now()
-	c.reporter.Items = c.getResults()
+	c.reporter.Items, c.reporter.Report = c.getResults()
 
 	// TODO: gen report and return report path
 	path, err := c.reporter.GenResult()
@@ -123,9 +124,8 @@ func (c *CheckHandler) newProgress(moduleCheckFunc map[string]map[string]func() 
 	return progress
 }
 
-func (c *CheckHandler) getResults() (res map[define.MetricName]*define.YHCItem) {
-	res = c.checker.GetResult()
-	return
+func (c *CheckHandler) getResults() (map[define.MetricName]*define.YHCItem, *define.PandoraReport) {
+	return c.checker.GetResult()
 }
 
 func (c *CheckHandler) getOutputDir() string {

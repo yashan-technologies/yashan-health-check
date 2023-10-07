@@ -18,6 +18,7 @@ import (
 	"yhc/internal/modules/yhc/check/alertgenner"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/internal/modules/yhc/check/gopsutil"
+	"yhc/internal/modules/yhc/check/jsonparser"
 	"yhc/internal/modules/yhc/check/sar"
 	"yhc/log"
 	"yhc/utils/stringutil"
@@ -64,7 +65,7 @@ type logTimeParseFunc func(date time.Time, line string) (time.Time, error)
 
 type Checker interface {
 	CheckFuncs(metrics []*confdef.YHCMetric) map[string]func() error
-	GetResult() map[define.MetricName]*define.YHCItem
+	GetResult() (map[define.MetricName]*define.YHCItem, *define.PandoraReport)
 }
 
 type YHCChecker struct {
@@ -85,10 +86,16 @@ func NewYHCChecker(base *define.CheckerBase, metrics []*confdef.YHCMetric) *YHCC
 }
 
 // [Interface Func]
-func (c *YHCChecker) GetResult() map[define.MetricName]*define.YHCItem {
+func (c *YHCChecker) GetResult() (map[define.MetricName]*define.YHCItem, *define.PandoraReport) {
 	c.fillterFailed()
 	c.genAlerts()
-	return c.Result
+	return c.Result, c.genReportJson()
+}
+
+func (c *YHCChecker) genReportJson() *define.PandoraReport {
+	log := log.Module.M("gen-report-json")
+	parser := jsonparser.NewJsonParser(log, *c.base, c.metrics, c.Result)
+	return parser.Parse()
 }
 
 func (c *YHCChecker) genAlerts() {

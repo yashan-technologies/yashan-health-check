@@ -1,10 +1,14 @@
 package reporter
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"path"
+	"strings"
 	"time"
 
 	"yhc/defs/bashdef"
@@ -19,19 +23,30 @@ import (
 )
 
 const (
-	_PACKAGE_NAME_FORMATTER = "ytc-%s"
-	_DATA_NAME_FORMATTER    = "data-%s.json"
+	_PACKAGE_NAME_FORMATTER     = "yhc-%s"
+	_DATA_NAME_FORMATTER        = "data-%s.json"
+	_REPORT_JSON_NAME_FORMATTER = "report-%s.json"
+	_REPORT_NAME_FORMATTER      = "report-%s.html"
+
+	_DIR_HTML_TEMPLATE  = "html-template"
+	_FILE_HTML_TEMPLATE = "template.html"
+
+	_TEMPLATE_KEY               = "$GLOBAL={}"
+	_TEMPLATE_REPLACE_FORMATTER = "$GLOBAL=%s"
 )
 
 type YHCReport struct {
+	YHCHome   string                                `json:"YHCHome"`
 	BeginTime time.Time                             `json:"beginTime"`
 	EndTime   time.Time                             `json:"endTime"`
 	CheckBase *define.CheckerBase                   `json:"checkBase"`
 	Items     map[define.MetricName]*define.YHCItem `json:"items"`
+	Report    *define.PandoraReport
 }
 
-func NewYHCReport(checkBase *define.CheckerBase) *YHCReport {
+func NewYHCReport(yhcHome string, checkBase *define.CheckerBase) *YHCReport {
 	return &YHCReport{
+		YHCHome:   yhcHome,
 		CheckBase: checkBase,
 		Items:     map[define.MetricName]*define.YHCItem{},
 	}
@@ -47,7 +62,14 @@ func (r *YHCReport) GenResult() (string, error) {
 		log.Errorf("gen data err: %s", err.Error())
 		return "", err
 	}
-	// TODO write report
+	if err := r.genReportJson(); err != nil {
+		log.Errorf("gen data err: %s", err.Error())
+		return "", err
+	}
+	if err := r.genReport(); err != nil {
+		log.Errorf("gen report failed: %s", err)
+		return "", err
+	}
 	if err := r.tarResult(); err != nil {
 		log.Errorf("tar result failed: %s", err)
 		return "", err
@@ -56,6 +78,29 @@ func (r *YHCReport) GenResult() (string, error) {
 		log.Errorf("chown result failed: %s", err)
 	}
 	return r.genPackageTarPath(), nil
+}
+
+func (r *YHCReport) genReport() error {
+	templateFile := r.getHtmlTemplateFile()
+	f, err := os.Open(templateFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	reader := bufio.NewReader(f)
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	jsonData, err := json.Marshal(r.Report)
+	if err != nil {
+		return err
+	}
+	replacement := fmt.Sprintf(_TEMPLATE_REPLACE_FORMATTER, string(jsonData))
+	contentStr := string(content)
+	newContentStr := strings.Replace(contentStr, _TEMPLATE_KEY, replacement, 1)
+	return fileutil.WriteFile(r.genReportFilePath(), []byte(newContentStr))
 }
 
 func (r *YHCReport) genDataJson() error {
@@ -68,6 +113,22 @@ func (r *YHCReport) genDataJson() error {
 		return err
 	}
 	return nil
+}
+
+func (r *YHCReport) genReportJson() error {
+	dataJson := path.Join(r.genDataPath(), fmt.Sprintf(_REPORT_JSON_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
+	bytes, err := json.MarshalIndent(r.Report, "", "    ")
+	if err != nil {
+		return err
+	}
+	if err := fileutil.WriteFile(dataJson, bytes); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *YHCReport) genReportFilePath() string {
+	return path.Join(r.genPackageDir(), fmt.Sprintf(_REPORT_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
 }
 
 func (r *YHCReport) genPackageTarPath() string {
@@ -88,6 +149,10 @@ func (r *YHCReport) genPackageTarName() string {
 
 func (r *YHCReport) genDataPath() string {
 	return path.Join(r.genPackageDir(), "data")
+}
+
+func (r *YHCReport) getHtmlTemplateFile() string {
+	return path.Join(r.YHCHome, _DIR_HTML_TEMPLATE, _FILE_HTML_TEMPLATE)
 }
 
 func (r *YHCReport) mkdir() error {

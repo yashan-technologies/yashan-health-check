@@ -9,6 +9,9 @@ OS=$(if $(GOOS),$(GOOS),linux)
 
 # go command defines
 GO_BUILD=go build
+YARN_REPLACE_SOURCE=yarn config set registry https://registry.npmmirror.com
+YARN_INSTALL=yarn install
+YARN_BUILD=yarn build
 GO_MOD_TIDY=$(go mod tidy -compat 1.19)
 GO_BUILD_WITH_INFO=$(GO_BUILD) -ldflags "\
 	-X 'yhc/defs/compiledef._appVersion=$(VERSION)' \
@@ -26,6 +29,11 @@ BIN_PATH=$(PKG_PATH)/bin
 LOG_PATH=$(PKG_PATH)/log
 DOCS_PATH=$(PKG_PATH)/docs
 RESULTS_PATH=$(PKG_PATH)/results
+HTML_PATH=$(PKG_PATH)/html-template
+
+
+TEMPLATE_PATH=./html-template
+TEMPLATE_BUILD_PATH=$(TEMPLATE_PATH)/dist
 
 # build defines
 BIN_YHCCTL=$(BUILD_PATH)/yhcctl
@@ -35,14 +43,15 @@ SCRIPTS_PATH=$(PKG_PATH)/scripts
 SCRIPTS_YASDB_GO=$(BUILD_PATH)/yasdb-go
 SCRIPTS_FILES=$(SCRIPTS_YASDB_GO)
 
-DIR_TO_MAKE=$(BIN_PATH) $(LOG_PATH) $(RESULTS_PATH) $(DOCS_PATH)
+DIR_TO_MAKE=$(BIN_PATH) $(LOG_PATH) $(RESULTS_PATH) $(DOCS_PATH) $(HTML_PATH)
 FILE_TO_COPY=./config ./scripts ./static
 
 .PHONY: clean force go_build
 
-build: go_build
+build: go_build 
 	@mkdir -p $(DIR_TO_MAKE) 
 	@cp -r $(FILE_TO_COPY) $(PKG_PATH)
+	@cp ./template.html $(HTML_PATH)/
 	# @cp -r ./yhc-doc $(DOCS_PATH)/markdown
 	# @cp ./yhc.pdf $(DOCS_PATH)
 	@mv $(BIN_FILES) $(BIN_PATH)
@@ -59,5 +68,9 @@ go_build:
 	$(GO_MOD_TIDY)
 	$(GO_BUILD_WITH_INFO) -o $(BIN_YHCCTL) ./cmd/yhcctl/*.go
 	$(GO_BUILD_WITH_INFO) -o $(SCRIPTS_YASDB_GO) ./cmd/yasdb-go/*.go
+
+build_template:
+	@cd $(TEMPLATE_PATH);$(YARN_REPLACE_SOURCE);$(YARN_INSTALL);$(YARN_BUILD)
+	@cp $(TEMPLATE_BUILD_PATH)/index.html ./template.html
 
 force: clean build
