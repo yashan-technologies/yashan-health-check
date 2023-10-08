@@ -42,6 +42,7 @@ func (c *YHCChecker) GetYasdbTablespace() (err error) {
 			continue
 		}
 		if len(dataPercentage) <= 0 {
+			tablespace[KEY_TABLESPACE_DATA_PERCENTAGE] = "0"
 			continue
 		}
 		tablespace[KEY_TABLESPACE_DATA_PERCENTAGE] = dataPercentage[0][KEY_TABLESPACE_DATA_PERCENTAGE]

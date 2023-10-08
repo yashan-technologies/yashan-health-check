@@ -19,6 +19,7 @@ import (
 	"yhc/utils/execerutil"
 	"yhc/utils/fileutil"
 
+	"git.yasdb.com/go/yasutil/execer"
 	"git.yasdb.com/go/yasutil/fs"
 )
 
@@ -27,9 +28,13 @@ const (
 	_DATA_NAME_FORMATTER        = "data-%s.json"
 	_REPORT_JSON_NAME_FORMATTER = "report-%s.json"
 	_REPORT_NAME_FORMATTER      = "report-%s.html"
+	_WORD_REPORT_NAME_FORMATTER = "report-%s.docx"
 
 	_DIR_HTML_TEMPLATE  = "html-template"
 	_FILE_HTML_TEMPLATE = "template.html"
+
+	_SCRIPTS          = "scripts"
+	_WORD_GENNER_PATH = "wordgenner"
 
 	_TEMPLATE_KEY               = "$GLOBAL={}"
 	_TEMPLATE_REPLACE_FORMATTER = "$GLOBAL=%s"
@@ -81,6 +86,16 @@ func (r *YHCReport) GenResult() (string, error) {
 }
 
 func (r *YHCReport) genReport() error {
+	if err := r.genHtmlReport(); err != nil {
+		return err
+	}
+	if err := r.genWordReport(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *YHCReport) genHtmlReport() error {
 	templateFile := r.getHtmlTemplateFile()
 	f, err := os.Open(templateFile)
 	if err != nil {
@@ -103,6 +118,26 @@ func (r *YHCReport) genReport() error {
 	return fileutil.WriteFile(r.genReportFilePath(), []byte(newContentStr))
 }
 
+func (r *YHCReport) genWordReport() error {
+	log := log.Module.M("gen-word")
+	wordGenner := r.getWordGennerFile()
+	exec := execer.NewExecer(log)
+	cmd := []string{
+		wordGenner,
+		"-i",
+		r.getReportJsonFile(),
+		"-o",
+		r.getWordReportFile(),
+	}
+	ret, _, stderr := exec.Exec(bashdef.CMD_BASH, "-c", strings.Join(cmd, " "))
+	if ret != 0 {
+		err := fmt.Errorf("gen word report err: %s", stderr)
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
 func (r *YHCReport) genDataJson() error {
 	dataJson := path.Join(r.genDataPath(), fmt.Sprintf(_DATA_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
 	bytes, err := json.MarshalIndent(r.Items, "", "    ")
@@ -116,7 +151,7 @@ func (r *YHCReport) genDataJson() error {
 }
 
 func (r *YHCReport) genReportJson() error {
-	dataJson := path.Join(r.genDataPath(), fmt.Sprintf(_REPORT_JSON_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
+	dataJson := r.getReportJsonFile()
 	bytes, err := json.MarshalIndent(r.Report, "", "    ")
 	if err != nil {
 		return err
@@ -125,6 +160,14 @@ func (r *YHCReport) genReportJson() error {
 		return err
 	}
 	return nil
+}
+
+func (r *YHCReport) getReportJsonFile() string {
+	return path.Join(r.genDataPath(), fmt.Sprintf(_REPORT_JSON_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
+}
+
+func (r *YHCReport) getWordReportFile() string {
+	return path.Join(r.genPackageDir(), fmt.Sprintf(_WORD_REPORT_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
 }
 
 func (r *YHCReport) genReportFilePath() string {
@@ -153,6 +196,10 @@ func (r *YHCReport) genDataPath() string {
 
 func (r *YHCReport) getHtmlTemplateFile() string {
 	return path.Join(r.YHCHome, _DIR_HTML_TEMPLATE, _FILE_HTML_TEMPLATE)
+}
+
+func (r *YHCReport) getWordGennerFile() string {
+	return path.Join(r.YHCHome, _SCRIPTS, _WORD_GENNER_PATH, "wordgenner")
 }
 
 func (r *YHCReport) mkdir() error {

@@ -65,7 +65,7 @@ type logTimeParseFunc func(date time.Time, line string) (time.Time, error)
 
 type Checker interface {
 	CheckFuncs(metrics []*confdef.YHCMetric) map[string]func() error
-	GetResult() (map[define.MetricName]*define.YHCItem, *define.PandoraReport)
+	GetResult(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport)
 }
 
 type YHCChecker struct {
@@ -86,15 +86,15 @@ func NewYHCChecker(base *define.CheckerBase, metrics []*confdef.YHCMetric) *YHCC
 }
 
 // [Interface Func]
-func (c *YHCChecker) GetResult() (map[define.MetricName]*define.YHCItem, *define.PandoraReport) {
+func (c *YHCChecker) GetResult(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport) {
 	c.fillterFailed()
 	c.genAlerts()
-	return c.Result, c.genReportJson()
+	return c.Result, c.genReportJson(startCheck, endCheck)
 }
 
-func (c *YHCChecker) genReportJson() *define.PandoraReport {
+func (c *YHCChecker) genReportJson(startCheck, endCheck time.Time) *define.PandoraReport {
 	log := log.Module.M("gen-report-json")
-	parser := jsonparser.NewJsonParser(log, *c.base, c.metrics, c.Result)
+	parser := jsonparser.NewJsonParser(log, *c.base, startCheck, endCheck, c.metrics, c.Result)
 	return parser.Parse()
 }
 

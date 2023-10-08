@@ -4,3 +4,6 @@
 [submodule "html-template"]
 	path = html-template
 	url = git@git.yasdb.com:pandora/html-template.git
+[submodule "wordgenner"]
+	path = wordgenner
+	url = git@git.yasdb.com:pandora/wordgenner.git

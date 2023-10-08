@@ -75,7 +75,7 @@ func (b *bar) draw() {
 		mpb.AppendDecorators(
 			decor.OnComplete(
 				// ETA decorator with ewma age of 30
-				decor.EwmaETA(decor.ET_STYLE_GO, 30),
+				decor.Name("checking"),
 				"done",
 			),
 		),

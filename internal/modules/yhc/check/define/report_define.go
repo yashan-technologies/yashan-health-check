@@ -73,7 +73,7 @@ type AlertAttributes struct {
 }
 
 type TableAttributes struct {
-	Title        CustomOptionTitle        `json:"title,omitempty"`
+	Title        string                   `json:"title,omitempty"`
 	DataSource   []map[string]interface{} `json:"dataSource,omitempty"`
 	TableColumns []*TableColumn           `json:"columns,omitempty"`
 }
