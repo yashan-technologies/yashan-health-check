@@ -42,18 +42,22 @@ var _mergeMetricMap = map[define.MetricName][]define.MetricName{
 type MetricParseFunc func(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric) error
 
 type JsonParser struct {
-	log     yaslog.YasLog
-	base    define.CheckerBase
-	metrics []*confdef.YHCMetric
-	results map[define.MetricName]*define.YHCItem
+	log            yaslog.YasLog
+	base           define.CheckerBase
+	startCheckTime time.Time
+	endCheckTime   time.Time
+	metrics        []*confdef.YHCMetric
+	results        map[define.MetricName]*define.YHCItem
 }
 
-func NewJsonParser(log yaslog.YasLog, base define.CheckerBase, metrics []*confdef.YHCMetric, results map[define.MetricName]*define.YHCItem) *JsonParser {
+func NewJsonParser(log yaslog.YasLog, base define.CheckerBase, startCheck, endCheck time.Time, metrics []*confdef.YHCMetric, results map[define.MetricName]*define.YHCItem) *JsonParser {
 	parser := &JsonParser{
-		log:     log,
-		metrics: metrics,
-		results: results,
-		base:    base,
+		log:            log,
+		metrics:        metrics,
+		results:        results,
+		startCheckTime: startCheck,
+		endCheckTime:   endCheck,
+		base:           base,
 	}
 	return parser
 }
@@ -64,8 +68,8 @@ func (j *JsonParser) Parse() *define.PandoraReport {
 		FileControl: _FILE_CONTROL,
 		Author:      _AUTHOR,
 		ChangeLog:   _CHANGE_LOG,
-		Time:        j.base.Start.Format(timedef.TIME_FORMAT),
-		CostTime:    int(j.base.End.Sub(j.base.Start).Seconds()),
+		Time:        j.startCheckTime.Format(timedef.TIME_FORMAT),
+		CostTime:    int(j.endCheckTime.Sub(j.base.Start).Seconds()),
 		Version:     compiledef.GetAPPVersion(),
 	}
 	j.MergeMetrics()
@@ -169,9 +173,7 @@ func (j *JsonParser) parseTable(menu *define.PandoraMenu, item *define.YHCItem, 
 		return fmt.Errorf("failed to parse table of %s because the details is nil", item.Name)
 	}
 	attributes := define.TableAttributes{
-		Title: define.CustomOptionTitle{
-			Text: metric.NameAlias,
-		},
+		Title: metric.NameAlias,
 	}
 	switch item.Details.(type) {
 	case map[string]string:
@@ -286,7 +288,9 @@ func (j *JsonParser) parseMap(menu *define.PandoraMenu, item *define.YHCItem, me
 	element := &define.PandoraElement{
 		ElementType: define.ET_DESCRIPTION,
 	}
-	attributes := define.DescriptionAttributes{}
+	attributes := define.DescriptionAttributes{
+		Title: metric.NameAlias,
+	}
 	switch item.Details.(type) {
 	case map[string]string:
 		datas := item.Details.(map[string]string)
@@ -318,6 +322,9 @@ func (j *JsonParser) parseText(menu *define.PandoraMenu, item *define.YHCItem, m
 	element := define.PandoraElement{
 		ElementType: define.ET_PRE,
 	}
+	attributes := define.DescriptionAttributes{
+		Title: metric.NameAlias,
+	}
 	switch item.Details.(type) {
 	case string:
 		text := item.Details.(string)
@@ -328,6 +335,7 @@ func (j *JsonParser) parseText(menu *define.PandoraMenu, item *define.YHCItem, m
 	default:
 		return fmt.Errorf("failed to parse code, unsupport type %T", item.Details)
 	}
+	element.Attributes = attributes
 	menu.Elements = append(menu.Elements, &element)
 	return nil
 }
@@ -513,7 +521,7 @@ func (j *JsonParser) parseHostWorkload(menu *define.PandoraMenu, item *define.YH
 			CustomOptions: define.ChartCustomOptions{
 				ChartType: define.CT_LINE,
 				Title: define.CustomOptionTitle{
-					Text: name,
+					Text: metric.NameAlias,
 				},
 				Data: []*define.ChartData{},
 			},
