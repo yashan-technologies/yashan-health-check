@@ -20,6 +20,7 @@ const (
 	CMD_CP            = "cp"
 	CMD_DMIDECODE     = "dmidecode"
 	CMD_IPTABLES      = "iptables"
+	CMD_GREP          = "grep"
 )
 
 const (

@@ -11,7 +11,7 @@ func (c *YHCChecker) GetYasdbControlFile() (err error) {
 }
 
 func (c *YHCChecker) GetYasdbControlFileCount() (err error) {
-	data, err := c.queryMultiRows(define.METRIC_YASDB_CONTROLFILE_COUNT)
+	data, err := c.querySingleRow(define.METRIC_YASDB_CONTROLFILE_COUNT)
 	defer c.fillResult(data)
 	return
 }
