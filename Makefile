@@ -46,20 +46,14 @@ SCRIPTS_FILES=$(SCRIPTS_YASDB_GO)
 DIR_TO_MAKE=$(BIN_PATH) $(LOG_PATH) $(RESULTS_PATH) $(DOCS_PATH) $(HTML_PATH)
 FILE_TO_COPY=./config ./scripts ./static
 
-
-PIP_INSTALL=pip3 install -i https://mirrors.aliyun.com/pypi/simple/
-PYINSTALLER=pyinstaller
 WORD_GENNER_PATH=./wordgenner
 WORD_GENNER_DIST=$(WORD_GENNER_PATH)/dist/wordgenner
-WORD_GENNER_INSTALL=$(PIP_INSTALL) -r requirements.txt
-PYTHON_DOCX_PATH=$(WORD_GENNER_PATH)/python-docx
-PYTHON_DOCX_INSTALL=$(PIP_INSTALL) .
-WORD_GENNER_BUILD=$(PYINSTALLER) main.py --name wordgenner
 
 .PHONY: clean force go_build
 
-build: pre_build go_build wordgenner_build
+build: pre_build go_build build_wordgenner
 	@cp ./template.html $(HTML_PATH)/
+	@cp -r $(WORD_GENNER_DIST) $(SCRIPTS_PATH)/
 	# @cp -r ./yhc-doc $(DOCS_PATH)/markdown
 	# @cp ./yhc.pdf $(DOCS_PATH)
 	@mv $(BIN_FILES) $(BIN_PATH)
@@ -71,7 +65,8 @@ build: pre_build go_build wordgenner_build
 
 clean:
 	rm -rf $(BUILD_PATH)
-	rm -rf $(WORD_GENNER_DIST)
+	@cd $(WORD_GENNER_PATH);make clean
+
 
 go_build: 
 	$(GO_MOD_TIDY)
@@ -82,12 +77,8 @@ build_template:
 	@cd $(TEMPLATE_PATH);$(YARN_REPLACE_SOURCE);$(YARN_INSTALL);$(YARN_BUILD)
 	@cp $(TEMPLATE_BUILD_PATH)/index.html ./template.html
 
-wordgenner_build:
-	@cd $(PYTHON_DOCX_PATH);$(PYTHON_DOCX_INSTALL)
-	@cd $(WORD_GENNER_PATH);$(WORD_GENNER_INSTALL)
-	@cd $(WORD_GENNER_PATH);$(WORD_GENNER_BUILD)
-	@cd $(WORD_GENNER_DIST);mkdir -p docx/parts/
-	@cp -r $(WORD_GENNER_DIST) $(SCRIPTS_PATH)
+build_wordgenner:
+	@cd $(WORD_GENNER_PATH);make build
 
 pre_build:
 	@mkdir -p $(DIR_TO_MAKE) 
