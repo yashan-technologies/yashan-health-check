@@ -43,6 +43,8 @@ def set_build_argument(subparser):
                     default=False, help="clean before building")
     sp.add_argument("--skip-build-template", action="store_true",
                     default=False, help="skip build html template before build")
+    sp.add_argument("--skip-build-wordgenner", action="store_true",
+                    default=False, help="skip build word genner before build")
     sp.add_argument("-f",
                     "--force",
                     action="store_true",

@@ -51,9 +51,8 @@ WORD_GENNER_DIST=$(WORD_GENNER_PATH)/dist/wordgenner
 
 .PHONY: clean force go_build
 
-build: pre_build go_build build_wordgenner
+build: pre_build go_build
 	@cp ./template.html $(HTML_PATH)/
-	@cp -r $(WORD_GENNER_DIST) $(SCRIPTS_PATH)/
 	# @cp -r ./yhc-doc $(DOCS_PATH)/markdown
 	# @cp ./yhc.pdf $(DOCS_PATH)
 	@mv $(BIN_FILES) $(BIN_PATH)
@@ -79,6 +78,7 @@ build_template:
 
 build_wordgenner:
 	@cd $(WORD_GENNER_PATH);make build
+	@cp -r $(WORD_GENNER_DIST) scripts/
 
 pre_build:
 	@mkdir -p $(DIR_TO_MAKE) 

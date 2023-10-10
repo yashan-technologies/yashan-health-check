@@ -18,12 +18,16 @@ def build(args):
     if 'force' in targets:
         if not 'skip_build_template' in targets and builder.YHCBuilder().build_template() != 0:
             return False
+        if not 'skip_build_wordgenner' in targets and builder.YHCBuilder().build_wordgenner() != 0:
+            return False
         return True if builder.YHCBuilder().force_build() == 0 else False
     if not 'skip_check' in targets and not check(args):
         return False
     if not 'skip_test' in targets and not test(args):
         return False
     if not 'skip_build_template' in targets and builder.YHCBuilder().build_template() != 0:
+        return False
+    if not 'skip_build_wordgenner' in targets and builder.YHCBuilder().build_wordgenner() != 0:
         return False
     if 'clean' in targets and builder.YHCBuilder().clean() != 0:
         return False
