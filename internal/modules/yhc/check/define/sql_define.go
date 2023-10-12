@@ -3,6 +3,7 @@ package define
 const (
 	SQL_QUERY_CONTROLFILE                         = "select  id, name, bytes/1024/1024 as MBytes from v$controlfile;"
 	SQL_QUERY_CONTROLFILE_COUNT                   = "select count(*) as total from v$controlfile;"
+	SQL_QUERY_DATAFILE                            = "select * from dba_data_files;"
 	SQL_QUERY_DATABASE                            = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
 	SQL_QUERY_INDEX_BLEVEL                        = "select OWNER, INDEX_NAME, BLEVEL from dba_indexes where BLEVEL>3;"
 	SQL_QUERY_INDEX_COLUMN                        = "select INDEX_OWNER, INDEX_NAME, count(*) as column_count from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"

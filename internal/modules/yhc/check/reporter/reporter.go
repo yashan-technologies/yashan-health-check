@@ -24,11 +24,12 @@ import (
 )
 
 const (
-	_PACKAGE_NAME_FORMATTER     = "yhc-%s"
-	_DATA_NAME_FORMATTER        = "data-%s.json"
-	_REPORT_JSON_NAME_FORMATTER = "report-%s.json"
-	_REPORT_NAME_FORMATTER      = "report-%s.html"
-	_WORD_REPORT_NAME_FORMATTER = "report-%s.docx"
+	_PACKAGE_NAME_FORMATTER          = "yhc-%s"
+	_DATA_NAME_FORMATTER             = "data-%s.json"
+	_REPORT_JSON_NAME_FORMATTER      = "report-%s.json"
+	_FAILED_ITEM_JSON_NAME_FORMATTER = "failed-%s.json"
+	_REPORT_NAME_FORMATTER           = "report-%s.html"
+	_WORD_REPORT_NAME_FORMATTER      = "report-%s.docx"
 
 	_DIR_HTML_TEMPLATE  = "html-template"
 	_FILE_HTML_TEMPLATE = "template.html"
@@ -41,12 +42,13 @@ const (
 )
 
 type YHCReport struct {
-	YHCHome   string                                `json:"YHCHome"`
-	BeginTime time.Time                             `json:"beginTime"`
-	EndTime   time.Time                             `json:"endTime"`
-	CheckBase *define.CheckerBase                   `json:"checkBase"`
-	Items     map[define.MetricName]*define.YHCItem `json:"items"`
-	Report    *define.PandoraReport
+	YHCHome    string                                `json:"YHCHome"`
+	BeginTime  time.Time                             `json:"beginTime"`
+	EndTime    time.Time                             `json:"endTime"`
+	CheckBase  *define.CheckerBase                   `json:"checkBase"`
+	Items      map[define.MetricName]*define.YHCItem `json:"items"`
+	Report     *define.PandoraReport
+	FailedItem map[define.MetricName]string
 }
 
 func NewYHCReport(yhcHome string, checkBase *define.CheckerBase) *YHCReport {
@@ -68,6 +70,10 @@ func (r *YHCReport) GenResult() (string, error) {
 		return "", err
 	}
 	if err := r.genReportJson(); err != nil {
+		log.Errorf("gen data err: %s", err.Error())
+		return "", err
+	}
+	if err := r.genFailedItemJson(); err != nil {
 		log.Errorf("gen data err: %s", err.Error())
 		return "", err
 	}
@@ -162,8 +168,24 @@ func (r *YHCReport) genReportJson() error {
 	return nil
 }
 
+func (r *YHCReport) genFailedItemJson() error {
+	dataJson := r.getFailedItemJsonFile()
+	bytes, err := json.MarshalIndent(r.FailedItem, "", "    ")
+	if err != nil {
+		return err
+	}
+	if err := fileutil.WriteFile(dataJson, bytes); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *YHCReport) getReportJsonFile() string {
 	return path.Join(r.genDataPath(), fmt.Sprintf(_REPORT_JSON_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
+}
+
+func (r *YHCReport) getFailedItemJsonFile() string {
+	return path.Join(r.genDataPath(), fmt.Sprintf(_FAILED_ITEM_JSON_NAME_FORMATTER, r.BeginTime.Format(timedef.TIME_FORMAT_IN_FILE)))
 }
 
 func (r *YHCReport) getWordReportFile() string {

@@ -5,6 +5,7 @@
   module_name = "overview"
   default = true
   enabled = true
+  column_order = ["hostname", "os", "kernelArch", "kernelVersion", "platform", "platformFamily", "platformVersion", "bootTime", "uptime", "procs"]
   [metrics.column_alias]
     hostname = "主机名称"
     bootTime = "开机时间"
@@ -19,12 +20,32 @@
 
 
 [[metrics]]
+  name = "host_firewalld"
+  name_alias = "防火墙状态"
+  metric_type = "bash"
+  module_name = "overview"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    firewalldStatus = "防火墙是否开启"
+
+[[metrics]]
+  name = "host_iptables"
+  name_alias = "端口打开情况"
+  metric_type = "bash"
+  module_name = "overview"
+  default = true
+  enabled = true
+
+
+[[metrics]]
   name = "host_cpu_info"
   name_alias = "CPU信息"
   module_name = "overview"
   metric_type = "bash"
   default = true
   enabled = true
+  column_order = ["modelName", "vendorId", "GHz", "physicalCores", "logicalCores"]
   [metrics.column_alias]
     vendorId = "CPU厂商标识符"
     modelName = "CPU型号名称"
@@ -32,6 +53,95 @@
     flags = "CPU特性标识列表"
     physicalCores = "CPU物理核心数"
     logicalCores = "CPU逻辑核心数"
+
+
+[[metrics]]
+  name = "host_disk_info"
+  name_alias = "磁盘信息"
+  module_name = "overview"
+  metric_type = "bash"
+  default = true
+  enabled = true
+  column_order = ["device","path","fstype","mountOptions","total","free","used","usedPercent","inodesTotal","inodesFree","inodesUsed","inodesUsedPercent"]
+  [metrics.column_alias]
+    device = "设备名称"
+    mountOptions = "挂载选项"
+    path = "挂载路径"
+    fstype = "文件系统"
+    total = "总空间"
+    free = "空闲空间"
+    used = "已使用空间"
+    usedPercent = "磁盘空间使用率"
+    inodesTotal = "i节点总数"
+    inodesUsed = "已使用i节点数量"
+    inodesFree = "空闲i节点数量"
+    inodesUsedPercent = "i节点使用率"
+
+
+[[metrics]]
+  name = "host_disk_block_info"
+  name_alias = "磁盘块设备信息"
+  module_name = "overview"
+  metric_type = "bash"
+  default = true
+  enabled = true
+  column_order = ["name", "kname", "mountpoint", "uuid", "pkname", "fstype", "type", "size", "rota", "model"]
+  [metrics.column_alias]
+    name = "名称"
+    kname = "内核名称"
+    pkname = "父设备名称"
+    model = "型号"
+    type = "类型"
+    mountpoint = "挂载点"
+    uuid = "UUID"
+    size = "大小"
+    rota = "是否旋转介质"
+    fstype = "文件系统类型"
+
+
+
+[[metrics]]
+  name = "host_bios_info"
+  name_alias = "BIOS信息"
+  module_name = "overview"
+  metric_type = "bash"
+  default = true
+  enabled = true
+
+
+[[metrics]]
+  name = "host_memory_info"
+  name_alias = "内存信息"
+  module_name = "overview"
+  metric_type = "bash"
+  default = true
+  enabled = true
+  column_order = ["type", "total", "used", "available", "free", "shared", "buffers_cached"]
+  [metrics.column_alias]
+    type = "类型"
+    total = "内存大小"
+    used = "已使用"
+    free = "空闲"
+    shared = "共享内存"
+    buffers_cached = "缓冲/缓存"
+    available = "可用"
+
+
+[[metrics]]
+  name = "host_network_info"
+  name_alias = "网卡信息"
+  module_name = "overview"
+  metric_type = "bash"
+  default = true
+  enabled = true
+  column_order = ["name","ipv4","ipv6","hardwareAddr","mtu","flags"]
+  [metrics.column_alias]
+    name = "网络接口"
+    mtu = "最大传输单元(MTU)"
+    hardwareAddr = "MAC地址"
+    ipv4 = "IPV4地址"
+    ipv6 = "IPV6地址"
+    flags = "标志位"
 
 
 [[metrics]]
@@ -147,18 +257,101 @@
 
 [[metrics]]
   name = "host_history_cpu_usage"
-  name_alias = "历史CPU使用率"
+  name_alias = "CPU历史使用情况"
   module_name = "host_check"
   default = true
   enabled = true
+  [metrics.column_alias]
+    idle = "空闲时间(%)"
+    user = "用户进程时间(%)"
+    system = "系统进程时间(%)"
+    iowait = "等待I/O时间(%)"
+    nice = "低优先级用户进程时间(%)"
+    steal = "发生CPU窃取时间(%)"
+
 
 
 [[metrics]]
   name = "host_current_cpu_usage"
-  name_alias = "当前CPU使用率"
+  name_alias = "CPU当前使用情况"
   module_name = "host_check"
   default = true
   enabled = true
+  [metrics.column_alias]
+    idle = "空闲时间(%)"
+    user = "用户进程时间(%)"
+    system = "系统进程时间(%)"
+    iowait = "等待I/O时间(%)"
+    nice = "低优先级用户进程时间(%)"
+    steal = "发生CPU窃取时间(%)"
+
+
+[[metrics]]
+  name = "host_history_disk_io"
+  name_alias = "磁盘历史IO情况"
+  module_name = "host_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    tps = "tps"
+    rdSec = "每秒读取数据量"
+    wrSec = "每秒写入数据量" 
+
+
+[[metrics]]
+  name = "host_current_disk_io"
+  name_alias = "磁盘当前IO情况"
+  module_name = "host_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    tps = "tps"
+    rdSec = "每秒读取数据量"
+    wrSec = "每秒写入数据量" 
+
+
+[[metrics]]
+  name = "host_history_memory_usage"
+  name_alias = "内存历史使用情况"
+  module_name = "host_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    realMemUsed = "内存使用率"
+    used = "已使用内存"
+
+
+[[metrics]]
+  name = "host_current_memory_usage"
+  name_alias = "内存当前使用情况"
+  module_name = "host_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    realMemUsed = "内存使用率"
+    used = "已使用内存"
+
+
+[[metrics]]
+  name = "host_history_network_io"
+  name_alias = "网卡历史IO情况"
+  module_name = "host_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    rxkB = "每秒接收数据量"
+    txkB = "每秒发送数据量"
+
+
+[[metrics]]
+  name = "host_current_network_io"
+  name_alias = "网卡当前IO情况"
+  module_name = "host_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    rxkB = "每秒接收数据量"
+    txkB = "每秒发送数据量"
 
 
 [[metrics]]
@@ -197,6 +390,26 @@
       description = "数据库备库应用日志存在延迟"
       suggestion = "请检查业务活动强度与当前网络传输速度"
 
+
+[[metrics]]
+  name = "yasdb_os_auth"
+  name_alias = "OS认证用户"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    ENABLE_LOCAL_OSAUTH = "操作系统身份认证开关"
+    YASDBA_GROUP_USER = "YASDBA组中用户"
+  [metrics.item_names]
+    ENABLE_LOCAL_OSAUTH="enable_local_osauth"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.info]]
+      expression = "enable_local_osauth == 'off'"
+      description = "未设置OS认证用户"
+      suggestion = "建议设置OS认证用户"
+
+
 [[metrics]]
   name = "yasdb_parameter"
   name_alias = "数据库参数检查"
@@ -234,10 +447,10 @@
   metric_type = "sql"
   default = true
   enabled = true
-  number_columns = ["USED_RATE"]
+  column_order = ["TABLESPACE_NAME", "CONTENTS", "STATUS", "ALLOCATION_TYPE", "USED_BYTES", "TOTAL_BYTES", "USED_RATE", "DATA_PERCENTAGE"]
+  number_columns = ["USED_RATE","USED_BYTES","TOTAL_BYTES"]
   labels = ["TABLESPACE_NAME"]
   sql = "SELECT TABLESPACE_NAME, CONTENTS, STATUS, ALLOCATION_TYPE, TOTAL_BYTES - USER_BYTES AS USED_BYTES, TOTAL_BYTES, (TOTAL_BYTES - USER_BYTES) / TOTAL_BYTES * 100 AS USED_RATE FROM SYS.DBA_TABLESPACES;"
-  column_order = ["TABLESPACE_NAME","CONTENTS","STATUS","ALLOCATION_TYPE","USED_BYTES","TOTAL_BYTES","USED_RATE","DATA_PERCENTAGE"]
   [metrics.column_alias]
     TABLESPACE_NAME = "表空间名称"
     CONTENTS = "表空间类型"
@@ -245,7 +458,7 @@
     ALLOCATION_TYPE = "EXTEND分配方式"
     USED_BYTES = "已使用字节数"
     TOTAL_BYTES = "总字节数"
-    USED_RATE = "使用率"
+    USED_RATE = "使用率(%)"
     DATA_PERCENTAGE = "数据段使用占比"
   [metrics.item_names]
     STATUS = "tablespace_status"
@@ -273,6 +486,42 @@
       description = "表空间使用率"
       suggestion = "表空间使用率过高，建议检查表空间使用情况并通过清理空间或者增加数据文件的方法降低表空间使用率，表空间完全满之后可能导致业务挂起或者数据库挂起"
 
+
+[[metrics]]
+  name = "yasdb_datafile"
+  name_alias = "数据文件"
+  module_name = "yasdb_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  labels = ["FILE_NAME"]
+  sql = "SELECT FILE_NAME, FILE_ID, TABLESPACE_NAME, STATUS, AUTO_EXTEND FROM DBA_DATA_FILES;"
+  number_columns = [""]
+  column_order = ["FILE_NAME","FILE_ID","TABLESPACE_NAME","STATUS","AUTO_EXTEND","FILE_PERMISSION"]
+  [metrics.column_alias]
+    FILE_NAME = "数据文件名称"
+    FILE_ID = "ID"
+    TABLESPACE_NAME = "表空间名称"
+    STATUS = "文件状态"
+    AUTO_EXTEND = "自动拓展"
+    FILE_PERMISSION = "文件权限"
+  [metrics.item_names]
+    STATUS = "datafile_status"
+    AUTO_EXTEND = "datafile_auto_extend"
+    FILE_PERMISSION = "datafile_file_permission"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "datafile_status != 'ONLINE'"
+      description = "数据文件状态检查"
+      suggestion = "数据文件状态异常（非online的具体状态），请检查数据文件状态异常原因"
+
+    [[metrics.alert_rules.warning]]
+      expression = "datafile_auto_extend != 'ON'"
+      description = "数据文件未开启自动扩展"
+      suggestion = "建议开启数据文件自动拓展功能"
+
+
 [[metrics]]
   name = "yasdb_controlfile"
   name_alias = "控制文件"
@@ -282,6 +531,7 @@
   enabled = true
   number_columns = ['MBYTES']
   sql = "select id, name, bytes/1024/1024 as MBYTES from v$controlfile;"
+  column_order = ["NAME","ID","MBYTES"]
   [metrics.column_alias]
     ID = "ID"
     NAME = "名称"
@@ -327,11 +577,12 @@
   default = true
   enabled = true
   number_columns = ["SESSION_USAGE"]
+  column_order = ["BACKGROUND_SESSIONS","USER_SESSIONS","MAX_SESSIONS","SESSION_USAGE"]
   [metrics.column_alias]
     USER_SESSIONS = "用户会话数"
     BACKGROUND_SESSIONS = "系统会话数"
     MAX_SESSIONS = "最大会话数"
-    SESSION_USAGE = "会话使用率"
+    SESSION_USAGE = "会话使用率(%)"
   [metrics.item_names]
     SESSION_USAGE = "session_session_usage"
   [metrics.alert_rules]
@@ -355,6 +606,8 @@
   default = true
   enabled = true
   sql = "select count(*) as total_count from dba_objects;"
+  [metrics.column_alias]
+    TOTAL_COUNT = "对象总数"
 
 [[metrics]]
   name = "yasdb_object_owner"
@@ -363,6 +616,7 @@
   metric_type = "sql"
   default = true
   enabled = true
+  column_order = ["OWNER","OBJECT_TYPE","OWNER_OBJECT_COUNT"]
   sql = "SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%' GROUP BY owner, object_type ORDER BY owner,object_type;"
   [metrics.column_alias]
     OWNER = "owner名称"
@@ -376,6 +630,7 @@
   metric_type = "sql"
   default = true
   enabled = true
+  column_order = ["TABLESPACE_NAME","TABLESPACE_OBJECT_COUNT"]
   sql = "SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE') GROUP BY tablespace_name ORDER BY tablespace_name;"
   [metrics.column_alias]
     TABLESPACE_NAME = "表空间名称"
@@ -430,6 +685,7 @@
   metric_type = "sql"
   default = true
   enabled = true
+  column_order = ["ID", "NAME", "STATUS", "SEQUENCE", "BLOCK_COUNT", "BLOCK_SIZE", "USED_BLOCKS"]
   sql = "select ID, NAME, STATUS, BLOCK_SIZE, BLOCK_COUNT, USED_BLOCKS, SEQUENCE# AS SEQUENCE from v$logfile;"
   [metrics.column_alias]
     ID = "ID"
@@ -449,6 +705,7 @@
   default = true
   enabled = true
   number_columns = ["TOTAL_COUNT", "CURRENT_COUNT", "ACTIVE_COUNT", "INACTIVE_COUNT"]
+  column_order = ["TOTAL_COUNT","ACTIVE_COUNT","INACTIVE_COUNT","CURRENT_COUNT"]
   sql = "select count(*) as total_count, SUM(CASE WHEN STATUS = 'CURRENT' THEN 1 ELSE 0 END) AS current_count,SUM(CASE WHEN STATUS = 'ACTIVE' THEN 1 ELSE 0 END) AS active_count, SUM(CASE WHEN STATUS = 'INACTIVE' THEN 1 ELSE 0 END) AS inactive_count from v$logfile;"
   [metrics.column_alias]
     TOTAL_COUNT= "REDO日志文件总数"

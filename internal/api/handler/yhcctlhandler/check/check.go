@@ -82,8 +82,7 @@ func (c *CheckHandler) check() {
 
 func (c *CheckHandler) afterCheck() error {
 	c.reporter.EndTime = time.Now()
-	c.reporter.Items, c.reporter.Report = c.getResults(c.reporter.BeginTime, c.reporter.EndTime)
-	// TODO: gen report and return report path
+	c.reporter.Items, c.reporter.Report, c.reporter.FailedItem = c.getResults(c.reporter.BeginTime, c.reporter.EndTime)
 	path, err := c.reporter.GenResult()
 	if err != nil {
 		return err
@@ -123,7 +122,7 @@ func (c *CheckHandler) newProgress(moduleCheckFunc map[string]map[string]func() 
 	return progress
 }
 
-func (c *CheckHandler) getResults(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport) {
+func (c *CheckHandler) getResults(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport, map[define.MetricName]string) {
 	return c.checker.GetResult(startCheck, endCheck)
 }
 

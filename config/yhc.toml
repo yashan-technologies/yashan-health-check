@@ -8,3 +8,4 @@ scrape_interval = 1
 scrape_times = 30
 metric_paths = ["./config/default_metric.toml", "./config/custom_metric.toml"]
 default_module_path = "./config/report_module.toml"
+network_io_discard = "^lo$,^veth.*,^virbr.*,^br.*,^tap.*,^tun.*,^docker.*,^flannel.*"

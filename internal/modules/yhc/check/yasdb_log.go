@@ -24,7 +24,7 @@ const (
 )
 
 func (c *YHCChecker) GetYasdbRedoLog() (err error) {
-	data, err := c.querySingleRow(define.METRIC_YASDB_REDO_LOG)
+	data, err := c.queryMultiRows(define.METRIC_YASDB_REDO_LOG)
 	defer c.fillResult(data)
 	return
 }

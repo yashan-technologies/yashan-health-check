@@ -3,7 +3,7 @@ package define
 const (
 	ET_PRE         ElementType = "pre" // 可换行的文本
 	ET_DIV         ElementType = "div"
-	ET_ALERT       ElementType = "custom-alert" // TODO: 支持custom-alert后更换成custom-alert
+	ET_ALERT       ElementType = "custom-alert"
 	ET_EMPTY       ElementType = "a-empty"
 	ET_CODE        ElementType = "custom-code"
 	ET_TABLE       ElementType = "custom-table"
@@ -52,13 +52,15 @@ type PandoraMenu struct {
 }
 
 type PandoraElement struct {
-	ElementType ElementType `json:"element,omitempty"`
-	InnerText   string      `json:"innerText,omitempty"`
-	Attributes  interface{} `json:"attributes,omitempty"`
-	Solts       interface{} `json:"solts,omitempty"`
-	SoltName    string      `json:"soltName,omitempty"`
-	Config      interface{} `json:"config,omitempty"`
-	Extend      interface{} `json:"extend,omitempty"`
+	MetricName   string      `json:"metricName,omitempty"`
+	ElementTitle string      `json:"elementTitle,omitempty"`
+	ElementType  ElementType `json:"element,omitempty"`
+	InnerText    string      `json:"innerText,omitempty"`
+	Attributes   interface{} `json:"attributes,omitempty"`
+	Solts        interface{} `json:"solts,omitempty"`
+	SoltName     string      `json:"soltName,omitempty"`
+	Config       interface{} `json:"config,omitempty"`
+	Extend       interface{} `json:"extend,omitempty"`
 }
 
 type CustomOptionTitle struct {
@@ -84,9 +86,9 @@ type TableColumn struct {
 }
 
 type CodeAttributes struct {
-	Title    CustomOptionTitle `json:"title,omitempty"`
-	Language string            `json:"language,omitempty"`
-	Code     string            `json:"code,omitempty"`
+	Title    string `json:"title,omitempty"`
+	Language string `json:"language,omitempty"`
+	Code     string `json:"code,omitempty"`
 }
 
 type PAttributes struct {

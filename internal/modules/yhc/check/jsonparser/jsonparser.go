@@ -23,20 +23,42 @@ const (
 	_CHANGE_LOG   = "生成巡检报告"
 )
 
-var _hostOverviewRelated = []define.MetricName{
-	define.METRIC_HOST_INFO,
-	define.METRIC_HOST_CPU_INFO,
-}
-
-var _yasdbOverviewRelated = []define.MetricName{
-	define.METRIC_YASDB_DATABASE,
-	define.METRIC_YASDB_INSTANCE,
-	define.METRIC_YASDB_LISTEN_ADDR,
-}
-
+// 将不同指标的数据合并到一个map中，只支持map之间的合并
 var _mergeMetricMap = map[define.MetricName][]define.MetricName{
-	define.METRIC_HOST_INFO:      _hostOverviewRelated,
-	define.METRIC_YASDB_DATABASE: _yasdbOverviewRelated,
+	define.METRIC_HOST_INFO: {
+		define.METRIC_HOST_INFO,
+		define.METRIC_HOST_CPU_INFO,
+	},
+	define.METRIC_YASDB_DATABASE: {
+		define.METRIC_YASDB_DATABASE,
+		define.METRIC_YASDB_INSTANCE,
+		define.METRIC_YASDB_LISTEN_ADDR,
+	},
+}
+
+// 将不同指标的element放在一个指标下
+var _mergeElementMap = map[define.MetricName][]define.MetricName{
+	define.METRIC_HOST_INFO: {
+		define.METRIC_HOST_INFO,
+		define.METRIC_HOST_CPU_INFO,
+		define.METRIC_HOST_DISK_INFO,
+		define.METRIC_HOST_DISK_BLOCK_INFO,
+		define.METRIC_HOST_MEMORY_INFO,
+		define.METRIC_HOST_NETWORK_INFO,
+	},
+	define.METRIC_YASDB_DATABASE: {
+		define.METRIC_YASDB_DATABASE,
+		define.METRIC_YASDB_FILE_PERMISSION,
+	},
+	define.METRIC_YASDB_OBJECT_COUNT: {
+		define.METRIC_YASDB_OBJECT_COUNT,
+		define.METRIC_YASDB_OBJECT_TABLESPACE,
+		define.METRIC_YASDB_OBJECT_OWNER,
+	},
+	define.METRIC_YASDB_REDO_LOG: {
+		define.METRIC_YASDB_REDO_LOG,
+		define.METRIC_YASDB_REDO_LOG_COUNT,
+	},
 }
 
 type MetricParseFunc func(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric) error
@@ -62,6 +84,8 @@ func NewJsonParser(log yaslog.YasLog, base define.CheckerBase, startCheck, endCh
 	return parser
 }
 
+// todo: 这个parse函数各个模块之间的关系处理有点问题，需要优化
+// todo: 包括wordgenner的模块处理也有问题，后续优化！
 func (j *JsonParser) Parse() *define.PandoraReport {
 	report := &define.PandoraReport{
 		ReportTitle: _REPORT_TITLE,
@@ -72,12 +96,13 @@ func (j *JsonParser) Parse() *define.PandoraReport {
 		CostTime:    int(j.endCheckTime.Sub(j.base.Start).Seconds()),
 		Version:     compiledef.GetAPPVersion(),
 	}
-	j.MergeMetrics()
+	j.mergeMetrics()
 	for _, module := range confdef.GetModuleConf().Modules {
 		menu := &define.PandoraMenu{IsMenu: true, Title: confdef.GetModuleAlias(module.Name)}
 		report.ReportData = append(report.ReportData, menu)
 		j.dealYHCModule(module, menu)
 	}
+	j.mergeElements(report)
 	return report
 }
 
@@ -127,30 +152,45 @@ func (j *JsonParser) genMetricParseFunc(metric *confdef.YHCMetric) (MetricParseF
 
 func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (MetricParseFunc, error) {
 	parseFuncMap := map[define.MetricName]MetricParseFunc{
-		define.METRIC_YASDB_INSTANCE:           j.parseMap,
-		define.METRIC_YASDB_DATABASE:           j.parseMap,
-		define.METRIC_YASDB_FILE_PERMISSION:    j.parseTable,
-		define.METRIC_YASDB_LISTEN_ADDR:        j.parseMap,
-		define.METRIC_HOST_INFO:                j.parseMap,
-		define.METRIC_HOST_CPU_INFO:            j.parseMap,
-		define.METRIC_HOST_HISTORY_CPU_USAGE:   j.parseHostCPUUsage,
-		define.METRIC_HOST_CURRENT_CPU_USAGE:   j.parseHostCPUUsage,
-		define.METRIC_YASDB_REPLICATION_STATUS: j.parseTable,
-		define.METRIC_YASDB_PARAMETER:          j.parseMap,
-		define.METRIC_YASDB_TABLESPACE:         j.parseTable,
-		define.METRIC_YASDB_CONTROLFILE_COUNT:  j.parseMap,
-		define.METRIC_YASDB_CONTROLFILE:        j.parseTable,
-		define.METRIC_YASDB_SESSION:            j.parseTable,
-		define.METRIC_YASDB_WAIT_EVENT:         j.parseTable,
-		define.METRIC_YASDB_OBJECT_COUNT:       j.parseMap,
-		define.METRIC_YASDB_OBJECT_OWNER:       j.parseTable,
-		define.METRIC_YASDB_OBJECT_TABLESPACE:  j.parseTable,
-		define.METRIC_YASDB_INDEX_BLEVEL:       j.parseTable,
-		define.METRIC_YASDB_INDEX_COLUMN:       j.parseTable,
-		define.METRIC_YASDB_INDEX_INVISIBLE:    j.parseTable,
-		define.METRIC_YASDB_REDO_LOG:           j.parseTable,
-		define.METRIC_YASDB_REDO_LOG_COUNT:     j.parseTable,
-		define.METRIC_YASDB_RUN_LOG_ERROR:      j.parseText,
+		define.METRIC_YASDB_INSTANCE:            j.parseMap,
+		define.METRIC_YASDB_DATABASE:            j.parseMap,
+		define.METRIC_YASDB_FILE_PERMISSION:     j.parseTable,
+		define.METRIC_YASDB_LISTEN_ADDR:         j.parseMap,
+		define.METRIC_YASDB_OS_AUTH:             j.parseMap,
+		define.METRIC_HOST_INFO:                 j.parseMap,
+		define.METRIC_HOST_FIREWALLD:            j.parseMap,
+		define.METRIC_HOST_IPTABLES:             j.parseCode,
+		define.METRIC_HOST_CPU_INFO:             j.parseMap,
+		define.METRIC_HOST_DISK_INFO:            j.parseTable,
+		define.METRIC_HOST_DISK_BLOCK_INFO:      j.parseTable,
+		define.METRIC_HOST_BIOS_INFO:            j.parseCode,
+		define.METRIC_HOST_MEMORY_INFO:          j.parseTable,
+		define.METRIC_HOST_NETWORK_INFO:         j.parseTable,
+		define.METRIC_HOST_HISTORY_CPU_USAGE:    j.parseHostWorkload,
+		define.METRIC_HOST_CURRENT_CPU_USAGE:    j.parseHostWorkload,
+		define.METRIC_HOST_CURRENT_DISK_IO:      j.parseHostWorkload,
+		define.METRIC_HOST_HISTORY_DISK_IO:      j.parseHostWorkload,
+		define.METRIC_HOST_CURRENT_MEMORY_USAGE: j.parseHostWorkload,
+		define.METRIC_HOST_HISTORY_MEMORY_USAGE: j.parseHostWorkload,
+		define.METRIC_HOST_CURRENT_NETWORK_IO:   j.parseHostWorkload,
+		define.METRIC_HOST_HISTORY_NETWORK_IO:   j.parseHostWorkload,
+		define.METRIC_YASDB_REPLICATION_STATUS:  j.parseTable,
+		define.METRIC_YASDB_PARAMETER:           j.parseMap,
+		define.METRIC_YASDB_TABLESPACE:          j.parseTable,
+		define.METRIC_YASDB_CONTROLFILE_COUNT:   j.parseMap,
+		define.METRIC_YASDB_CONTROLFILE:         j.parseTable,
+		define.METRIC_YASDB_DATAFILE:            j.parseTable,
+		define.METRIC_YASDB_SESSION:             j.parseMap,
+		define.METRIC_YASDB_WAIT_EVENT:          j.parseTable,
+		define.METRIC_YASDB_OBJECT_COUNT:        j.parseMap,
+		define.METRIC_YASDB_OBJECT_OWNER:        j.parseTable,
+		define.METRIC_YASDB_OBJECT_TABLESPACE:   j.parseTable,
+		define.METRIC_YASDB_INDEX_BLEVEL:        j.parseTable,
+		define.METRIC_YASDB_INDEX_COLUMN:        j.parseTable,
+		define.METRIC_YASDB_INDEX_INVISIBLE:     j.parseTable,
+		define.METRIC_YASDB_REDO_LOG:            j.parseTable,
+		define.METRIC_YASDB_REDO_LOG_COUNT:      j.parseTable,
+		define.METRIC_YASDB_RUN_LOG_ERROR:       j.parseText,
 	}
 	fn, ok := parseFuncMap[define.MetricName(metric.Name)]
 	if !ok {
@@ -193,12 +233,44 @@ func (j *JsonParser) parseTable(menu *define.PandoraMenu, item *define.YHCItem, 
 	default:
 		return fmt.Errorf("failed to parse table, unsupport data type %T", item.Details)
 	}
+	attributes.TableColumns = j.sortTableColumns(metric, attributes.TableColumns)
 	element := &define.PandoraElement{
-		ElementType: define.ET_TABLE,
-		Attributes:  attributes,
+		MetricName:   metric.Name,
+		ElementTitle: metric.NameAlias,
+		ElementType:  define.ET_TABLE,
+		Attributes:   attributes,
 	}
 	menu.Elements = append(menu.Elements, element)
 	return j.parseAlert(menu, item, metric)
+}
+
+func (j *JsonParser) sortTableColumns(metric *confdef.YHCMetric, columns []*define.TableColumn) []*define.TableColumn {
+	columnMap := map[string]*define.TableColumn{}
+	for _, column := range columns {
+		columnMap[column.DataIndex] = column
+	}
+	var order, unorder []*define.TableColumn
+	relatedMetric := j.getRelatedMetrics(metric)
+	for _, metricName := range relatedMetric {
+		m, err := j.getMetric(string(metricName))
+		if err != nil {
+			j.log.Error(err)
+			continue
+		}
+		for _, o := range m.ColumnOrder {
+			if column, ok := columnMap[o]; ok {
+				order = append(order, column)
+				delete(columnMap, o)
+			}
+		}
+	}
+	for _, column := range columnMap {
+		unorder = append(unorder, column)
+	}
+	sort.Slice(unorder, func(i, j int) bool {
+		return unorder[i].DataIndex < unorder[j].DataIndex
+	})
+	return append(order, unorder...)
 }
 
 func (j *JsonParser) dealTableStringRow(attributes *define.TableAttributes, metric *confdef.YHCMetric, data map[string]string) {
@@ -216,9 +288,6 @@ func (j *JsonParser) dealTableStringRow(attributes *define.TableAttributes, metr
 		for _, column := range columnsMap {
 			columns = append(columns, column)
 		}
-		sort.Slice(columns, func(i, j int) bool {
-			return columns[i].DataIndex < columns[j].DataIndex
-		})
 		attributes.TableColumns = columns
 	}
 	dataSource := make(map[string]interface{})
@@ -226,11 +295,6 @@ func (j *JsonParser) dealTableStringRow(attributes *define.TableAttributes, metr
 		dataSource[key] = value
 	}
 	attributes.DataSource = append(attributes.DataSource, dataSource)
-}
-
-func (j *JsonParser) SortTableColumns(metric *confdef.YHCMetric, columns []*define.TableColumn) []*define.TableColumn {
-	// todo:
-	return nil
 }
 
 func (j *JsonParser) dealTableAnyRow(attributes *define.TableAttributes, metric *confdef.YHCMetric, data map[string]interface{}) {
@@ -248,9 +312,6 @@ func (j *JsonParser) dealTableAnyRow(attributes *define.TableAttributes, metric 
 		for _, column := range columnsMap {
 			columns = append(columns, column)
 		}
-		sort.Slice(columns, func(i, j int) bool {
-			return columns[i].DataIndex < columns[j].DataIndex
-		})
 		attributes.TableColumns = columns
 	}
 	dataSource := make(map[string]interface{})
@@ -265,6 +326,7 @@ func (j *JsonParser) parseCode(menu *define.PandoraMenu, item *define.YHCItem, m
 		return fmt.Errorf("failed to parse code of %s because the details is nil", item.Name)
 	}
 	attributes := define.CodeAttributes{
+		Title:    confdef.GetModuleAlias(metric.Name),
 		Language: "shell",
 	}
 	switch item.Details.(type) {
@@ -275,8 +337,10 @@ func (j *JsonParser) parseCode(menu *define.PandoraMenu, item *define.YHCItem, m
 		return fmt.Errorf("failed to parse code, unsupport type %T", item.Details)
 	}
 	menu.Elements = append(menu.Elements, &define.PandoraElement{
-		ElementType: define.ET_CODE,
-		Attributes:  attributes,
+		MetricName:   metric.Name,
+		ElementTitle: metric.NameAlias,
+		ElementType:  define.ET_CODE,
+		Attributes:   attributes,
 	})
 	return nil
 }
@@ -286,33 +350,63 @@ func (j *JsonParser) parseMap(menu *define.PandoraMenu, item *define.YHCItem, me
 		return fmt.Errorf("failed to parse map of %s because the details is nil", item.Name)
 	}
 	element := &define.PandoraElement{
-		ElementType: define.ET_DESCRIPTION,
+		MetricName:   metric.Name,
+		ElementTitle: metric.NameAlias,
+		ElementType:  define.ET_DESCRIPTION,
 	}
-	attributes := define.DescriptionAttributes{
-		Title: metric.NameAlias,
-	}
+	attributes := define.DescriptionAttributes{}
 	switch item.Details.(type) {
 	case map[string]string:
 		datas := item.Details.(map[string]string)
 		for key, value := range datas {
-			label := j.getColumnAlias(metric, key)
-			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: label, Value: value})
+			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: key, Value: value})
 		}
 	case map[string]interface{}:
 		datas := item.Details.(map[string]interface{})
 		for key, value := range datas {
-			label := j.getColumnAlias(metric, key)
-			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: label, Value: value})
+			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: key, Value: value})
 		}
 	default:
 		return fmt.Errorf("failed to parse map, unsupport data type %T", item.Details)
 	}
-	sort.Slice(attributes.Data, func(i, j int) bool {
-		return attributes.Data[i].Label < attributes.Data[j].Label
-	})
+	attributes.Data = j.sortMapData(metric, attributes.Data)
 	element.Attributes = attributes
 	menu.Elements = append(menu.Elements, element)
 	return j.parseAlert(menu, item, metric)
+}
+
+func (j *JsonParser) sortMapData(metric *confdef.YHCMetric, datas []*define.DescriptionData) []*define.DescriptionData {
+	dataMap := map[string]*define.DescriptionData{}
+	for _, data := range datas {
+		dataMap[data.Label] = data
+	}
+	var order, unorder []*define.DescriptionData
+	relatedMetric := j.getRelatedMetrics(metric)
+	for _, metricName := range relatedMetric {
+		m, err := j.getMetric(string(metricName))
+		if err != nil {
+			j.log.Error(err)
+			continue
+		}
+		for _, o := range m.ColumnOrder {
+			if column, ok := dataMap[o]; ok {
+				order = append(order, column)
+				delete(dataMap, o)
+			}
+		}
+	}
+	for _, data := range dataMap {
+		unorder = append(unorder, data)
+	}
+	sort.Slice(unorder, func(i, j int) bool {
+		return unorder[i].Label < unorder[j].Label
+	})
+	order = append(order, unorder...)
+	// replace with column alias
+	for _, o := range order {
+		o.Label = j.getColumnAlias(metric, o.Label)
+	}
+	return order
 }
 
 func (j *JsonParser) parseText(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric) error {
@@ -320,7 +414,9 @@ func (j *JsonParser) parseText(menu *define.PandoraMenu, item *define.YHCItem, m
 		return fmt.Errorf("failed to parse text of %s because the details is nil", item.Name)
 	}
 	element := define.PandoraElement{
-		ElementType: define.ET_PRE,
+		MetricName:   metric.Name,
+		ElementTitle: metric.NameAlias,
+		ElementType:  define.ET_PRE,
 	}
 	attributes := define.DescriptionAttributes{
 		Title: metric.NameAlias,
@@ -347,6 +443,7 @@ func (j *JsonParser) parseAlert(menu *define.PandoraMenu, item *define.YHCItem, 
 	for _, alerts := range item.Alerts {
 		for _, alert := range alerts {
 			element := define.PandoraElement{
+				MetricName:  metric.Name,
 				ElementType: define.ET_ALERT,
 				Attributes: define.AlertAttributes{
 					Message:     alert.Description,
@@ -374,10 +471,91 @@ func (j *JsonParser) genAlertDescription(metric *confdef.YHCMetric, alert *defin
 }
 
 // 部分指标由于sql限制，分开采集，生成报告的时候需要合并到同一张表格中
-func (j *JsonParser) MergeMetrics() {
+func (j *JsonParser) mergeMetrics() {
 	for to, from := range _mergeMetricMap {
 		j.mergeMetric(to, from)
 	}
+}
+
+func (j *JsonParser) mergeElements(report *define.PandoraReport) {
+	for to, from := range _mergeElementMap {
+		j.mergeElement(report, to, from)
+	}
+	j.cleanEmptyMenus(report.ReportData)
+}
+
+func (j *JsonParser) mergeElement(report *define.PandoraReport, to define.MetricName, from []define.MetricName) {
+	toMenu, _ := j.findMenuAndElements(report, to)
+	if toMenu == nil {
+		return
+	}
+	for _, m := range from {
+		if to == m {
+			continue
+		}
+		menu, elements := j.findMenuAndElements(report, m)
+		if len(elements) == 0 {
+			continue
+		}
+		toMenu.Elements = append(toMenu.Elements, elements...)
+		j.deleteElementsFromMenu(menu, m)
+	}
+}
+
+func (j *JsonParser) findMenuAndElements(report *define.PandoraReport, metricName define.MetricName) (targetMenu *define.PandoraMenu, elements []*define.PandoraElement) {
+	for _, menu := range report.ReportData {
+		targetMenu, elements = j.findElementsInMenu(menu, metricName)
+		if len(elements) > 0 {
+			break
+		}
+	}
+	return
+}
+
+func (j *JsonParser) findElementsInMenu(menu *define.PandoraMenu, metricName define.MetricName) (findMenu *define.PandoraMenu, findElements []*define.PandoraElement) {
+	if menu == nil {
+		return
+	}
+	for _, element := range menu.Elements {
+		if element.MetricName == string(metricName) {
+			findElements = append(findElements, element)
+			findMenu = menu
+		}
+	}
+	if len(findElements) > 0 {
+		return
+	}
+	for _, childMenu := range menu.Children {
+		findMenu, findElements = j.findElementsInMenu(childMenu, metricName)
+		if len(findElements) > 0 {
+			return
+		}
+	}
+	return
+}
+
+func (j *JsonParser) deleteElementsFromMenu(menu *define.PandoraMenu, metricName define.MetricName) {
+	var updatedElements []*define.PandoraElement
+	for _, element := range menu.Elements {
+		if element.MetricName != string(metricName) {
+			updatedElements = append(updatedElements, element)
+		}
+	}
+	menu.Elements = updatedElements
+}
+
+func (j *JsonParser) cleanEmptyMenus(menus []*define.PandoraMenu) []*define.PandoraMenu {
+	var cleanedMenus []*define.PandoraMenu
+	for _, menu := range menus {
+		if len(menu.Elements) == 0 && len(menu.Children) == 0 {
+			continue
+		}
+		menu.Children = j.cleanEmptyMenus(menu.Children)
+		if len(menu.Elements) > 0 || len(menu.Children) > 0 {
+			cleanedMenus = append(cleanedMenus, menu)
+		}
+	}
+	return cleanedMenus
 }
 
 func (j *JsonParser) getColumnAlias(metric *confdef.YHCMetric, columnName string) string {
@@ -398,18 +576,12 @@ func (j *JsonParser) getColumnAlias(metric *confdef.YHCMetric, columnName string
 
 // 部分指标在展示的时候需要合并信息，此函数返回当前指标的关联指标
 func (j *JsonParser) getRelatedMetrics(metric *confdef.YHCMetric) []define.MetricName {
-	var relatedMap = map[define.MetricName][]define.MetricName{}
-	for _, metric := range _yasdbOverviewRelated {
-		relatedMap[metric] = _yasdbOverviewRelated
+	for metricName, related := range _mergeMetricMap {
+		if metricName == define.MetricName(metric.Name) {
+			return related
+		}
 	}
-	for _, metric := range _hostOverviewRelated {
-		relatedMap[metric] = _hostOverviewRelated
-	}
-	related, ok := relatedMap[define.MetricName(metric.Name)]
-	if !ok {
-		related = []define.MetricName{define.MetricName(metric.Name)}
-	}
-	return related
+	return []define.MetricName{define.MetricName(metric.Name)}
 }
 
 func (j *JsonParser) mergeMetric(to define.MetricName, from []define.MetricName) {
@@ -490,14 +662,106 @@ func (j *JsonParser) genCustomSqlParseFunc(metric *confdef.YHCMetric) (MetricPar
 	return fn, nil
 }
 
-func (j *JsonParser) parseHostCPUUsage(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric) error {
-	cpuExcludeMap := map[string]struct{}{
-		"cpu": {},
+func (j *JsonParser) parseHostOtherWorkload(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric, includeFields map[string]struct{}) error {
+	if len(item.Error) != 0 {
+		return fmt.Errorf("failed to gen parse func because the metric %s check failed", metric.Name)
 	}
-	return j.parseHostWorkload(menu, item, metric, cpuExcludeMap)
+	data, ok := item.Details.(define.WorkloadOutput)
+	if !ok {
+		return fmt.Errorf("invalid data type %T", item.Details)
+	}
+	if len(data) == 0 {
+		return nil
+	}
+	timeArray := []int64{}
+	for time := range data {
+		timeArray = append(timeArray, time)
+	}
+	sort.Slice(timeArray, func(i, j int) bool { return timeArray[i] < timeArray[j] })
+
+	// create attributes map to store all attribute
+	attributes := make(map[string]define.ChartAttributes)
+	for _, value := range data[timeArray[0]] {
+		m, err := j.convertObjectToMap(value)
+		if err != nil {
+			return err
+		}
+		for field := range m {
+			if _, ok := includeFields[field]; !ok {
+				continue
+			}
+			attribute := define.ChartAttributes{
+				CustomOptions: define.ChartCustomOptions{
+					ChartType: define.CT_LINE,
+					Title: define.CustomOptionTitle{
+						Text: j.getColumnAlias(metric, field),
+					},
+					Data: []*define.ChartData{},
+				},
+			}
+			attributes[field] = attribute
+		}
+	}
+
+	// fill chart data from origin data
+	for _, t := range timeArray {
+		timeStr := time.Unix(t, 0).Format(timedef.TIME_FORMAT)
+		for name, obj := range data[t] {
+			// parse data to map
+			m, err := j.convertObjectToMap(obj)
+			if err != nil {
+				j.log.Errorf("failed to parse object %T, err: %v", obj, err)
+				continue
+			}
+			for field, value := range m {
+				if _, ok := includeFields[field]; !ok {
+					continue
+				}
+				attribute := attributes[field]
+
+				chartDataMap := make(map[string]*define.ChartData)
+				for _, d := range attribute.CustomOptions.Data {
+					chartDataMap[d.Name] = d
+				}
+				chartData, ok := chartDataMap[name]
+				if !ok {
+					chartData = &define.ChartData{Name: name}
+				}
+				chartData.Value = append(chartData.Value, &define.ChartCoordinate{X: timeStr, Y: value})
+				chartDataMap[name] = chartData
+				chartDatas := []*define.ChartData{}
+				for _, d := range chartDataMap {
+					chartDatas = append(chartDatas, d)
+				}
+				attribute.CustomOptions.Data = chartDatas
+				attributes[field] = attribute
+			}
+		}
+	}
+	for _, attribute := range attributes {
+		menu.Elements = append(menu.Elements, &define.PandoraElement{
+			MetricName:  metric.Name,
+			ElementType: define.ET_CHART,
+			Attributes:  attribute,
+		})
+	}
+	return nil
 }
 
-func (j *JsonParser) parseHostWorkload(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric, excludeMap map[string]struct{}) error {
+func (j *JsonParser) parseHostWorkload(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric) error {
+	includeFields := map[string]struct{}{}
+	for column := range metric.ColumnAlias {
+		includeFields[column] = struct{}{}
+	}
+	switch item.Name {
+	case define.METRIC_HOST_CURRENT_CPU_USAGE, define.METRIC_HOST_HISTORY_CPU_USAGE:
+		return j.parseHostCPUUsage(menu, item, metric, includeFields)
+	default:
+		return j.parseHostOtherWorkload(menu, item, metric, includeFields)
+	}
+}
+
+func (j *JsonParser) parseHostCPUUsage(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric, includeFields map[string]struct{}) error {
 	if len(item.Error) != 0 {
 		return fmt.Errorf("failed to gen parse func because the metric %s check failed", metric.Name)
 	}
@@ -546,15 +810,13 @@ func (j *JsonParser) parseHostWorkload(menu *define.PandoraMenu, item *define.YH
 				chartDataMap[d.Name] = d
 			}
 			for lineName, lineValue := range m {
-				if _, ok := excludeMap[lineName]; ok {
-					j.log.Debugf("column %s in exclude map, skip", lineName)
+				if _, ok := includeFields[lineName]; !ok {
 					continue
 				}
-				alias := j.getColumnAlias(metric, lineName)
 				chartData, ok := chartDataMap[lineName]
 				if !ok {
 					chartData = &define.ChartData{
-						Name: alias,
+						Name: lineName,
 					}
 				}
 				chartData.Value = append(chartData.Value, &define.ChartCoordinate{X: timeStr, Y: lineValue})
@@ -569,6 +831,10 @@ func (j *JsonParser) parseHostWorkload(menu *define.PandoraMenu, item *define.YH
 		}
 	}
 	for _, attribute := range attributes {
+		datas := attribute.CustomOptions.Data
+		for _, data := range datas {
+			data.Name = j.getColumnAlias(metric, data.Name)
+		}
 		menu.Elements = append(menu.Elements, &define.PandoraElement{
 			ElementType: define.ET_CHART,
 			Attributes:  attribute,
