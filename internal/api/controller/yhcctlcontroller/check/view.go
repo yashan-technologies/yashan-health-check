@@ -50,6 +50,7 @@ const (
 
 	_check_list_width          = 30
 	_table_cell_max_width      = 50
+	_alert_level_max_width     = 12
 	_validate_dba_sql          = define.SQL_QUERY_TOTAL_OBJECT
 	_base_yasdb_process_format = `.*yasdb (?i:(nomount|mount|open))`
 )
@@ -323,6 +324,7 @@ func fillTableCell(table *tview.Table, columns []string, data []interface{}) {
 	for r := 0; r < rows; r++ {
 		for c := 0; c < cols; c++ {
 			color, text := tcell.ColorYellow, columns[c]
+			maxWidth := _table_cell_max_width
 			if r > 0 {
 				color = tcell.ColorWhite
 				value := reflect.ValueOf(data[r-1])
@@ -332,8 +334,11 @@ func fillTableCell(table *tview.Table, columns []string, data []interface{}) {
 				fieldValue := value.Field(c)
 				text = fieldValue.String()
 			}
-			cell := tview.NewTableCell(columns[c])
-			cell.SetMaxWidth(_table_cell_max_width)
+			if c == 0 {
+				maxWidth = _alert_level_max_width
+			}
+			cell := tview.NewTableCell("")
+			cell.SetMaxWidth(maxWidth)
 			cell.SetAlign(tview.AlignLeft)
 			cell.SetText(text)
 			cell.SetTextColor(color)

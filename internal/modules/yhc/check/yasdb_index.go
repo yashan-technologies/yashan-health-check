@@ -19,3 +19,15 @@ func (c *YHCChecker) GetYasdbIndexInvisible() (err error) {
 	defer c.fillResult(data)
 	return
 }
+
+func (c *YHCChecker) GetYasdbIndexOversized() (err error) {
+	data, err := c.queryMultiRows(define.METRIC_YASDB_INDEX_OVERSIZED)
+	defer c.fillResult(data)
+	return
+}
+
+func (c *YHCChecker) GetYasdbTableIndexNotTogether() (err error) {
+	data, err := c.queryMultiRows(define.METRIC_YASDB_INDEX_TABLE_INDEX_NOT_TOGETHER)
+	defer c.fillResult(data)
+	return
+}

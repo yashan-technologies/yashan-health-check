@@ -59,7 +59,7 @@ type MetricType string
 const (
 	AL_INVALID  = "invalid"
 	AL_INFO     = "info"
-	AL_WARING   = "waring"
+	AL_WARING   = "warning"
 	AL_CRITICAL = "critical"
 )
 

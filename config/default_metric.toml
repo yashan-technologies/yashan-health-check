@@ -677,6 +677,301 @@
     INDEX_NAME = "索引名称"
     TABLE_OWNER = "表用户"
     TABLE_NAME = "表名"
+    
+[[metrics]]
+  name = "yasdb_index_oversized"
+  name_alias = "过大的索引"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT ind.OWNER AS ind_owner,ind.SEGMENT_NAME AS ind_name,ind.SEGMENT_TYPE as IND_SEGMENT_TYPE ,tab.SEGMENT_TYPE as TAB_SEGMENT_TYPE,tab.OWNER AS tab_owner ,tab.SEGMENT_NAME AS tab_name,ind.BYTES AS ind_bytes,tab.BYTES AS tab_bytes FROM DBA_SEGMENTS ind,DBA_SEGMENTS tab,DBA_INDEXES di WHERE IND.SEGMENT_TYPE IN ('INDEX','INDEX PARTITION') AND tab.SEGMENT_TYPE IN ('TABLE','TABLE PARTITION') AND ind.OWNER =di.OWNER AND ind.SEGMENT_NAME =di.INDEX_NAME AND tab.OWNER =di.TABLE_OWNER AND tab.SEGMENT_NAME =di.TABLE_NAME AND ind.BYTES > tab.BYTES;"
+  number_columns = ["IND_BYTES","TAB_BYTES"]
+  labels = ["IND_NAME"]
+  [metrics.column_alias]
+    IND_OWNER = "索引用户"
+    TAB_OWNER = "表用户"
+    IND_NAME = "索引名称"
+    TAB_NAME = "表名称"
+    TAB_SEGMENT_TYPE = "表段类型"
+    IND_SEGMENT_TYPE = "索引段类型"
+    IND_BYTES = "索引大小"
+    TAB_BYTES = "表大小"
+  [metrics.item_names]
+    IND_BYTES = "yasdb_index_bytes"
+    TAB_BYTES = "yasdb_table_bytes"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_index_bytes>yasdb_table_bytes"
+      description = "存在索引过大的情况"
+      suggestion = "存在索引过大的情况，需审视是否需要该索引，或者是否该索引碎片过多"
+
+[[metrics]]
+  name = "yasdb_index_table_index_not_together"
+  name_alias = "表和索引不在一个schema下"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT OWNER,INDEX_NAME ,TABLE_OWNER ,TABLE_NAME FROM dba_indexes WHERE OWNER <> TABLE_OWNER;"
+  labels = ["INDEX_NAME"]
+  [metrics.column_alias]
+    OWNER = "索引用户"
+    INDEX_NAME = "索引名称"
+    TABLE_OWNER = "表用户"
+    TABLE_NAME = "表名称"
+  [metrics.item_names]
+    OWNER = "yasdb_index_owner"
+    TABLE_OWNER = "yasdb_table_owner"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_index_owner != yasdb_table_owner"
+      description = "索引大小大于表大小"
+      suggestion = "表和索引的属主不同，可能带来维护上的不必要的额外步骤，建议评估后重建索引。"
+
+[[metrics]]
+  name = "yasdb_sequence_no_available"
+  name_alias = "无可用值的序列"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT SEQUENCE_OWNER ,SEQUENCE_NAME ,MIN_VALUE / MAX_VALUE * 100 as USED_RATE FROM DBA_SEQUENCES ds WHERE MIN_VALUE / MAX_VALUE > 7/10;"
+  number_columns = ["USED_RATE"]
+  [metrics.column_alias]
+    SEQUENCE_OWNER = "序列用户"
+    SEQUENCE_NAME = "序列名称"
+    USED_RATE = "使用率"
+  [metrics.item_names]
+    USED_RATE = "yasdb_sequence_used_rate"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_sequence_used_rate >= 80 && yasdb_sequence_used_rate <=100"
+      description = "序列使用率"
+      suggestion = "序列不可用，可能导致业务阻塞无法运行"
+
+[[metrics]]
+  name = "yasdb_task_running"
+  name_alias = "运行中的任务"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select OWNER ,JOB_NAME ,JOB_STYLE ,JOB_CREATOR ,JOB_ACTION  from DBA_SCHEDULER_JOBS where STATE='RUNNING';"
+  number_columns = ["USED_RATE"]
+  [metrics.column_alias]
+    OWNER = "JOB的所有者"
+    JOB_NAME = "JOB名称"
+    JOB_STYLE = "JOB类型"
+    JOB_CREATOR = "创建JOB的用户名"
+    JOB_ACTION = "JOB执行的动作"
+
+[[metrics]]
+  name = "yasdb_package_no_package_package_body"
+  name_alias = "没有package的package body"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT OWNER ,NAME, JOIN_STR FROM (SELECT  OWNER ,NAME,LISTAGG('TYPE','-') AS JOIN_STR FROM DBA_SOURCE GROUP by OWNER ,NAME) WHERE JOIN_STR<>'PACKAGE-PACKAGE BODY';"
+  number_columns = ["USED_RATE"]
+  labels = ["NAME"]
+  [metrics.column_alias]
+    OWNER = "对象所属的用户"
+    NAME = "对象名称"
+    JOIN_STR = "对象类型连接字符串"
+  [metrics.item_names]
+    JOIN_STR = "yasdb_package_type_join"
+  [metrics.alert_rules]
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_package_type_join != 'PACKAGE-PACKAGE BODY'"
+      description = "存在没有package的package body"
+      suggestion = "建议使用package以充分利用其封装、组织和优化代码的特性。"
+
+[[metrics]]
+  name = "yasdb_security_password_strength"
+  name_alias = "密码强度"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT VALUE FROM x$parameter WHERE name ='_CHECK_PASSWORD_COMPLEXITY';"
+  [metrics.column_alias]
+    VALUE = "密码强度控制"
+  [metrics.item_names]
+    VALUE = "yasdb_password_strength_complexity"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_password_strength_complexity == 'FALSE'"
+      description = "未开启密码强度控制"
+      suggestion = "建议打开此项参数，防止普通用户使用弱密码"
+
+[[metrics]]
+  name = "yasdb_security_maximum_login_attempts"
+  name_alias = "允许用户登录尝试次数"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select PROFILE,RESOURCE_NAME ,RESOURCE_TYPE, LIMIT from DBA_PROFILES where PROFILE<>'DEFAULT' and RESOURCE_NAME='FAILED_LOGIN_ATTEMPTS' and LIMIT<>'UNLIMITED';"
+  [metrics.column_alias]
+    PROFILE = "PROFILE名称"
+    RESOURCE_NAME = "资源名称"
+    RESOURCE_TYPE = "密码强度控制"
+    LIMIT = "限制"
+  [metrics.item_names]
+    LIMIT = "yasdb_maximum_login_limit"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_maximum_login_limit != 'UNLIMITED'"
+      description = "未限制用户登录尝试次数"
+      suggestion = "建议限制用户尝试登录次数，防止暴力破解密码（应用系统账户谨慎设置尝试登录次数）"
+
+[[metrics]]
+  name = "yasdb_security_user_no_open"
+  name_alias = "非OPEN状态的用户"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select username,ACCOUNT_STATUS from dba_users where ACCOUNT_STATUS!='OPEN';"
+  [metrics.column_alias]
+    USERNAME = "用户名称"
+    ACCOUNT_STATUS = "账户状态"
+  [metrics.item_names]
+    ACCOUNT_STATUS = "yasdb_user_account_status"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_user_account_status != 'OPEN'"
+      description = "存在非OPEN状态的用户"
+      suggestion = "如应用账户被锁定，应及时解锁。"
+
+[[metrics]]
+  name = "yasdb_security_user_with_system_table_privileges"
+  name_alias = "拥有系统表权限的用户"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select GRANTEE from DBA_TAB_PRIVS where OWNER='SYS' and TYPE='TABLE' and GRANTEE in (select username from dba_users);"
+  [metrics.column_alias]
+    GRANTEE = "被授权者名"
+  [metrics.item_names]
+    GRANTEE = "yasdb_user_with_system_table"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_user_with_system_table != 'SYS'"
+      description = "非SYS用户拥有系统表权限"
+      suggestion = "普通用户拥有SYS下对象的权限，这会增加普通用户破坏整个数据库的风险"
+
+[[metrics]]
+  name = "yasdb_security_user_with_dba_role"
+  name_alias = "所有DBA角色的用户"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select GRANTEE from dba_role_privs where GRANTED_ROLE='DBA';"
+  [metrics.column_alias]
+    GRANTEE = "拥有DBA角色的用户"
+  [metrics.item_names]
+    GRANTEE = "yasdb_user_with_dba_role"
+  [metrics.alert_rules] 
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_user_with_dba_role != 'SYS'"
+      description = "非SYS用户拥有DBA角色"
+      suggestion = "谨慎为普通用户授予管理数据库的DBA角色"
+
+[[metrics]]
+  name = "yasdb_security_user_all_privilege_or_system_privileges"
+  name_alias = "拥有ALL PRIVILEGE|SYSTEM的用户"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select GRANTEE from dba_sys_privs where PRIVILEGE='ALL PRIVILEGES' AND GRANTEE IN ( SELECT USERNAME FROM DBA_USERS);"
+  [metrics.column_alias]
+    GRANTEE = "拥有ALL PRIVILEGE|SYSTEM的用户"
+  [metrics.item_names]
+    GRANTEE = "yasdb_user_all_privilege_or_system_privileges"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_user_all_privilege_or_system_privileges != 'SYS'"
+      description = "非sys用户拥有ALL PRIVILEGE或者SYSTEM权限"
+      suggestion = "谨慎为普通用户授予管理数据库的系统权限"
+
+[[metrics]]
+  name = "yasdb_security_user_use_system_tablespace"
+  name_alias = "以SYSTEM表空间为默认表空间的用户"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select username,default_tablespace from dba_users;"
+  labels = ["DEFAULT_TABLESPACE"]
+  [metrics.column_alias]
+    USERNAME = "用户名称"
+    DEFAULT_TABLESPACE = "默认表空间"
+  [metrics.item_names]
+    GRANTEE = "yasdb_security_user_use_system_tablespace"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_security_user_use_system_tablespace{DEFAULT_TABLESPACE=='SYSTEM'} != 'SYS'"
+      description = "除SYS外，存在以SYSTEM表空间为默认表空间的用户列表"
+      suggestion = "系统表空间很重要，按道理只允许SYS使用，避免其他用户向SYSTEM表空间中写入数据，避免SYSTEM空间写满，影响数据库运行"
+
+[[metrics]]
+  name = "yasdb_security_audit_cleanup_task"
+  name_alias = "审计定时清理任务详情"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select count(*) as AUDIT_CLEANUP_COUNT from DBA_AUDIT_MGMT_LAST_ARCH_TS;"
+  number_columns = ["AUDIT_CLEANUP_COUNT"]
+  labels = ["AUDIT_CLEANUP_COUNT"]
+  [metrics.column_alias]
+    AUDIT_CLEANUP_COUNT = "审计日志清理次数"
+  [metrics.item_names]
+    AUDIT_CLEANUP_COUNT = "yasdb_audit_cleanup_task_count"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_audit_cleanup_task_count == 0"
+      description = "未定时清理审计日志"
+      suggestion = "未定时清理审计日志，请添加审计清理任务"
+
+[[metrics]]
+  name = "yasdb_security_audit_file_size"
+  name_alias = "审计文件大小"
+  module_name = "security_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like 'AUD$';"
+  number_columns = ["SIZE_GB"]
+  [metrics.column_alias]
+    SEGMENT_NAME = "段名称"
+    SIZE_GB = "大小"
+
+
+[[metrics]]
+  name = "yasdb_database_change"
+  name_alias = "数据库变更"
+  module_name = "log_analysis"
+  metric_type = "bash"
+  default = true
+  enabled = true
 
 [[metrics]]
   name = "yasdb_redo_log"
@@ -695,7 +990,6 @@
     BLOCK_COUNT = "块数量"
     USED_BLOCKS = "已使用块数量"
     SEQUENCE = "序列号"
-
 
 [[metrics]]
   name = "yasdb_redo_log_count"
@@ -734,10 +1028,112 @@
       description = "redo追尾风险"
       suggestion = "存在redo追尾风险"
 
+[[metrics]]
+  name = "yasdb_undo_size"
+  name_alias = "正在使用的UNDO空间大小"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT  a.USED_UBLK * b.value /1024/1024/1044 AS SIZE_GB, XID from V$TRANSACTION as a ,(SELECT VALUE FROM V$PARAMETER WHERE NAME='DB_BLOCK_SIZE') AS B ;"
+  number_columns = ["SIZE_GB","XID"]
+  labels = ["XID"]
+  [metrics.column_alias]
+    SIZE_GB= "正在使用的UNDO空间大小"
+  [metrics.item_names]
+    SIZE_GB = "yasdb_current_using_undo_size"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_current_using_undo_size >= 10 && yasdb_current_using_undo_size < 30"
+      description = "UNDO空间使用超过10G"
+      suggestion = "TP型系统，单个事务使用的UNDO不易太大，回滚时可能会导致数据库hang住，会话使用的undo空间超过10GB，建议检查该会话并及时提交，谨慎进行回滚，回滚可能影响系统正常运行"
+
+    [[metrics.alert_rules.critical]]
+      expression = "yasdb_current_using_undo_size >= 30"
+      description = "UNDO空间使用超过30G"
+      suggestion = "TP型系统，单个事务使用的UNDO不易太大，回滚时可能会导致数据库hang住，会话使用的undo空间超过30GB，建议检查会话并及时提交。并需要修改应用，防止超限使用再次发生."
+
+[[metrics]]
+  name = "yasdb_total_undo_block"
+  name_alias = "使用过多UNDO块"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT  SUM(USED_UBLK) as TOTAL_BLOCK from V$TRANSACTION ;"
+  number_columns = ["TOTAL_BLOCK"]
+  [metrics.column_alias]
+    TOTAL_BLOCK= "正在使用的UNDO块数量"
+  [metrics.item_names]
+    TOTAL_BLOCK = "yasdb_total_undo_block"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_total_undo_block >= 20000 && yasdb_total_undo_block < 300000"
+      description = "正在使用的undo块超过2w"
+      suggestion = "请检查确认是否有大事务正在运行，需及时提交大事务，避免影响系统并发性能。"
+
+    [[metrics.alert_rules.critical]]
+      expression = "yasdb_total_undo_block >= 300000"
+      description = "正在使用的undo块超过30w"
+      suggestion = "请检查当前是否在运行批量数据修改业务。谨慎进行超大事务的回滚，回滚可能影响系统正常运行。"
+
+[[metrics]]
+  name = "yasdb_transactions"
+  name_alias = "当前正在运行的事务及UNDO使用情况"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "SELECT XID, SID,XRMID,XEXT, XNODE,XSN,STATUS,RESIDUAL, USED_UBLK, FIRST_UBAFIL,FIRST_UBABLK,FIRST_UBAVER ,FIRST_UBAREC,LAST_UBAFIL,LAST_UBABLK, PTX_XID, START_DATE,ISOLATION_LEVEL from V$TRANSACTION ;"
+  number_columns = ["XID","SID","XRMID","XEXT","XNODE","XSN","USED_UBLK","FIRST_UBAFIL","FIRST_UBABLK","FIRST_UBAVER","FIRST_UBAREC","LAST_UBAFIL","LAST_UBABLK","PTX_XID"]
+  [metrics.column_alias]
+    TOTAL_BLOCK= "正在使用的UNDO块数量"
+  [metrics.item_names]
+    XID = "事务的全局ID"
+    SID = "该事务绑定的会话ID"
+    XRMID = "该事务的XRM ID"
+    XEXT = "当前事务对应的事务区编号"
+    XNODE = "当前事务在对应事务区内的编号"
+    XSN = "当前事务的版本号"
+    STATUS = "事务状态"
+    RESIDUAL = "事务是否在后台线程等待回滚"
+    USED_UBLK = "事务使用的undo block数量"
+    FIRST_UBAFIL = "事务使用的第一个undo block文件号"
+    FIRST_UBABLK = "事务使用的第一个undo block的ID"
+    FIRST_UBAVER = "事务使用的第一个undo block版本号"
+    FIRST_UBAREC = "事务开启后第一条undo记录的编号"
+    LAST_UBAFIL = "事务的最后一个undo block文件号"
+    LAST_UBABLK = "事务最后一个undo block的ID"
+    PTX_XID = "父事务ID"
+    START_DATE = "事务启动时间"
+    ISOLATION_LEVEL = "隔离级别"
 
 [[metrics]]
   name = "yasdb_run_log_error"
   name_alias = "run.log错误分析"
+  module_name = "log_analysis"
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb_alert_log_error"
+  name_alias = "alert.log错误分析"
+  module_name = "log_analysis"
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "host_dmesg_log_error"
+  name_alias = "内核错误分析"
+  module_name = "log_analysis"
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "host_system_log_error"
+  name_alias = "操作系统错误日志分析"
   module_name = "log_analysis"
   default = true
   enabled = true

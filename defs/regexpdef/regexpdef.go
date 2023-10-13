@@ -12,6 +12,8 @@ const (
 	mutiple_line_format        = `\n\s*\n`
 	lsblk_ignore_device_format = `^(ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$`
 	lsblk_output_format        = `([A-Z]+)=(?:\"(.*?)\")`
+	dmesg_log_time_format      = `^\[\s*(\d+\.\d+)\]`
+	yasdb_log_time_format      = `^(\d+-\d+-\d+\s\d+:\d+:\d+\.\d+)`
 )
 
 var (
@@ -24,4 +26,6 @@ var (
 	MultiLineRegexp         = regexp.MustCompile(mutiple_line_format)
 	LsblkIgnoreDeviceRegexp = regexp.MustCompile(lsblk_ignore_device_format)
 	LsblkOutputRegexp       = regexp.MustCompile(lsblk_output_format)
+	DmesgTimeRegex          = regexp.MustCompile(dmesg_log_time_format)
+	YasdbLogTimeRegex       = regexp.MustCompile(yasdb_log_time_format)
 )
