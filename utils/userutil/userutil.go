@@ -7,8 +7,13 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+	"strings"
 
 	"yhc/commons/constants"
+	"yhc/defs/bashdef"
+
+	"git.yasdb.com/go/yaslog"
+	"git.yasdb.com/go/yasutil/execer"
 )
 
 const (
@@ -19,6 +24,7 @@ const (
 const (
 	ENV_SUDO_USER = "SUDO_USER"
 	ROOT_USER_UID = 0
+	ETC_GROUP     = "/etc/group"
 )
 
 var (
@@ -96,4 +102,19 @@ func GetRealUser() (*user.User, error) {
 		return user.Lookup(username)
 	}
 	return user.LookupId(fmt.Sprint(os.Getuid()))
+}
+
+func GetUserOfGroup(log yaslog.YasLog, groupName string) ([]string, error) {
+	execer := execer.NewExecer(log, execer.WithPrintResult())
+	cmd := fmt.Sprintf("%s %s | grep %s", bashdef.CMD_CAT, ETC_GROUP, groupName)
+	ret, stdout, stderr := execer.Exec(bashdef.CMD_BASH, "-c", cmd)
+	if ret != 0 {
+		return nil, errors.New(stderr)
+	}
+	stdout = strings.TrimSpace(stdout)
+	arr := strings.Split(stdout, ":")
+	if len(arr) < 4 {
+		return []string{}, nil
+	}
+	return strings.Split(arr[3], ","), nil
 }

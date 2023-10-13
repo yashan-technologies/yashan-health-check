@@ -1,0 +1,63 @@
+package check
+
+import (
+	"yhc/internal/modules/yhc/check/define"
+	"yhc/log"
+
+	"git.yasdb.com/go/yasutil/size"
+	"github.com/shirou/gopsutil/mem"
+)
+
+const (
+	KEY_MEMORY_TYPE               = "type"
+	KEY_MEMORY_TOTAL              = "total"
+	KEY_MEMORY_USED               = "used"
+	KEY_MEMORY_FREE               = "free"
+	KEY_MEMORY_SHARED             = "shared"
+	KEY_MEMORY_BUFFERS_AND_CACHED = "buffers_cached"
+	KEY_MEMORY_AVAILABLE          = "available"
+
+	SYSTEM_MEMORY_TYPE = "system"
+	SWAP_MEMORY_TYPE   = "swap"
+)
+
+func (c *YHCChecker) GetHostMemoryInfo() (err error) {
+	data := &define.YHCItem{
+		Name: define.METRIC_HOST_MEMORY_INFO,
+	}
+	defer c.fillResult(data)
+
+	log := log.Module.M(string(define.METRIC_HOST_MEMORY_INFO))
+	memInfo, err := mem.VirtualMemory()
+	if err != nil {
+		log.Errorf("failed to get host memory info, err: %v", err)
+		data.Error = err.Error()
+		return err
+	}
+	data.Details = c.dealMemoryData(memInfo)
+	return
+}
+
+func (c *YHCChecker) dealMemoryData(memory *mem.VirtualMemoryStat) (res []map[string]any) {
+	res = append(res,
+		map[string]any{
+			KEY_MEMORY_TYPE:               SYSTEM_MEMORY_TYPE,
+			KEY_MEMORY_TOTAL:              size.GenHumanReadableSize(float64(memory.Total), 2),
+			KEY_MEMORY_USED:               size.GenHumanReadableSize(float64(memory.Used), 2),
+			KEY_MEMORY_FREE:               size.GenHumanReadableSize(float64(memory.Free), 2),
+			KEY_MEMORY_SHARED:             size.GenHumanReadableSize(float64(memory.Shared), 2),
+			KEY_MEMORY_BUFFERS_AND_CACHED: size.GenHumanReadableSize(float64(memory.Buffers+memory.Cached), 2),
+			KEY_MEMORY_AVAILABLE:          size.GenHumanReadableSize(float64(memory.Available), 2),
+		},
+		map[string]any{
+			KEY_MEMORY_TYPE:               SWAP_MEMORY_TYPE,
+			KEY_MEMORY_TOTAL:              size.GenHumanReadableSize(float64(memory.SwapTotal), 2),
+			KEY_MEMORY_USED:               size.GenHumanReadableSize(float64(memory.SwapTotal-memory.SwapFree-memory.SwapCached), 2),
+			KEY_MEMORY_FREE:               size.GenHumanReadableSize(float64(memory.SwapFree), 2),
+			KEY_MEMORY_SHARED:             "/",
+			KEY_MEMORY_BUFFERS_AND_CACHED: size.GenHumanReadableSize(float64(memory.SwapCached), 2),
+			KEY_MEMORY_AVAILABLE:          "/",
+		},
+	)
+	return
+}

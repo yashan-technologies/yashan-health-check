@@ -1,8 +1,11 @@
 package confdef
 
 import (
+	"regexp"
+	"strings"
 	"time"
 
+	"yhc/utils/stringutil"
 	"yhc/utils/timeutil"
 )
 
@@ -20,6 +23,7 @@ type YHC struct {
 	Output            string   `toml:"output"`
 	MetricPaths       []string `toml:"metric_paths"`
 	DefaultModulePath string   `toml:"default_module_path"`
+	NetworkIODiscard  string   `toml:"network_io_discard"`
 }
 
 func GetYHCConf() YHC {
@@ -82,4 +86,22 @@ func (c YHC) GetScrapeInterval() (interval int) {
 
 func (c YHC) GetScrapeTimes() (times int) {
 	return c.ScrapeTimes
+}
+
+func (c YHC) GetNetworkIODiscard() []string {
+	return strings.Split(c.NetworkIODiscard, stringutil.STR_COMMA)
+}
+
+func IsDiscardNetwork(name string) bool {
+	discards := GetYHCConf().GetNetworkIODiscard()
+	for _, discard := range discards {
+		re, err := regexp.Compile(discard)
+		if err != nil {
+			continue
+		}
+		if re.MatchString(name) {
+			return true
+		}
+	}
+	return false
 }

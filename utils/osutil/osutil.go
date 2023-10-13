@@ -37,7 +37,7 @@ func GetOSRelease() (*OSRelease, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		line = regexpdef.SpaceRegex.ReplaceAllString(line, stringutil.STR_EMPTY)
+		line = regexpdef.SpaceRegexp.ReplaceAllString(line, stringutil.STR_EMPTY)
 		if strings.HasPrefix(line, stringutil.STR_HASH) {
 			continue
 		}

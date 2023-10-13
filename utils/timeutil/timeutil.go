@@ -86,7 +86,7 @@ func GetTimeDivBySepa(timeStr, sepa string) (time.Time, error) {
 }
 
 func GetDuration(s string) (d time.Duration, err error) {
-	if !regexpdef.RangeRegex.MatchString(s) {
+	if !regexpdef.RangeRegexp.MatchString(s) {
 		err = ErrDurationInvalid
 		return
 	}

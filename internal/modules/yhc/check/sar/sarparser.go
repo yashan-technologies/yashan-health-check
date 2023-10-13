@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	memoryUsageKey = "memoryUsage"
+	memoryUsageKey = "memory"
 )
 
 // dd:mm:ss AM CPU     %user     %nice   %system   %iowait    %steal     %idle
@@ -332,7 +332,7 @@ func (b *baseParser) getSarDirFromConfig(configPath string) string {
 			continue
 		}
 		// key=value
-		re := regexpdef.KeyValueRegex
+		re := regexpdef.KeyValueRegexp
 		match := re.FindStringSubmatch(line)
 		if len(match) == 3 {
 			key := strings.TrimSpace(match[1])
