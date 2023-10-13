@@ -7,7 +7,7 @@ require (
 	git.yasdb.com/go/yaserr v0.1.0
 	git.yasdb.com/go/yaslog v0.0.0-20230531092234-0b27ba7c86fe
 	git.yasdb.com/go/yasutil v0.0.0-20230913105631-0b301ec98247
-	git.yasdb.com/pandora/alertql v0.0.0-20230925070939-e6946fdb3d20
+	git.yasdb.com/pandora/alertql v0.0.0-20231010073049-141fa29d219a
 	git.yasdb.com/pandora/tview v0.0.0-20230915021201-898e1aeb8e10
 	git.yasdb.com/pandora/yasqlgo v0.0.0-20230922070722-929be43c57d7
 	github.com/BurntSushi/toml v1.3.2
@@ -22,6 +22,7 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/google/uuid v1.3.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect

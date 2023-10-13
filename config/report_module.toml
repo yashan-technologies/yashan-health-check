@@ -82,22 +82,22 @@
   [[modules.children]]
     name = "object_index_check"
     name_alias = "索引"
-    metric_names = ["yasdb_index_blevel", "yasdb_index_column", "yasdb_index_invisible"]
+    metric_names = ["yasdb_index_blevel", "yasdb_index_column", "yasdb_index_invisible","yasdb_index_oversized","yasdb_index_table_index_not_together"]
 
   [[modules.children]]
     name = "object_sequence_check"
     name_alias = "序列"
-    metric_names = []
+    metric_names = ["yasdb_sequence_no_available"]
 
   [[modules.children]]
     name = "object_task_check"
     name_alias = "任务"
-    metric_names = []
+    metric_names = ["yasdb_task_running"]
 
   [[modules.children]]
     name = "object_package_check"
     name_alias = "包"
-    metric_names = []
+    metric_names = ["yasdb_package_no_package_package_body"]
 
 [[modules]]
   name = "security_check"
@@ -106,17 +106,17 @@
   [[modules.children]]
     name = "security_login_config"
     name_alias = "登录检查"
-    metric_names = []
+    metric_names = ["yasdb_security_password_strength","yasdb_security_maximum_login_attempts"]
 
   [[modules.children]]
     name = "security_permission_check"
     name_alias = "用户与权限检查"
-    metric_names = []
+    metric_names = ["yasdb_security_user_no_open","yasdb_security_user_with_system_table_privileges","yasdb_security_user_with_dba_role","yasdb_security_user_all_privilege_or_system_privileges","yasdb_security_user_use_system_tablespace"]
 
   [[modules.children]]
     name = "security_audit_check"
     name_alias = "审计日志分析"
-    metric_names = []
+    metric_names = ["yasdb_security_audit_cleanup_task","yasdb_security_audit_file_size"]
 
 [[modules]]
   name = "log_analysis"
@@ -125,7 +125,7 @@
   [[modules.children]]
     name = "log_run_analysis"
     name_alias = "数据库变更"
-    metric_names = []
+    metric_names = ["yasdb_run_log_database_changes"]
 
   [[modules.children]]
     name = "log_redo_analysis"
@@ -135,12 +135,12 @@
   [[modules.children]]
     name = "log_undo_analysis"
     name_alias = "UNDO日志分析"
-    metric_names = []
+    metric_names = ["yasdb_undo_size","yasdb_total_undo_block","yasdb_transactions"]
 
   [[modules.children]]
     name = "log_error_analysis"
     name_alias = "错误日志分析"
-    metric_names = ["yasdb_run_log_error"]
+    metric_names = ["yasdb_run_log_error","yasdb_alert_log_error","host_dmesg_log_error","host_system_log_error"]
 
 [[modules]]
   name = "custom_check"

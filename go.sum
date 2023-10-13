@@ -8,6 +8,8 @@ git.yasdb.com/go/yasutil v0.0.0-20230913105631-0b301ec98247 h1:nsBzbq6gzalpBtstu
 git.yasdb.com/go/yasutil v0.0.0-20230913105631-0b301ec98247/go.mod h1:SMFHKKIPjD5GiEqvO1YgihctvaYif7+FuGCt+/44bM8=
 git.yasdb.com/pandora/alertql v0.0.0-20230925070939-e6946fdb3d20 h1:lPB3tHn1iEftuIMBKhCVZJ5s2W9roiqxEmQTpAaDg7E=
 git.yasdb.com/pandora/alertql v0.0.0-20230925070939-e6946fdb3d20/go.mod h1:pQcqa0VKc0RKqgG99qn4O61NZsR9R6y7AxRgIMXdJHQ=
+git.yasdb.com/pandora/alertql v0.0.0-20231010073049-141fa29d219a h1:gIeqtZ3Dg9yMWvlhYvZmpF34fuTmUy5jGAJAgiXbvV4=
+git.yasdb.com/pandora/alertql v0.0.0-20231010073049-141fa29d219a/go.mod h1:pQcqa0VKc0RKqgG99qn4O61NZsR9R6y7AxRgIMXdJHQ=
 git.yasdb.com/pandora/tview v0.0.0-20230915021201-898e1aeb8e10 h1:+KOhNl353G4iISS2iTZZqWPnrqcBXgzV2VT2f0G2VkI=
 git.yasdb.com/pandora/tview v0.0.0-20230915021201-898e1aeb8e10/go.mod h1:+7bixyx/itVLxxKTyLJy8kx9fLEQTTmoIt1GlwKZ60s=
 git.yasdb.com/pandora/yasqlgo v0.0.0-20230922070722-929be43c57d7 h1:J6Pj/zbDup/DsYzp//1HiULH00CCcodbTWeN4t5pJc8=
@@ -29,6 +31,8 @@ github.com/gdamore/tcell/v2 v2.6.0 h1:OKbluoP9VYmJwZwq/iLb4BxwKcwGthaa1YNBJIyCyS
 github.com/gdamore/tcell/v2 v2.6.0/go.mod h1:be9omFATkdr0D9qewWW3d+MEvl5dha+Etb5y65J2H8Y=
 github.com/go-ole/go-ole v1.2.6 h1:/Fpf6oFPoeFik9ty7siob0G6Ke8QvQEuVcuChpwXzpY=
 github.com/go-ole/go-ole v1.2.6/go.mod h1:pprOEPIfldk/42T2oK7lQ4v4JSDwmV0As9GaiUsvbm0=
+github.com/google/uuid v1.3.1 h1:KjJaJ9iWZ3jOFZIf1Lqf4laDRCasjl0BCmnEGxkdLb4=
+github.com/google/uuid v1.3.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
