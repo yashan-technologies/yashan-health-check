@@ -18,6 +18,7 @@ const (
 	KYE_BACKGROUND_SESSIONS = "BACKGROUND_SESSIONS"
 	KEY_MAX_SESSIONS        = "MAX_SESSIONS"
 	KEY_SESSION_USAGE       = "SESSION_USAGE"
+	KET_TOTAL_SESSIONS      = "TOTAL_SESSIONS"
 )
 
 func (c *YHCChecker) GetYasdbSession() (err error) {
@@ -66,6 +67,7 @@ func (c *YHCChecker) GetYasdbSession() (err error) {
 		KYE_BACKGROUND_SESSIONS: backgroundSessions,
 		KEY_MAX_SESSIONS:        maxSessions,
 		KEY_SESSION_USAGE:       sessionUsage,
+		KET_TOTAL_SESSIONS:      len(sessions),
 	}
 	data.Details = res
 	return

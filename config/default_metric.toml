@@ -545,7 +545,7 @@
       description = "控制文件大小检查"
       suggestion = "控制文件过大可能会影响数据库性能"
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "controlfile_mbytes >= 100"
       description = "控制文件大小检查"
       suggestion = "控制文件过大可能会影响数据库性能"
@@ -571,6 +571,62 @@
 
 
 [[metrics]]
+  name = "yasdb_backup_set"
+  name_alias = "备份记录"
+  module_name = "yasdb_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
+  column_order = ["RECID","START_TIME","TYPE","SUCCESS"]
+  [metrics.column_alias]
+    RECID = "备份集编号"
+    START_TIME = "开始时间"
+    TYPE = "备份类型"
+    SUCCESS = "备份完成"
+
+[[metrics]]
+  name = "yasdb_full_backup_set_count"
+  name_alias = "近十天完成的全量备份"
+  module_name = "yasdb_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  number_columns = ["TOTAL"]
+  sql = "select count(*) as TOTAL from dba_backup_set where date_add(COMPLETION_TIME , INTERVAL 10 DAY) >= sysdate AND type = 'FULL';"
+  [metrics.column_alias]
+    TOTAL = "备份数量"
+  [metrics.item_names]
+    TOTAL = "recent_full_backup_set_count"
+
+  [metrics.alert_rules]
+    [[metrics.alert_rules.warning]]
+      expression = "recent_full_backup_set_count == 0"
+      description = "近十天没有完成全量备份"
+      suggestion = "建议定期执行全量备份"
+
+[[metrics]]
+  name = "yasdb_backup_set_path"
+  name_alias = "本地备份集路径"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  labels = ["PATH"]
+  column_order = ["PATH", "EXIST"]
+  [metrics.column_alias]
+    PATH = "备份集文件"
+    EXIST = "是否存在"
+
+  [metrics.item_names]
+    EXIST = "yasdb_backup_set_path_exist"
+
+  [metrics.alert_rules]
+    [[metrics.alert_rules.warning]]
+      expression = "yasdb_backup_set_path_exist == 'FALSE'"
+      description = "备份集文件不存在或者检查用户无权限访问"
+      suggestion = "建议检查备份文件，必要时重新备份"
+
+[[metrics]]
   name = "yasdb_session"
   name_alias = "会话数检查"
   module_name = "yasdb_check"
@@ -581,6 +637,7 @@
   [metrics.column_alias]
     USER_SESSIONS = "用户会话数"
     BACKGROUND_SESSIONS = "系统会话数"
+    TOTAL_SESSIONS = "总会话数"
     MAX_SESSIONS = "最大会话数"
     SESSION_USAGE = "会话使用率(%)"
   [metrics.item_names]
@@ -597,6 +654,291 @@
       description = "当前会话占用率"
       suggestion = "会话使用率过高。请检查原因"
 
+
+[[metrics]]
+  name = "yasdb_share_pool"
+  name_alias = "共享池信息"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    TOTAL_SIZE = "总大小"
+    FREE_SIZE = "空闲大小"
+    USED_SIZE = "已使用大小"
+    USED_PERCENTAGE = "共享池使用率"
+
+[[metrics]]
+  name = "yasdb_vm_swap_rate"
+  name_alias = "VM转换率"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = "SELECT t1.SWAPPED_OUT_BLOCKS / t2.value AS RATE FROM ( SELECT SWAPPED_OUT_BLOCKS FROM v$vm ) t1, ( SELECT value FROM V$SYSSTAT WHERE NAME = 'VM ALLOC' ) t2;"
+  [metrics.column_alias]
+    RATE = "转换率"
+
+[[metrics]]
+  name = "yasdb_high_frequency_sql"
+  name_alias = "高频SQL"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = "select SQL_ID, SQL_TEXT, PLSQL_EXEC_TIME, EXECUTIONS from v$sql where EXECUTIONS >= 10000;"
+  column_order = ["SQL_ID", "PLSQL_EXEC_TIME", "EXECUTIONS", "SQL_TEXT"]
+  [metrics.column_alias]
+    PLSQL_EXEC_TIME = "PL / SQL执行时间（单位毫秒）"
+    EXECUTIONS = "执行次数"
+
+[[metrics]]
+  name = "yasdb_history_db_time"
+  name_alias = "数据库历史负载"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    DB_TIME_MS = "DB Time(ms)"
+
+[[metrics]]
+  name = "yasdb_history_buffer_hit_rate"
+  name_alias = "历史内存命中率"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    HIT_RATE = "历史内存命中率(%)"
+
+[[metrics]]
+  name = "yasdb_buffer_hit_rate"
+  name_alias = "内存池命中率"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = "select (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0)) - sum(decode(NAME, 'DISK READS', VALUE, 0))) / (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0))) * 100 AS HIT_RATE FROM v$sysstat;"
+  number_columns = ["HIT_RATE"]
+  [metrics.column_alias]
+    HIT_RATE = "当前命中率（%）"
+
+  [metrics.item_names]
+    HIT_RATE = "buffer_hit_rate"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "buffer_hit_rate < 80"
+      description = "内存池命中率"
+      suggestion = "内存池命中率过低，请检查原因"
+
+[[metrics]]
+  name = "yasdb_top_sql_by_cpu_time"
+  name_alias = "平均耗时 TOP10 SQL"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = '''SELECT round(CPU_TIME / 1000, 2) AS CPU_TIME, EXECUTIONS
+        , round(ELAPSED_TIME / 1000, 2) AS ALL_ELAPSED_TIME
+        , round(ELAPSED_TIME / 1000 / EXECUTIONS, 2) AS AVG_TIME
+        , to_char(LAST_ACTIVE_TIME, 'YYYY-MM-DD HH24:MI:SS') AS LAST_TIME, SQL_ID
+        , SQL_TEXT
+    FROM v$sqlarea
+    WHERE EXECUTIONS > 0
+    ORDER BY round(ELAPSED_TIME / 1000 / EXECUTIONS, 2) DESC
+    LIMIT 10;'''
+  column_order = ["CPU_TIME","EXECUTIONS","ALL_ELAPSED_TIME","AVG_TIME","LAST_TIME","SQL_ID","SQL_TEXT"]
+  [metrics.column_alias]
+    CPU_TIME = "CPU时间（s）"
+    EXECUTIONS = "执行次数"
+    ALL_ELAPSED_TIME = "总耗时（s）"
+    AVG_TIME = "平均耗时（s）"
+    LAST_TIME= "上次执行时间"
+    SQL_ID = "SQL ID"
+    SQL_TEXT = "SQL文本的前1000个字符"
+
+[[metrics]]
+  name = "yasdb_top_sql_by_buffer_gets"
+  name_alias = "从缓存区获取Buffer次数 TOP10 SQL"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = '''SELECT BUFFER_GETS, EXECUTIONS
+        , round(BUFFER_GETS / EXECUTIONS, 2) AS GETS_PER_EXEC
+        , round(ELAPSED_TIME / 1000, 2) AS ALL_ELAPSED_TIME
+        , to_char(LAST_ACTIVE_TIME, 'YYYY-MM-DD HH24:MI:SS') AS LAST_TIME, SQL_ID
+        , SQL_TEXT
+    FROM v$sqlarea
+    WHERE EXECUTIONS > 0
+    ORDER BY BUFFER_GETS DESC
+    LIMIT 10;'''
+  column_order = ["BUFFER_GETS","EXECUTIONS","GETS_PER_EXEC","ALL_ELAPSED_TIME","LAST_TIME","SQL_ID","SQL_TEXT"]
+  [metrics.column_alias]
+    BUFFER_GETS = "从缓存区获取Buffer的次数"
+    EXECUTIONS = "执行次数"
+    GETS_PER_EXEC = "平均每次执行从缓存区获取Buffer的次数"
+    ALL_ELAPSED_TIME = "总耗时（s）"
+    LAST_TIME= "上次执行时间"
+    SQL_ID = "SQL ID"
+    SQL_TEXT = "SQL文本的前1000个字符"
+
+
+[[metrics]]
+  name = "yasdb_top_sql_by_disk_reads"
+  name_alias = "磁盘读取次数 TOP10 SQL"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = '''SELECT DISK_READS, EXECUTIONS
+        , round(DISK_READS / EXECUTIONS, 2) AS READS_PER_EXEC
+        , round(ELAPSED_TIME / 1000, 2) AS ALL_ELAPSED_TIME
+        , to_char(LAST_ACTIVE_TIME, 'YYYY-MM-DD HH24:MI:SS') AS LAST_TIME, SQL_ID
+        , SQL_TEXT
+    FROM v$sqlarea
+    WHERE EXECUTIONS > 0
+    ORDER BY DISK_READS DESC
+    LIMIT 10;'''
+  column_order = ["DISK_READS","EXECUTIONS","READS_PER_EXEC","ALL_ELAPSED_TIME","LAST_TIME","SQL_ID","SQL_TEXT"]
+  [metrics.column_alias]
+    DISK_READS = "磁盘读取次数"
+    EXECUTIONS = "执行次数"
+    READS_PER_EXEC = "平均每次执行读取磁盘次数"
+    ALL_ELAPSED_TIME = "总耗时（s）"
+    LAST_TIME= "上次执行时间"
+    SQL_ID = "SQL ID"
+    SQL_TEXT = "SQL文本的前1000个字符"
+
+[[metrics]]
+  name = "yasdb_top_sql_by_parse_calls"
+  name_alias = "磁盘读取次数 TOP10 SQL"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = '''SELECT PARSE_CALLS, EXECUTIONS
+        , round(PARSE_CALLS / EXECUTIONS, 2) AS CALLS_PER_EXEC
+        , round(ELAPSED_TIME / 1000, 2) AS ALL_ELAPSED_TIME
+        , to_char(LAST_ACTIVE_TIME, 'YYYY-MM-DD HH24:MI:SS') AS LAST_TIME, SQL_ID
+        , SQL_TEXT
+    FROM v$sqlarea
+    WHERE EXECUTIONS > 0
+    ORDER BY round(ELAPSED_TIME / 1000 / EXECUTIONS, 2) DESC
+    LIMIT 10;'''
+  column_order = ["DISK_READS","EXECUTIONS","CALLS_PER_EXEC","ALL_ELAPSED_TIME","LAST_TIME","SQL_ID","SQL_TEXT"]
+  [metrics.column_alias]
+    PARSE_CALLS = "解析的次数"
+    EXECUTIONS = "执行次数"
+    CALLS_PER_EXEC = "平均每次执行解析的次数"
+    ALL_ELAPSED_TIME = "总耗时（s）"
+    LAST_TIME= "上次执行时间"
+    SQL_ID = "SQL ID"
+    SQL_TEXT = "SQL文本的前1000个字符"
+
+[[metrics]]
+  name = "host_huge_page"
+  name_alias = "标准大页"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    hugePageEnabled = "标准大页开启"
+
+  [metrics.item_names]
+    hugePageEnabled = "host_huge_page_enabled"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "host_huge_page_enabled == 'FALSE'"
+      description = "标准大页未开启"
+      suggestion = "对于内存操作非常频繁的业务，开启标准大页可以提高性能"
+
+
+[[metrics]]
+  name = "host_swap_memory"
+  name_alias = "Swap内存"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    swapMemoryEnabled = "Swap内存开启"
+
+  [metrics.item_names]
+    swapMemoryEnabled = "host_swap_memory_enabled"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "host_swap_memory_enabled == 'TRUE'"
+      description = "Swap内存开启"
+      suggestion = "由于磁盘访问速度较慢，与物理内存相比，Swap内存的访问速度较低。当系统频繁地使用Swap时，会导致IO负载增加，从而可能引起性能下降。"
+
+
+[[metrics]]
+  name = "yasdb_table_lock_wait"
+  name_alias = "锁等待"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = "select count(*) as TABLE_LOCK_WAIT_COUNT from v$lock where REQUEST in ('TS','TX');"
+  number_columns = ["TABLE_LOCK_WAIT_COUNT"]
+  [metrics.column_alias]
+    TABLE_LOCK_WAIT_COUNT = "表锁等待数量"
+
+  [metrics.item_names]
+    TABLE_LOCK_WAIT_COUNT = "table_lock_wait_count"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "table_lock_wait_count > 0"
+      description = "表锁等待数量"
+      suggestion = "当前存在表锁阻塞，请检查"
+
+[[metrics]]
+  name = "yasdb_row_lock_wait"
+  name_alias = "行锁等待"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = "select count(*) as ROW_LOCK_WAIT_COUNT from v$lock where REQUEST in ('ROW');"
+  number_columns = ["ROW_LOCK_WAIT_COUNT"]
+  [metrics.column_alias]
+    ROW_LOCK_WAIT_COUNT = "行锁等待数量"
+
+  [metrics.item_names]
+    ROW_LOCK_WAIT_COUNT = "row_lock_wait_count"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "row_lock_wait_count > 0"
+      description = "行锁等待"
+      suggestion = "当前存在行锁阻塞，请检查"
+
+[[metrics]]
+  name = "yasdb_long_running_transaction"
+  name_alias = "长事务"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  sql = "select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE > sysdate - 3 / 24 and t.SID = s.SID;"
+  column_order = ["XID","START_DATE","STATUS","RESIDUAL","USERNAME","SID","USED_UBLK"]
+  number_columns = ["XID"]
+  labels = ["XID"]
+  [metrics.column_alias]
+    XID = "事务全局ID"
+    START_DATE = "事务开始时间"
+    STATUS = "事务状态"
+    RESIDUAL = "事务是否在后台线程等待回滚"
+    USERNAME = "所属用户"
+    SID = "该事务绑定的会话ID"
+    USED_UBLK = "事务使用的 UNDO Block 数量"
+
+  [metrics.item_names]
+    XID = "long_running_transaction_xid"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "long_running_transaction_xid != 0"
+      description = "长事务的全局ID"
+      suggestion = "当前存在超过3个小时的长事务，长事务可能降低数据库并发能力"
 
 [[metrics]]
   name = "yasdb_object_count"
@@ -636,6 +978,312 @@
     TABLESPACE_NAME = "表空间名称"
     TABLESPACE_OBJECT_COUNT = "表空间拥有对象数"
 
+[[metrics]]
+  name = "yasdb_invalid_object"
+  name_alias = "失效对象列表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  sql = "select OBJECT_ID, OWNER, OBJECT_NAME, OBJECT_TYPE, STATUS from dba_objects where STATUS = 'INVALID';"
+  column_order = ["OWNER","OBJECT_NAME","OBJECT_TYPE","STATUS"]
+  number_columns = ["OBJECT_ID"]
+  labels = ["OWNER", "OBJECT_ID", "OBJECT_NAME"]
+  [metrics.column_alias]
+    OBJECT_ID = "对象ID"
+    OWNER = "对象所属用户"
+    OBJECT_NAME = "对象名称"
+    OBJECT_TYPE = "对象类型"
+    STATUS = "对象状态"
+
+  [metrics.item_names]
+    OBJECT_ID = "invalid_object_id"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "invalid_object_id != 0"
+      description = "失效对象ID"
+      suggestion = "当前存在失效对象，可能影响业务运行"
+
+[[metrics]]
+  name = "yasdb_invisible_index"
+  name_alias = "不可见索引列表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  sql = "select OWNER,INDEX_NAME,VISIBILITY from dba_indexes where VISIBILITY !='VISIBLE';"
+  column_order = ["OWNER","INDEX_NAME","VISIBILITY"]
+  labels = ["OWNER", "INDEX_NAME"]
+  [metrics.column_alias]
+    OWNER = "索引所属用户"
+    INDEX_NAME = "索引名称"
+    VISIBILITY = "索引可见性"
+
+  [metrics.item_names]
+    INDEX_NAME = "invisible_index_name"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.info]]
+      expression = "invisible_index_name != ''"
+      description = "不可见索引名称"
+      suggestion = "当前存在不可见索引，需检查判断是否需要该对象"
+
+[[metrics]]
+  name = "yasdb_disabled_constraint"
+  name_alias = "不可用约束列表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  sql = "select OWNER,CONSTRAINT_NAME,CONSTRAINT_TYPE,STATUS from dba_constraints where STATUS ='DISABLED';"
+  column_order = ["OWNER","CONSTRAINT_NAME","STATUS"]
+  labels = ["OWNER", "CONSTRAINT_NAME"]
+  [metrics.column_alias]
+    OWNER = "约束所属用户"
+    CONSTRAINT_NAME = "约束名称"
+    CONSTRAINT_TYPE = "约束类型"
+    STATUS = "约束状态"
+
+  [metrics.item_names]
+    CONSTRAINT_NAME = "disabled_constraint_name"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.info]]
+      expression = "disabled_constraint_name != ''"
+      description = "不可用约束名称"
+      suggestion = "当前存在不可用约束，请检查"
+
+[[metrics]]
+  name = "yasdb_table_with_too_much_columns"
+  name_alias = "字段过多的表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  sql = "select OWNER,TABLE_NAME,count(*) as COLUMN_COUNT from dba_tab_cols group by OWNER,TABLE_NAME having count(*)>80;"
+  column_order = ["OWNER","TABLE_NAME","COLUMN_COUNT"]
+  labels = ["OWNER", "TABLE_NAME"]
+  [metrics.column_alias]
+    OWNER = "表所属用户"
+    TABLE_NAME = "表名称"
+    COLUMN_COUNT = "字段的数量"
+
+  [metrics.item_names]
+    COLUMN_COUNT = "table_column_count"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.waring]]
+      expression = "table_column_count > 80"
+      description = "表的字段数量"
+      suggestion = "该表字段过多，容易存在冗余数据，可重新检查该表字段设计"
+
+[[metrics]]
+  name = "yasdb_table_with_too_much_indexes"
+  name_alias = "索引过多的表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  sql = "select TABLE_OWNER,TABLE_NAME,count(*) as INDEX_COUNT from dba_indexes group by TABLE_OWNER,TABLE_NAME having count(*) >8;"
+  column_order = ["TABLE_OWNER","TABLE_NAME","INDEX_COUNT"]
+  labels = ["TABLE_OWNER", "TABLE_NAME"]
+  [metrics.column_alias]
+    TABLE_OWNER = "表所属用户"
+    TABLE_NAME = "表名称"
+    INDEX_COUNT = "索引的数量"
+
+  [metrics.item_names]
+    INDEX_COUNT = "table_index_count"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.waring]]
+      expression = "table_index_count > 8"
+      description = "表的字段数量"
+      suggestion = "该表超过8个索引，可能影响数据插入效率"
+
+[[metrics]]
+  name = "yasdb_partitioned_table_without_partitioned_indexes"
+  name_alias = "没有分区索引的分区表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  sql = '''SELECT b.OWNER ,b.name,a.PARTITIONING_TYPE ,b.tab_cols
+    from
+    (SELECT owner,TABLE_NAME,PARTITIONING_TYPE FROM DBA_PART_TABLES) a,
+    (SELECT OWNER ,NAME ,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY COLUMN_POSITION) AS tab_cols FROM DBA_PART_KEY_COLUMNS WHERE OBJECT_TYPE ='TABLE' GROUP BY OWNER ,NAME ) b
+    WHERE a.OWNER = b.owner AND a.TABLE_NAME =b.name AND a.owner<>'SYS'
+    minus
+    (
+    WITH t1 AS
+    (
+    SELECT b.OWNER ,b.name,a.PARTITIONING_TYPE ,b.tab_cols
+    from
+    (SELECT owner,TABLE_NAME,PARTITIONING_TYPE FROM DBA_PART_TABLES) a,
+    (SELECT OWNER ,NAME ,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY COLUMN_POSITION) AS tab_cols FROM DBA_PART_KEY_COLUMNS WHERE OBJECT_TYPE ='TABLE' GROUP BY OWNER ,NAME ) b
+    WHERE a.OWNER = b.owner AND a.TABLE_NAME =b.name
+    ),
+    t2 AS
+    (
+    SELECT t2.INDEX_OWNER ,t2.INDEX_NAME,t2.TABLE_OWNER ,t2.TABLE_NAME,t2.ind_cols
+    FROM
+    (SELECT OWNER ,INDEX_NAME ,TABLE_OWNER ,TABLE_NAME FROM DBA_INDEXES WHERE PARTITIONED ='Y') t1,
+    (SELECT INDEX_OWNER ,INDEX_NAME,TABLE_OWNER ,TABLE_NAME,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY COLUMN_POSITION) AS ind_cols
+    FROM DBA_IND_COLUMNS WHERE INDEX_OWNER <>'SYS1' GROUP BY INDEX_OWNER ,INDEX_NAME,TABLE_OWNER ,TABLE_NAME) t2
+    WHERE t1.OWNER=t2.INDEX_OWNER AND t1.INDEX_NAME=t2.INDEX_NAME AND t1.TABLE_OWNER=t2.TABLE_OWNER AND t1.TABLE_NAME=t2.TABLE_NAME
+    )
+    SELECT t1.OWNER ,t1.name,t1.PARTITIONING_TYPE ,t1.tab_cols
+    FROM t1,t2
+    WHERE t1.OWNER=t2.TABLE_OWNER AND t1.name=t2.TABLE_NAME AND t1.tab_cols=t2.ind_cols
+    );'''
+  column_order = ["OWNER","NAME","PARTITIONING_TYPE","TAB_COLS"]
+  labels = ["OWNER", "NAME"]
+  [metrics.column_alias]
+    OWNER = "表所属用户"
+    NAME = "表名称"
+    PARTITIONING_TYPE = "分区类型"
+    TAB_COLS = "分区键的列"
+
+  [metrics.item_names]
+    NAME = "partitioned_table_name_without_partitioned_indexes"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.waring]]
+      expression = "partitioned_table_name_without_partitioned_indexes != ''"
+      description = "没有分区索引的分区表"
+      suggestion = "该分区表无分区索引，在数据量过大的前提下，等值匹配可能成本较高，建议为较大的分区表创建对应索引。"
+
+[[metrics]]
+  name = "yasdb_table_with_row_size_exceeds_block_size"
+  name_alias = "行大小超过块大小的表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  labels = ["OWNER", "TABLE_NAME"]
+  [metrics.column_alias]
+    OWNER = "表所属用户"
+    TABLE_NAME = "表名称"
+
+  [metrics.item_names]
+    TABLE_NAME = "name_of_table_with_row_size_exceeds_block_size"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.waring]]
+      expression = "name_of_table_with_row_size_exceeds_block_size != ''"
+      description = "符合条件的表的名称"
+      suggestion = "当表的行大小大于数据库或表空间的块大小时，则每行需要两个IOs，建议使用更大的数据块来存储该表。您可能需要增加数据库块大小(重组练习)或将表移动到块大小更大的表空间(重新定位)。"
+
+[[metrics]]
+  name = "yasdb_partitioned_table_with_number_of_hash_partitions_is_not_a_power_of_two"
+  name_alias = "哈希分区数量不是2的幂的分区表"
+  module_name = "object_check"
+  default = true
+  enabled = true
+  sql = "select OWNER,TABLE_NAME,PARTITIONING_TYPE,PARTITION_COUNT from dba_part_tables where PARTITIONING_TYPE ='HASH' and abs(floor(log(2, PARTITION_COUNT)))!=log(2, PARTITION_COUNT) or log(2, PARTITION_COUNT)='Nan';"
+  column_order = ["OWNER", "TABLE_NAME","PARTITIONING_TYPE","PARTITION_COUNT"]
+  labels = ["OWNER", "TABLE_NAME"]
+  [metrics.column_alias]
+    OWNER = "表所属用户"
+    TABLE_NAME = "表名称"
+    PARTITIONING_TYPE = "分区类型"
+    PARTITION_COUNT = "分区个数"
+
+  [metrics.item_names]
+    TABLE_NAME = "name_of_partitioned_table_with_number_of_hash_partitions_is_not_a_power_of_two"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.waring]]
+      expression = "name_of_partitioned_table_with_number_of_hash_partitions_is_not_a_power_of_two != ''"
+      description = "符合条件的表的名称"
+      suggestion = "存在哈希分区数量不是2的幂的分区表，可能会导致数据分布不均匀、哈希碰撞、数据倾斜等问题，同时也会增加维护的复杂性。在设计哈希分区时，最好遵循2的幂次方的规则，以获得更好的性能和管理效果。"
+
+[[metrics]]
+  name = "yasdb_foreign_keys_with_implicit_data_type_conversion"
+  name_alias = "数据类型隐式转换的外键"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = '''WITH t1 AS
+    (SELECT b.OWNER ,b.CONSTRAINT_NAME ,b.TABLE_NAME ,b.COLUMN_NAME AS CHD_COL,b.posi,c.DATA_TYPE AS CHD_TYP FROM
+    (SELECT OWNER ,CONSTRAINT_NAME ,TABLE_NAME FROM DBA_CONSTRAINTS WHERE CONSTRAINT_TYPE ='R') a,
+    (SELECT b.OWNER ,b.CONSTRAINT_NAME ,b.TABLE_NAME ,b.COLUMN_NAME ,b."POSITION" AS posi FROM DBA_CONS_COLUMNS b) b ,
+    (SELECT OWNER ,TABLE_NAME ,COLUMN_NAME ,DATA_TYPE FROM DBA_TAB_COLUMNS) c
+    WHERE a.owner=b.OWNER AND a.CONSTRAINT_NAME=b.CONSTRAINT_NAME AND a.table_name=b.TABLE_NAME AND
+    b.OWNER =c.OWNER AND b.TABLE_NAME =c.TABLE_NAME AND b.COLUMN_NAME =c.COLUMN_NAME ),
+    t2 AS
+    (SELECT distinct A.FK_OWNER,A.FK_CON_NAME,A.CHD_TAB,B.PRT_OWNER,B.PRT_CON_NAME,B.PRT_TAB,B.COLUMN_NAME AS PRT_COL,C.DATA_TYPE AS PRT_TYP,B.posi FROM
+    (SELECT OWNER AS FK_OWNER, CONSTRAINT_NAME AS FK_CON_NAME,TABLE_NAME AS CHD_TAB,R_OWNER ,R_CONSTRAINT_NAME FROM DBA_CONSTRAINTS WHERE CONSTRAINT_TYPE ='R' ) a,
+    (SELECT owner AS PRT_OWNER, CONSTRAINT_NAME AS PRT_CON_NAME, TABLE_NAME AS PRT_TAB,COLUMN_NAME,"POSITION" AS posi FROM DBA_CONS_COLUMNS) b,
+    (SELECT OWNER ,TABLE_NAME ,COLUMN_NAME ,DATA_TYPE FROM DBA_TAB_COLUMNS) c
+    WHERE a.R_OWNER=b.PRT_OWNER AND a.R_CONSTRAINT_NAME=b.PRT_CON_NAME AND
+    B.PRT_OWNER = c.OWNER AND B.PRT_TAB=C.TABLE_NAME AND B.COLUMN_NAME=C.COLUMN_NAME)
+    SELECT t2.FK_OWNER,t2.FK_CON_NAME,t2.CHD_TAB,t1.CHD_COL,t1.CHD_TYP,t2.PRT_OWNER,t2.PRT_CON_NAME,t2.PRT_TAB,t2.PRT_COL,T2.PRT_TYP
+    FROM t1,t2
+    WHERE t1.OWNER=t2.FK_OWNER AND t1.CONSTRAINT_NAME=t2.FK_CON_NAME AND t1.TABLE_NAME=t2.CHD_TAB AND t1.posi=t2.posi AND t1.CHD_TYP<>t2.PRT_TYP;'''
+  column_order = ["FK_OWNER", "FK_CON_NAME","CHD_TAB","CHD_COL","CHD_TYP","PRT_OWNER","PRT_CON_NAME","PRT_TAB","PRT_COL","PRT_TYP"]
+  labels = ["FK_OWNER", "FK_CON_NAME"]
+  [metrics.column_alias]
+    FK_OWNER = "外键所属用户"
+    FK_CON_NAME = "外键约束名称"
+    CHD_TAB = "子表名称"
+    CHD_COL = "子表列名"
+    CHD_TYP = "子表列的数据类型"
+    PRT_OWNER = "父表所属用户"
+    PRT_CON_NAME = "父表约束名称"
+    PRT_TAB = "父表名称"
+    PRT_COL = "父表列名"
+    PRT_TYP = "父表列的数据类型"
+
+  [metrics.item_names]
+    FK_CON_NAME = "foreign_keys_with_implicit_data_type_conversion"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.waring]]
+      expression = "foreign_keys_with_implicit_data_type_conversion != ''"
+      description = "符合条件的外键名称"
+      suggestion = "当您连接父表(使用PK)和子表(使用FK)时，如果数据类型和/或长度不相同，性能将受到影响。虽然允许pk和fk不匹配本质上是一个关系设计错误，但它会工作的。但是优化器需要向解释计划中添加执行隐式数据类型转换的步骤——这意味着可能不会使用索引。当外键列存在隐式转换时，把这两个列进行连接，则无法使用索引，这可能导致查询性能差，引起性能降低。"
+
+[[metrics]]
+  name = "yasdb_foreign_keys_without_indexes"
+  name_alias = "无索引的子表外键"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = '''WITH t1 AS
+    (SELECT owner,CONSTRAINT_NAME,TABLE_NAME,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY posi) AS col_lst FROM
+    (SELECT b.OWNER ,b.CONSTRAINT_NAME ,b.TABLE_NAME ,b.COLUMN_NAME ,b.posi FROM
+    (SELECT OWNER ,CONSTRAINT_NAME ,TABLE_NAME FROM DBA_CONSTRAINTS WHERE CONSTRAINT_TYPE ='R') a,
+    (SELECT b.OWNER ,b.CONSTRAINT_NAME ,b.TABLE_NAME ,b.COLUMN_NAME ,b."POSITION" AS posi FROM ALL_CONS_COLUMNS b) b
+    WHERE a.owner=b.OWNER AND a.CONSTRAINT_NAME=b.CONSTRAINT_NAME AND a.table_name=b.TABLE_NAME
+    ) GROUP BY owner,CONSTRAINT_NAME,TABLE_NAME),
+    t2 AS
+    (SELECT INDEX_OWNER ,INDEX_NAME,TABLE_OWNER ,TABLE_NAME,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY COLUMN_POSITION) AS ind_lst
+    FROM DBA_IND_COLUMNS GROUP BY INDEX_OWNER ,INDEX_NAME,TABLE_OWNER ,TABLE_NAME)
+    SELECT DISTINCT t1.owner,t1.CONSTRAINT_NAME,t1.TABLE_NAME,t1.col_lst FROM t1,t2
+    WHERE t1.owner<>'SYS' AND t1.OWNER = t2.TABLE_OWNER AND t1.TABLE_NAME = t2.TABLE_NAME AND t1.col_lst <> t2.ind_lst;'''
+  column_order = ["OWNER", "TABLE_NAME","CONSTRAINT_NAME","COL_LST"]
+  labels = ["OWNER", "TABLE_NAME"]
+  [metrics.column_alias]
+    OWNER = "所属用户"
+    TABLE_NAME = "表名称"
+    CONSTRAINT_NAME = "约束名称"
+    COL_LST = "相关列"
+
+  [metrics.item_names]
+    CONSTRAINT_NAME = "foreign_keys_without_indexes"
+
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.waring]]
+      expression = "foreign_keys_without_indexes != ''"
+      description = "符合条件的外键名称"
+      suggestion = "当子表在外键上没有索引时，该子表上的某些DML操作将需要在父表上的某个级别上加锁，这可能会从根本上降低性能。"
 
 [[metrics]]
   name = "yasdb_index_blevel"

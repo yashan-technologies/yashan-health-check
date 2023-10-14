@@ -48,12 +48,18 @@
   [[modules.children]]
     name = "yasdb_backup_check"
     name_alias = "备份检查"
-    metric_names = []
+    metric_names = ["yasdb_backup_set", "yasdb_full_backup_set_count", "yasdb_backup_set_path"]
 
   [[modules.children]]
     name = "yasdb_workload_check"
     name_alias = "负载检查"
-    metric_names = ["yasdb_session"]
+    metric_names = ["yasdb_session", "yasdb_share_pool"]
+
+  [[modules.children]]
+    name = "yasdb_performance_analysis"
+    name_alias = "性能分析"
+
+    metric_names = ["yasdb_vm_swap_rate", "yasdb_top_sql_by_cpu_time", "yasdb_top_sql_by_buffer_gets", "yasdb_top_sql_by_disk_reads", "yasdb_top_sql_by_parse_calls","yasdb_high_frequency_sql", "yasdb_history_db_time","yasdb_history_buffer_hit_rate","yasdb_buffer_hit_rate","host_huge_page", "host_swap_memory", "yasdb_table_lock_wait", "yasdb_row_lock_wait", "yasdb_long_running_transaction"]
 
 [[modules]]
   name = "object_check"
@@ -67,17 +73,17 @@
   [[modules.children]]
     name = "object_status_check"
     name_alias = "对象状态检查"
-    metric_names = []
+    metric_names = ["yasdb_invalid_object", "yasdb_invisible_index", "yasdb_disabled_constraint"]
 
   [[modules.children]]
     name = "object_table_check"
     name_alias = "表"
-    metric_names = []
+    metric_names = ["yasdb_table_with_too_much_columns", "yasdb_table_with_too_much_indexes","yasdb_partitioned_table_without_partitioned_indexes","yasdb_table_with_row_size_exceeds_block_size","yasdb_partitioned_table_with_number_of_hash_partitions_is_not_a_power_of_two"]
 
   [[modules.children]]
     name = "object_constraint_check"
     name_alias = "约束"
-    metric_names = []
+    metric_names = ["yasdb_foreign_keys_without_indexes","yasdb_foreign_keys_with_implicit_data_type_conversion"]
 
   [[modules.children]]
     name = "object_index_check"
