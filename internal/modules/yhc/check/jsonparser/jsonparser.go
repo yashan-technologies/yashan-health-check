@@ -3,6 +3,7 @@ package jsonparser
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"yhc/defs/confdef"
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/define"
+	"yhc/log"
 	"yhc/utils/stringutil"
 
 	"git.yasdb.com/go/yaslog"
@@ -21,6 +23,8 @@ const (
 	_FILE_CONTROL = "此文档仅供崖山科技有限公司与最终用户审阅，不得向与此无关的个人或机构传阅或复制。"
 	_AUTHOR       = "Yashan Health Check"
 	_CHANGE_LOG   = "生成巡检报告"
+
+	_metric_name = "metricName"
 )
 
 // 将不同指标的数据合并到一个map中，只支持map之间的合并
@@ -40,32 +44,116 @@ var _mergeMetricMap = map[define.MetricName][]define.MetricName{
 	},
 }
 
-// 将不同指标的element放在一个指标下
-var _mergeElementMap = map[define.MetricName][]define.MetricName{
-	define.METRIC_HOST_INFO: {
-		define.METRIC_HOST_INFO,
-		define.METRIC_HOST_CPU_INFO,
-		define.METRIC_HOST_DISK_INFO,
-		define.METRIC_HOST_DISK_BLOCK_INFO,
-		define.METRIC_HOST_MEMORY_INFO,
-		define.METRIC_HOST_NETWORK_INFO,
+type merge struct {
+	parentModule  string
+	originMetrics []string
+	targetTitle   string
+}
+
+var _mergeOldMenuToNew []merge = []merge{
+	{
+		parentModule: string(define.MODULE_HOST_WORKLOAD),
+		targetTitle:  "CPU使用情况",
+		originMetrics: []string{
+			string(define.METRIC_HOST_CURRENT_CPU_USAGE),
+			string(define.METRIC_HOST_HISTORY_CPU_USAGE),
+		},
 	},
-	define.METRIC_YASDB_DATABASE: {
-		define.METRIC_YASDB_DATABASE,
-		define.METRIC_YASDB_FILE_PERMISSION,
+	{
+		parentModule: string(define.MODULE_HOST_WORKLOAD),
+		targetTitle:  "内存使用情况",
+		originMetrics: []string{
+			string(define.METRIC_HOST_CURRENT_MEMORY_USAGE),
+			string(define.METRIC_HOST_HISTORY_MEMORY_USAGE),
+		},
 	},
-	define.METRIC_YASDB_OBJECT_COUNT: {
-		define.METRIC_YASDB_OBJECT_COUNT,
-		define.METRIC_YASDB_OBJECT_TABLESPACE,
-		define.METRIC_YASDB_OBJECT_OWNER,
+	{
+		parentModule: string(define.MODULE_HOST_WORKLOAD),
+		targetTitle:  "网络使用情况",
+		originMetrics: []string{
+			string(define.METRIC_HOST_CURRENT_NETWORK_IO),
+			string(define.METRIC_HOST_HISTORY_NETWORK_IO),
+		},
 	},
-	define.METRIC_YASDB_REDO_LOG: {
-		define.METRIC_YASDB_REDO_LOG,
-		define.METRIC_YASDB_REDO_LOG_COUNT,
+	{
+		parentModule: string(define.MODULE_HOST_WORKLOAD),
+		targetTitle:  "磁盘使用情况",
+		originMetrics: []string{
+			string(define.METRIC_HOST_CURRENT_DISK_IO),
+			string(define.METRIC_HOST_HISTORY_DISK_IO),
+		},
 	},
-	define.METRIC_YASDB_BUFFER_HIT_RATE: {
-		define.METRIC_YASDB_BUFFER_HIT_RATE,
-		define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE,
+	{
+		parentModule: string(define.MODULE_OVERVIEW_HOST),
+		targetTitle:  "主机信息",
+		originMetrics: []string{
+			string(define.METRIC_HOST_INFO),
+			string(define.METRIC_HOST_CPU_INFO),
+			string(define.METRIC_HOST_DISK_INFO),
+			string(define.METRIC_HOST_DISK_BLOCK_INFO),
+			string(define.METRIC_HOST_MEMORY_INFO),
+			string(define.METRIC_HOST_NETWORK_INFO),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_OVERVIEW_YASDB),
+		targetTitle:  "数据库信息",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_DATABASE),
+			string(define.METRIC_YASDB_FILE_PERMISSION),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_OBJECT_NUMBER),
+		targetTitle:  "对象总数",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_OBJECT_COUNT),
+			string(define.METRIC_YASDB_OBJECT_TABLESPACE),
+			string(define.METRIC_YASDB_OBJECT_OWNER),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_LOG),
+		targetTitle:  "REDO日志分析",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_REDO_LOG),
+			string(define.METRIC_YASDB_REDO_LOG_COUNT),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_YASDB_PERFORMANCE),
+		targetTitle:  "内存池命中率",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_BUFFER_HIT_RATE),
+			string(define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_YASDB_PERFORMANCE),
+		targetTitle:  "TOP10 SQL",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_TOP_SQL_BY_CPU_TIME),
+			string(define.METRIC_YASDB_TOP_SQL_BY_BUFFER_GETS),
+			string(define.METRIC_YASDB_TOP_SQL_BY_DISK_READS),
+			string(define.METRIC_YASDB_TOP_SQL_BY_PARSE_CALLS),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_YASDB_PERFORMANCE),
+		targetTitle:  "性能配置检查",
+		originMetrics: []string{
+			string(define.METRIC_HOST_HUGE_PAGE),
+			string(define.METRIC_HOST_SWAP_MEMORY),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_LOG),
+		targetTitle:  "UNDO日志分析",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_UNDO_LOG_SIZE),
+			string(define.METRIC_YASDB_UNDO_LOG_TOTAL_BLOCK),
+			string(define.METRIC_YASDB_UNDO_LOG_RUNNING_TRANSACTIONS),
+		},
 	},
 }
 
@@ -105,20 +193,94 @@ func (j *JsonParser) Parse() *define.PandoraReport {
 		Version:     compiledef.GetAPPVersion(),
 	}
 	j.mergeMetrics()
-	for _, module := range confdef.GetModuleConf().Modules {
-		menu := &define.PandoraMenu{IsMenu: true, Title: confdef.GetModuleAlias(module.Name)}
+	j.addCheckSummary(report)
+	for i, module := range confdef.GetModuleConf().Modules {
+		menu := &define.PandoraMenu{IsMenu: true, Title: confdef.GetModuleAlias(module.Name), TitleEn: module.Name, MenuIndex: i}
 		report.ReportData = append(report.ReportData, menu)
 		j.dealYHCModule(module, menu)
 	}
 	j.mergeElements(report)
+	j.filterSingleElementTitle(report)
 	return report
+}
+
+func (j *JsonParser) addCheckSummary(report *define.PandoraReport) {
+	menu := &define.PandoraMenu{IsMenu: false, Title: "健康检查概览"}
+	j.checkSummary(report.Time, report.CostTime, menu)
+	j.moduleSummary(menu)
+	report.ReportData = append(report.ReportData, menu)
+}
+
+func (j *JsonParser) checkSummary(checkTime string, costTime int, menu *define.PandoraMenu) {
+	descAttr := &define.DescriptionAttributes{}
+	data := []*define.DescriptionData{
+		{Label: "健康检查开始时间", Value: checkTime},
+		{Label: "健康检查花费时间", Value: fmt.Sprintf("%d 秒", costTime)},
+		{Label: "检查项共计", Value: fmt.Sprintf("%d 个", len(j.metrics))},
+		{Label: "YashanDB Home目录", Value: j.base.DBInfo.YasdbHome},
+		{Label: "YashanDB Data目录", Value: j.base.DBInfo.YasdbData},
+		{Label: "YashanDB用户", Value: j.base.DBInfo.YasdbUser},
+	}
+	descAttr.Data = data
+	menu.Elements = append(menu.Elements, &define.PandoraElement{
+		ElementType:  define.ET_DESCRIPTION,
+		Attributes:   descAttr,
+		ElementTitle: "检查概览信息",
+	})
+}
+
+func (j *JsonParser) moduleSummary(menu *define.PandoraMenu) {
+
+	modules := []string{
+		string(define.MODULE_OVERVIEW),
+		string(define.MODULE_HOST),
+		string(define.MODULE_YASDB),
+		string(define.MODULE_OBJECT),
+		string(define.MODULE_SECURITY),
+		string(define.MODULE_LOG),
+		string(define.MODULE_CUSTOM),
+	}
+	for _, module := range modules {
+		element := j.genModuleElement(module)
+		menu.Elements = append(menu.Elements, element)
+	}
+}
+
+func (j *JsonParser) genModuleElement(module string) *define.PandoraElement {
+	element := &define.PandoraElement{
+		ElementType:  define.ET_TABLE,
+		ElementTitle: fmt.Sprintf("%s模块检查项列表", confdef.GetModuleAlias(module)),
+	}
+	res := make([]map[string]interface{}, 0)
+	for _, metric := range j.metrics {
+		if metric.ModuleName == module {
+			res = append(res, map[string]interface{}{
+				_metric_name: metric.NameAlias,
+			})
+		}
+	}
+	tabAttr := define.TableAttributes{
+		TableColumns: []*define.TableColumn{
+			{Title: "指标名称", DataIndex: _metric_name},
+		},
+		DataSource: res,
+	}
+	element.Attributes = tabAttr
+	return element
 }
 
 func (j *JsonParser) dealYHCModule(module *confdef.YHCModuleNode, menu *define.PandoraMenu) {
 	if module == nil {
 		return
 	}
-	for _, metricName := range module.MetricNames {
+	if len(module.Children) != 0 {
+		for i, childModule := range module.Children {
+			childMenu := &define.PandoraMenu{IsMenu: true, Title: childModule.NameAlias, TitleEn: childModule.Name, MenuIndex: i}
+			menu.Children = append(menu.Children, childMenu)
+			j.dealYHCModule(childModule, childMenu)
+		}
+	}
+	for i, metricName := range module.MetricNames {
 		result, ok := j.results[define.MetricName(metricName)]
 		if !ok {
 			continue
@@ -132,16 +294,33 @@ func (j *JsonParser) dealYHCModule(module *confdef.YHCModuleNode, menu *define.P
 			j.log.Errorf("failed to gen parse func of metric %s", metricName)
 			continue
 		}
-		childMenu := &define.PandoraMenu{Title: metric.NameAlias}
+		childMenu := &define.PandoraMenu{Title: metric.NameAlias, TitleEn: metricName, MenuIndex: len(module.Children) + i}
 		if err := fn(childMenu, result, metric); err != nil {
 			j.log.Errorf("failed to parse metric %s, err: %v", metricName, err)
 			continue
 		}
 		menu.Children = append(menu.Children, childMenu)
 	}
-	for _, child := range module.Children {
-		j.dealYHCModule(child, menu)
+}
+
+func (j *JsonParser) filterSingleElementTitle(report *define.PandoraReport) {
+	for _, menu := range report.ReportData {
+		j.filterElementTitle(menu)
 	}
+}
+
+func (j *JsonParser) filterElementTitle(menu *define.PandoraMenu) {
+	if menu == nil {
+		return
+	}
+	for _, child := range menu.Children {
+		j.filterElementTitle(child)
+	}
+	if len(menu.Elements) == 0 || len(menu.Elements) > 1 {
+		return
+	}
+	menu.Elements[0].ElementTitle = ""
+
 }
 
 func (j *JsonParser) genMetricParseFunc(metric *confdef.YHCMetric) (MetricParseFunc, error) {
@@ -535,84 +714,65 @@ func (j *JsonParser) mergeMetrics() {
 }
 
 func (j *JsonParser) mergeElements(report *define.PandoraReport) {
-	for to, from := range _mergeElementMap {
-		j.mergeElement(report, to, from)
-	}
-	j.cleanEmptyMenus(report.ReportData)
-}
-
-func (j *JsonParser) mergeElement(report *define.PandoraReport, to define.MetricName, from []define.MetricName) {
-	toMenu, _ := j.findMenuAndElements(report, to)
-	if toMenu == nil {
-		return
-	}
-	for _, m := range from {
-		if to == m {
+	log := log.Module.M("merge element")
+	for _, merge := range _mergeOldMenuToNew {
+		var parentMenu *define.PandoraMenu
+		for _, menu := range report.ReportData {
+			parentMenu = j.findMenu(menu, merge.parentModule)
+			if parentMenu != nil {
+				break
+			}
+		}
+		if parentMenu == nil {
+			log.Warningf("report unfound menu: %s", merge.parentModule)
 			continue
 		}
-		menu, elements := j.findMenuAndElements(report, m)
-		if len(elements) == 0 {
-			continue
+		childrenMenu := make([]*define.PandoraMenu, 0)
+		mergeMenu := &define.PandoraMenu{Title: merge.targetTitle}
+		oldChildrenMap := make(map[string]*define.PandoraMenu)
+		minMenuIndex := math.MaxInt
+		for _, origin := range merge.originMetrics {
+			menu := j.findMenu(parentMenu, origin)
+			if menu == nil {
+				log.Warnf("from %s unfound submenu %s", merge.parentModule, origin)
+				continue
+			}
+			if menu.MenuIndex < minMenuIndex {
+				minMenuIndex = menu.MenuIndex
+			}
+			oldChildrenMap[origin] = menu
 		}
-		toMenu.Elements = append(toMenu.Elements, elements...)
-		j.deleteElementsFromMenu(menu, m)
+		// 将准备合并的孩子元素添加到新菜单中
+		for _, childMenu := range parentMenu.Children {
+			if _, ok := oldChildrenMap[childMenu.TitleEn]; !ok {
+				childrenMenu = append(childrenMenu, childMenu)
+				continue
+			}
+			mergeMenu.Elements = append(mergeMenu.Elements, oldChildrenMap[childMenu.TitleEn].Elements...)
+		}
+		mergeMenu.MenuIndex = minMenuIndex
+		childrenMenu = append(childrenMenu, mergeMenu)
+		sort.Slice(childrenMenu, func(i, j int) bool {
+			return childrenMenu[i].MenuIndex < childrenMenu[j].MenuIndex
+		})
+		parentMenu.Children = childrenMenu
 	}
 }
 
-func (j *JsonParser) findMenuAndElements(report *define.PandoraReport, metricName define.MetricName) (targetMenu *define.PandoraMenu, elements []*define.PandoraElement) {
-	for _, menu := range report.ReportData {
-		targetMenu, elements = j.findElementsInMenu(menu, metricName)
-		if len(elements) > 0 {
-			break
-		}
-	}
-	return
-}
-
-func (j *JsonParser) findElementsInMenu(menu *define.PandoraMenu, metricName define.MetricName) (findMenu *define.PandoraMenu, findElements []*define.PandoraElement) {
+func (j *JsonParser) findMenu(menu *define.PandoraMenu, menuName string) *define.PandoraMenu {
 	if menu == nil {
-		return
+		return nil
 	}
-	for _, element := range menu.Elements {
-		if element.MetricName == string(metricName) {
-			findElements = append(findElements, element)
-			findMenu = menu
+	if menu.TitleEn == menuName {
+		return menu
+	}
+	for _, child := range menu.Children {
+		res := j.findMenu(child, menuName)
+		if res != nil {
+			return res
 		}
 	}
-	if len(findElements) > 0 {
-		return
-	}
-	for _, childMenu := range menu.Children {
-		findMenu, findElements = j.findElementsInMenu(childMenu, metricName)
-		if len(findElements) > 0 {
-			return
-		}
-	}
-	return
-}
-
-func (j *JsonParser) deleteElementsFromMenu(menu *define.PandoraMenu, metricName define.MetricName) {
-	var updatedElements []*define.PandoraElement
-	for _, element := range menu.Elements {
-		if element.MetricName != string(metricName) {
-			updatedElements = append(updatedElements, element)
-		}
-	}
-	menu.Elements = updatedElements
-}
-
-func (j *JsonParser) cleanEmptyMenus(menus []*define.PandoraMenu) []*define.PandoraMenu {
-	var cleanedMenus []*define.PandoraMenu
-	for _, menu := range menus {
-		if len(menu.Elements) == 0 && len(menu.Children) == 0 {
-			continue
-		}
-		menu.Children = j.cleanEmptyMenus(menu.Children)
-		if len(menu.Elements) > 0 || len(menu.Children) > 0 {
-			cleanedMenus = append(cleanedMenus, menu)
-		}
-	}
-	return cleanedMenus
+	return nil
 }
 
 func (j *JsonParser) getColumnAlias(metric *confdef.YHCMetric, columnName string) string {
