@@ -33,6 +33,7 @@ const (
 	KEY_YASDB_RUN_LOG_ERR = "errno"
 	KEY_YASDB_ALERT_LOG   = "alert"
 	KEY_YASDB_LOG         = "log"
+	KEY_YASDB_CONFIG      = "config"
 
 	NAME_YASDB_RUN_LOG   = "run.log"
 	NAME_YASDB_ALERT_LOG = "alert.log"

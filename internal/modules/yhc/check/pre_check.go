@@ -55,6 +55,11 @@ var (
 		define.METRIC_YASDB_SECURITY_AUDIT_FILE_SIZE:                         {},
 		define.METRIC_YASDB_TABLESPACE:                                       {},
 
+		define.METRIC_HOST_BIOS_INFO: {},
+		define.METRIC_HOST_FIREWALLD: {},
+		define.METRIC_HOST_IPTABLES:  {},
+		define.METRIC_YASDB_DATAFILE: {},
+
 		define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES: {},
 		define.METRIC_YASDB_RUN_LOG_ERROR:            {},
 		define.METRIC_YASDB_ALERT_LOG_ERROR:          {},
@@ -114,6 +119,10 @@ var (
 		define.METRIC_YASDB_PARTITIONED_TABLE_WITH_NUMBER_OF_HASH_PARTITIONS_IS_NOT_A_POWER_OF_TWO: checkDBAPrivileges,
 		define.METRIC_YASDB_FOREIGN_KEYS_WITHOUT_INDEXES:                                           checkDBAPrivileges,
 		define.METRIC_YASDB_FOREIGN_KEYS_WITH_IMPLICIT_DATA_TYPE_CONVERSION:                        checkDBAPrivileges,
+		define.METRIC_YASDB_DATAFILE:                                                               checkDBAPrivileges,
+		define.METRIC_HOST_FIREWALLD:                                                               checkFirewalld,
+		define.METRIC_HOST_BIOS_INFO:                                                               checkRootPermission,
+		define.METRIC_HOST_IPTABLES:                                                                checkRootPermission,
 	}
 
 	metricPermissionPathMap = map[string]getPathFunc{
@@ -227,6 +236,31 @@ func checkDmesg(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric
 		Name:        metric.NameAlias,
 		Description: "麒麟系统执行dmesg命令需要root权限",
 		Error:       errors.New("dmesg need root permission"),
+	}
+}
+
+func checkRootPermission(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	if userutil.IsCurrentUserRoot() {
+		return nil
+	}
+	return &define.NoNeedCheckMetric{
+		Name:        metric.NameAlias,
+		Description: "当前检查项需要root权限",
+		Error:       errors.New("current metric need root permission"),
+	}
+}
+
+func checkFirewalld(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	if userutil.IsCurrentUserRoot() {
+		return nil
+	}
+	if runtimedef.GetOSRelease().Id != osutil.UBUNTU_ID {
+		return nil
+	}
+	return &define.NoNeedCheckMetric{
+		Name:        metric.NameAlias,
+		Description: "Ubuntu系统检查防火墙状态需要root权限",
+		Error:       errors.New("ufw need root permission"),
 	}
 }
 
