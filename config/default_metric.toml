@@ -293,9 +293,9 @@
   default = true
   enabled = true
   [metrics.column_alias]
-    tps = "tps"
-    rdSec = "每秒读取数据量"
-    wrSec = "每秒写入数据量" 
+    tps = "历史tps"
+    rdSec = "历史每秒读取数据量"
+    wrSec = "历史每秒写入数据量" 
 
 
 [[metrics]]
@@ -305,9 +305,9 @@
   default = true
   enabled = true
   [metrics.column_alias]
-    tps = "tps"
-    rdSec = "每秒读取数据量"
-    wrSec = "每秒写入数据量" 
+    tps = "当前tps"
+    rdSec = "当前每秒读取数据量"
+    wrSec = "当前每秒写入数据量" 
 
 
 [[metrics]]
@@ -317,7 +317,7 @@
   default = true
   enabled = true
   [metrics.column_alias]
-    realMemUsed = "内存使用率"
+    realMemUsed = "历史内存使用率"
     used = "已使用内存"
 
 
@@ -328,7 +328,7 @@
   default = true
   enabled = true
   [metrics.column_alias]
-    realMemUsed = "内存使用率"
+    realMemUsed = "当前内存使用率"
     used = "已使用内存"
 
 
@@ -339,8 +339,8 @@
   default = true
   enabled = true
   [metrics.column_alias]
-    rxkB = "每秒接收数据量"
-    txkB = "每秒发送数据量"
+    rxkB = "历史每秒接收数据量"
+    txkB = "历史每秒发送数据量"
 
 
 [[metrics]]
@@ -350,8 +350,8 @@
   default = true
   enabled = true
   [metrics.column_alias]
-    rxkB = "每秒接收数据量"
-    txkB = "每秒发送数据量"
+    rxkB = "当前每秒接收数据量"
+    txkB = "当前每秒发送数据量"
 
 
 [[metrics]]
@@ -806,7 +806,7 @@
 
 [[metrics]]
   name = "yasdb_top_sql_by_parse_calls"
-  name_alias = "磁盘读取次数 TOP10 SQL"
+  name_alias = "磁盘解析次数 TOP10 SQL"
   module_name = "yasdb_check"
   default = true
   enabled = true

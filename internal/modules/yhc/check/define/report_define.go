@@ -9,6 +9,7 @@ const (
 	ET_TABLE       ElementType = "custom-table"
 	ET_CHART       ElementType = "custom-chart"
 	ET_DESCRIPTION ElementType = "custom-description"
+	ET_H3          ElementType = "h3"
 )
 
 const (
@@ -47,7 +48,9 @@ type PandoraMenu struct {
 	IsMenu    bool              `json:"isMenu,omitempty"`
 	IsChapter bool              `json:"isChapter,omitempty"`
 	Title     string            `json:"title,omitempty"`
+	TitleEn   string            `json:"-"`
 	Children  []*PandoraMenu    `json:"children,omitempty"`
+	MenuIndex int               `json:"menuIndex"`
 	Elements  []*PandoraElement `json:"elements,omitempty"`
 }
 
@@ -76,7 +79,7 @@ type AlertAttributes struct {
 
 type TableAttributes struct {
 	Title        string                   `json:"title,omitempty"`
-	DataSource   []map[string]interface{} `json:"dataSource,omitempty"`
+	DataSource   []map[string]interface{} `json:"dataSource"`
 	TableColumns []*TableColumn           `json:"columns,omitempty"`
 }
 

@@ -15,6 +15,7 @@ import (
 	checkhandler "yhc/internal/api/handler/yhcctlhandler/check"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+	"yhc/utils/jsonutil"
 	"yhc/utils/processutil"
 	"yhc/utils/stringutil"
 	"yhc/utils/timeutil"
@@ -39,6 +40,7 @@ func (c *CheckCmd) Run() error {
 	if err := c.validate(); err != nil {
 		return err
 	}
+	log.Controller.Debugf("module report: %s", jsonutil.ToJSONString(confdef.GetModuleConf()))
 	yasdb, modules := c.getViewModels()
 	StartTerminalView(modules, yasdb)
 	// globalExitCode will be fill after terminal view exit

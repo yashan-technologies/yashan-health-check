@@ -108,7 +108,7 @@
 [[modules]]
   name = "security_check"
   name_alias = "安全检查"
-
+  metric_names = ["yasdb_security_audit_cleanup_task","yasdb_security_audit_file_size"]
   [[modules.children]]
     name = "security_login_config"
     name_alias = "登录检查"
@@ -119,29 +119,10 @@
     name_alias = "用户与权限检查"
     metric_names = ["yasdb_security_user_no_open","yasdb_security_user_with_system_table_privileges","yasdb_security_user_with_dba_role","yasdb_security_user_all_privilege_or_system_privileges","yasdb_security_user_use_system_tablespace"]
 
-  [[modules.children]]
-    name = "security_audit_check"
-    name_alias = "审计日志分析"
-    metric_names = ["yasdb_security_audit_cleanup_task","yasdb_security_audit_file_size"]
-
 [[modules]]
   name = "log_analysis"
   name_alias = "日志分析"
-
-  [[modules.children]]
-    name = "log_run_analysis"
-    name_alias = "数据库变更"
-    metric_names = ["yasdb_run_log_database_changes"]
-
-  [[modules.children]]
-    name = "log_redo_analysis"
-    name_alias = "REDO日志分析"
-    metric_names = ["yasdb_redo_log", "yasdb_redo_log_count"]
-
-  [[modules.children]]
-    name = "log_undo_analysis"
-    name_alias = "UNDO日志分析"
-    metric_names = ["yasdb_undo_size","yasdb_total_undo_block","yasdb_transactions"]
+  metric_names = ["yasdb_database_change","yasdb_redo_log", "yasdb_redo_log_count","yasdb_undo_size","yasdb_total_undo_block","yasdb_transactions"]
 
   [[modules.children]]
     name = "log_error_analysis"
