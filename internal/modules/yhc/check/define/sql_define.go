@@ -64,38 +64,24 @@ const (
     ORDER BY round(ELAPSED_TIME / 1000 / EXECUTIONS, 2) DESC
     LIMIT 10;`
 	SQL_QUERY_HIGH_FREQUENCY_SQL = `select SQL_ID, SQL_TEXT, PLSQL_EXEC_TIME, EXECUTIONS from v$sql where EXECUTIONS >= 10000`
-	SQL_QUERY_HISTORY_DB_TIME    = `
-        WITH dbinfo AS (
-            SELECT DISTINCT dbid
-            FROM SYS.wRM$_database_instance
-            LIMIT 1
-        ), 
-        t1 AS (
-            SELECT snap_id, value
-            FROM SYS.wrh$_sysstat, dbinfo
-            WHERE SYS.wrh$_sysstat.dbid = dbinfo.dbid
-                AND stat_id = 604
-        ), 
-        t2 AS (
-            SELECT snap_id, begin_interval_time + (end_interval_time - begin_interval_time) / 2 AS snap_time
-            FROM SYS.wrm$_snapshot, dbinfo
-            WHERE SYS.wrm$_snapshot.dbid = dbinfo.dbid
-        ), 
-        t3 AS (
-            SELECT t2_1.snap_time AS prev_snap_time, t2_2.snap_time AS current_snap_time, t1_1.value AS prev_value, t1_2.value AS current_value
-            FROM t2 t2_1
-                JOIN t2 t2_2 ON t2_1.snap_id + 1 = t2_2.snap_id
-                JOIN t1 t1_1 ON t2_1.snap_id = t1_1.snap_id
-                JOIN t1 t1_2 ON t2_2.snap_id = t1_2.snap_id
-        ), 
-        t4 AS (
-            SELECT prev_snap_time + (current_snap_time - prev_snap_time) / 2 AS snap_time
-                , current_value - prev_value AS db_time_ms
-            FROM t3
-        )
-    SELECT to_char(t4.snap_time, 'YYYY-MM-DD HH24:MI:SS') AS snap_time, t4.db_time_ms
-    FROM t4
-    ORDER BY snap_time;`
+	SQL_QUERY_SNAP_DB_TIMES      = `
+    WITH dbinfo AS (
+        SELECT DISTINCT dbid
+        FROM SYS.wRM$_database_instance
+        LIMIT 1
+    ), 
+    t1 AS (
+        SELECT snap_id, value
+        FROM SYS.wrh$_sysstat, dbinfo
+        WHERE SYS.wrh$_sysstat.dbid = dbinfo.dbid
+            AND stat_id = 604
+    ), 
+    t2 AS (
+        SELECT snap_id, begin_interval_time + (end_interval_time - begin_interval_time) / 2 AS snap_time
+        FROM SYS.wrm$_snapshot, dbinfo
+        WHERE SYS.wrm$_snapshot.dbid = dbinfo.dbid
+    )
+    SELECT t1.value as db_times, to_char(t2.snap_time, 'YYYY-MM-DD HH24:MI:SS') as snap_time from t1,t2 where t1.snap_id = t2.snap_id and t2.snap_time >= TIMESTAMP('%s') AND t2.snap_time <= TIMESTAMP('%s');`
 	SQL_QUERY_HISTORY_BUFFER_HIT_RATE = `
     WITH dbinfo AS (
             SELECT DISTINCT dbid
@@ -137,6 +123,7 @@ const (
     SELECT to_char(t5.snap_time, 'YYYY-MM-DD HH24:MI:SS') AS snap_time, t4.hit_rate
     FROM t4
         JOIN t5 ON t4.snap_id = t5.snap_id
+    where t5.snap_time >= TIMESTAMP('%s') AND t5.snap_time <= TIMESTAMP('%s')
     ORDER BY t5.snap_time;`
 	SQL_QUERY_BUFFER_HIT_RATE          = `select (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0)) - sum(decode(NAME, 'DISK READS', VALUE, 0))) / (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0))) * 100 AS HIT_RATE FROM v$sysstat;`
 	SQL_QUERY_TABLE_LOCK_WAIT          = `select count(*) as TOTAL from v$lock lo where REQUEST in ('TS','TX');`

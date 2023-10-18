@@ -696,7 +696,7 @@
   default = true
   enabled = true
   [metrics.column_alias]
-    DB_TIME_MS = "DB Time(ms)"
+    DB_TIMES = "DB Time(ms)"
 
 [[metrics]]
   name = "yasdb_history_buffer_hit_rate"
