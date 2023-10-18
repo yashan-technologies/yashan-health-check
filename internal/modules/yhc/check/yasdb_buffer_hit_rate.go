@@ -1,6 +1,7 @@
 package check
 
 import (
+	"fmt"
 	"time"
 
 	"yhc/defs/confdef"
@@ -26,7 +27,11 @@ func (c *YHCChecker) GetYasdbHistoryBufferHitRate() (err error) {
 
 	logger := log.Module.M(string(define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE))
 	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
-	dbTimes, err := yasdb.QueryMultiRows(define.SQL_QUERY_HISTORY_BUFFER_HIT_RATE, confdef.GetYHCConf().SqlTimeout)
+	dbTimes, err := yasdb.QueryMultiRows(
+		fmt.Sprintf(define.SQL_QUERY_HISTORY_BUFFER_HIT_RATE,
+			c.formatFunc(c.base.Start),
+			c.formatFunc(c.base.End)),
+		confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
 		logger.Errorf("failed to get data with sql %s, err: %v", define.SQL_QUERY_HISTORY_BUFFER_HIT_RATE, err)
 		data.Error = err.Error()
