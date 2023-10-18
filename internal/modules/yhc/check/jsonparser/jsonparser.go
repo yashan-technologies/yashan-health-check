@@ -849,7 +849,7 @@ func (j *JsonParser) mergeMetric(to define.MetricName, from []define.MetricName)
 
 func (j *JsonParser) genCustomBashParseFunc(metric *confdef.YHCMetric) (MetricParseFunc, error) {
 	fn := func(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric) error {
-		if len(item.Error) == 0 {
+		if len(item.Error) != 0 {
 			return fmt.Errorf("failed to gen parse func because the metric %s check failed", metric.Name)
 		}
 		if err := j.parseCode(menu, item, metric); err != nil {
@@ -865,7 +865,7 @@ func (j *JsonParser) genCustomBashParseFunc(metric *confdef.YHCMetric) (MetricPa
 
 func (j *JsonParser) genCustomSqlParseFunc(metric *confdef.YHCMetric) (MetricParseFunc, error) {
 	fn := func(menu *define.PandoraMenu, item *define.YHCItem, metric *confdef.YHCMetric) error {
-		if len(item.Error) == 0 {
+		if len(item.Error) != 0 {
 			return fmt.Errorf("failed to gen parse func because the metric %s check failed", metric.Name)
 		}
 		if err := j.parseTable(menu, item, metric); err != nil {
