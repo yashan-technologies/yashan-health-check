@@ -1523,9 +1523,11 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select GRANTEE from DBA_TAB_PRIVS where OWNER='SYS' and TYPE='TABLE' and GRANTEE in (select username from dba_users);"
+  labels = ["TABLE_NAME"]
+  sql = "select GRANTEE , TABLE_NAME from DBA_TAB_PRIVS where OWNER='SYS' and TYPE='TABLE' and GRANTEE in (select username from dba_users);"
   [metrics.column_alias]
     GRANTEE = "被授权者名"
+    TABLE_NAME = "表名称"
   [metrics.item_names]
     GRANTEE = "yasdb_user_with_system_table"
   [metrics.alert_rules]
@@ -1586,7 +1588,7 @@
     USERNAME = "用户名称"
     DEFAULT_TABLESPACE = "默认表空间"
   [metrics.item_names]
-    GRANTEE = "yasdb_security_user_use_system_tablespace"
+    USERNAME = "yasdb_security_user_use_system_tablespace"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
