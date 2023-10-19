@@ -123,6 +123,10 @@ func (y *YashanDB) Query(query string, timeout int) ([]map[string]string, error)
 		}
 		mapValue := make(map[string]string)
 		for i, colName := range cols {
+			if columnData[i] == nil {
+				mapValue[colName] = ""
+				continue
+			}
 			mapValue[colName] = fmt.Sprint(columnData[i])
 		}
 		result = append(result, mapValue)
