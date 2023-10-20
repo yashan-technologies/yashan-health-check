@@ -1482,6 +1482,7 @@
   default = true
   enabled = true
   sql = "select PROFILE,RESOURCE_NAME ,RESOURCE_TYPE, LIMIT from DBA_PROFILES where PROFILE<>'DEFAULT' and RESOURCE_NAME='FAILED_LOGIN_ATTEMPTS' and LIMIT='UNLIMITED';"
+  labels = ["PROFILE"]
   [metrics.column_alias]
     PROFILE = "PROFILE名称"
     RESOURCE_NAME = "资源名称"

@@ -24,7 +24,8 @@ const (
 	_AUTHOR       = "Yashan Health Check"
 	_CHANGE_LOG   = "生成巡检报告"
 
-	_metric_name = "metricName"
+	_metric_name  = "metricName"
+	_alert_number = "alertNumber"
 )
 
 // 将不同指标的数据合并到一个map中，只支持map之间的合并
@@ -213,10 +214,17 @@ func (j *JsonParser) addCheckSummary(report *define.PandoraReport) {
 
 func (j *JsonParser) checkSummary(checkTime string, costTime int, menu *define.PandoraMenu) {
 	descAttr := &define.DescriptionAttributes{}
+	existAlertItems := 0
+	for _, item := range j.results {
+		if len(item.Alerts) != 0 {
+			existAlertItems += 1
+		}
+	}
 	data := []*define.DescriptionData{
 		{Label: "健康检查开始时间", Value: checkTime},
 		{Label: "健康检查花费时间", Value: fmt.Sprintf("%d 秒", costTime)},
 		{Label: "检查项共计", Value: fmt.Sprintf("%d 个", len(j.metrics))},
+		{Label: "存在告警的检查项", Value: fmt.Sprintf("%d 个", existAlertItems)},
 		{Label: "YashanDB Home目录", Value: j.base.DBInfo.YasdbHome},
 		{Label: "YashanDB Data目录", Value: j.base.DBInfo.YasdbData},
 		{Label: "YashanDB用户", Value: j.base.DBInfo.YasdbUser},
@@ -254,14 +262,25 @@ func (j *JsonParser) genModuleElement(module string) *define.PandoraElement {
 	res := make([]map[string]interface{}, 0)
 	for _, metric := range j.metrics {
 		if metric.ModuleName == module {
-			res = append(res, map[string]interface{}{
-				_metric_name: metric.NameAlias,
-			})
+			itemResult, ok := j.results[define.MetricName(metric.Name)]
+			if !ok {
+				continue
+			}
+			alertCount := 0
+			for _, alerts := range itemResult.Alerts {
+				alertCount += len(alerts)
+			}
+			data := map[string]interface{}{
+				_metric_name:  metric.NameAlias,
+				_alert_number: alertCount,
+			}
+			res = append(res, data)
 		}
 	}
 	tabAttr := define.TableAttributes{
 		TableColumns: []*define.TableColumn{
 			{Title: "指标名称", DataIndex: _metric_name},
+			{Title: "告警数量", DataIndex: _alert_number},
 		},
 		DataSource: res,
 	}
