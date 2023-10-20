@@ -1603,17 +1603,22 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select count(*) as AUDIT_CLEANUP_COUNT from DBA_AUDIT_MGMT_LAST_ARCH_TS;"
-  number_columns = ["AUDIT_CLEANUP_COUNT"]
-  labels = ["AUDIT_CLEANUP_COUNT"]
+  sql = "select AUDIT_JOB.COUNT AS AUDIT_JOB_CLEAN_JOB, AUDIT_CLEAN_TIME.COUNT AS AUDIT_CLEAN_TIME_COUNT , AUDIT_RECORD.COUNT AS AUDIT_RECORD_COUNT from (SELECT COUNT(*) AS COUNT FROM DBA_AUDIT_MGMT_CLEANUP_JOBS) AS AUDIT_JOB, (select count(*) AS COUNT from DBA_AUDIT_MGMT_LAST_ARCH_TS) AS AUDIT_CLEAN_TIME , (select count(*) AS COUNT from UNIFIED_AUDIT_TRAIL) AS AUDIT_RECORD;"
+  number_columns = ["AUDIT_JOB_CLEAN_JOB","AUDIT_CLEAN_TIME_COUNT","AUDIT_RECORD_COUNT"]
+  column_order = ["AUDIT_JOB_CLEAN_JOB","AUDIT_CLEAN_TIME_COUNT","AUDIT_RECORD_COUNT"]
   [metrics.column_alias]
     AUDIT_CLEANUP_COUNT = "审计日志清理次数"
+    AUDIT_CLEAN_TIME_COUNT = "审计日志时间数量"
+    AUDIT_RECORD_COUNT = "审计日志数量"
+
   [metrics.item_names]
     AUDIT_CLEANUP_COUNT = "yasdb_audit_cleanup_task_count"
+    AUDIT_CLEAN_TIME_COUNT = "yasdb_audit_cleanup_time_count"
+    AUDIT_RECORD_COUNT = "yasdb_audit_record_count"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_audit_cleanup_task_count == 0"
+      expression = "(yasdb_audit_cleanup_task_count == 0)||( yasdb_audit_cleanup_time_count == 0 ) || (yasdb_audit_record_count != 0)"
       description = "未定时清理审计日志"
       suggestion = "未定时清理审计日志，请添加审计清理任务"
 
@@ -1624,11 +1629,11 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like '%AUD$%';"
+  sql = "select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like '%AUD$%' and SEGMENT_TYPE = 'TABLE';"
   number_columns = ["SIZE_GB"]
   [metrics.column_alias]
     SEGMENT_NAME = "段名称"
-    SIZE_GB = "大小"
+    SIZE_GB = "大小(GB)"
 
 
 [[metrics]]
