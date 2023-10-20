@@ -1477,7 +1477,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select PROFILE,RESOURCE_NAME ,RESOURCE_TYPE, LIMIT from DBA_PROFILES where PROFILE<>'DEFAULT' and RESOURCE_NAME='FAILED_LOGIN_ATTEMPTS' and LIMIT<>'UNLIMITED';"
+  sql = "select PROFILE,RESOURCE_NAME ,RESOURCE_TYPE, LIMIT from DBA_PROFILES where PROFILE<>'DEFAULT' and RESOURCE_NAME='FAILED_LOGIN_ATTEMPTS' and LIMIT='UNLIMITED';"
   [metrics.column_alias]
     PROFILE = "PROFILE名称"
     RESOURCE_NAME = "资源名称"
@@ -1488,7 +1488,7 @@
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_maximum_login_limit != 'UNLIMITED'"
+      expression = "yasdb_maximum_login_limit == 'UNLIMITED'"
       description = "未限制用户登录尝试次数"
       suggestion = "建议限制用户尝试登录次数，防止暴力破解密码（应用系统账户谨慎设置尝试登录次数）"
 
@@ -1618,7 +1618,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like 'AUD$';"
+  sql = "select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like '%AUD$%';"
   number_columns = ["SIZE_GB"]
   [metrics.column_alias]
     SEGMENT_NAME = "段名称"
