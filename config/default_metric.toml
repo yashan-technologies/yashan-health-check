@@ -921,7 +921,7 @@
   module_name = "yasdb_check"
   default = true
   enabled = true
-  sql = "select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE > sysdate - 3 / 24 and t.SID = s.SID;"
+  sql = "select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE < sysdate - 3 / 24 and t.SID = s.SID;"
   column_order = ["XID","START_DATE","STATUS","RESIDUAL","USERNAME","SID","USED_UBLK"]
   number_columns = ["XID"]
   labels = ["XID"]
@@ -930,6 +930,7 @@
     START_DATE = "事务开始时间"
     STATUS = "事务状态"
     RESIDUAL = "事务是否在后台线程等待回滚"
+
     USERNAME = "所属用户"
     SID = "该事务绑定的会话ID"
     USED_UBLK = "事务使用的 UNDO Block 数量"
