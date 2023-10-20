@@ -532,6 +532,10 @@ func (c *YHCChecker) convertSqlData(metric *confdef.YHCMetric, data map[string]s
 			log.Debugf("column %s not found, skip", col)
 			continue
 		}
+		if len(value) == 0 {
+			res[col] = 0
+			continue
+		}
 		f, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			log.Errorf("failed to parse column %s to float64, value: %s, metric: %s, err: %v", col, value, metric.Name, err)
