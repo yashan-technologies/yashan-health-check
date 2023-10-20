@@ -1,3 +1,7 @@
+# this file records default metrics in yhc, you'd better not modify this file, if you want to add some custom metrics, you should write it in 'custom_metric.toml'
+# you cannot modify some fields of default metric, especially 'name' and 'default'.
+# if necessary, you can modify fields like column_alias to control the generated results of word and html.
+# please refer to the product documentation to learn how to modify the default metrics.
 [[metrics]]
   name = "host_info"
   name_alias = "主机信息"

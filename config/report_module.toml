@@ -136,9 +136,22 @@
   [[modules.children]]
     name = "custom_check_bash"
     name_alias = "自定义BASH指标"
-    metric_names = []
 
   [[modules.children]]
     name = "custom_check_sql"
     name_alias = "自定义SQL指标"
-    metric_names = []
+
+# to make the custom metrics take effect, please add the metrics to the corresponding module. just like the followings:
+#[[modules]]
+#  name = "custom_check"
+#  name_alias = "自定义检查"
+
+# [[modules.children]]
+#    name = "custom_check_bash"
+#    name_alias = "自定义BASH指标"
+#    metric_names = ["bash_test"] # add your 'bash_test' metric in the module 'custom_check'
+
+#  [[modules.children]]
+#    name = "custom_check_sql"
+#    name_alias = "自定义SQL指标"
+#    metric_names = ["sql_test"] # add your 'sql_test' metric in the module 'custom_check'
