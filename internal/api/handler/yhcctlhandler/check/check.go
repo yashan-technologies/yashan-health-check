@@ -82,6 +82,7 @@ func (c *CheckHandler) check() {
 
 func (c *CheckHandler) afterCheck() error {
 	c.reporter.EndTime = time.Now()
+	fmt.Printf("Packing check results, please wait for a moment...\n\n")
 	c.reporter.Items, c.reporter.Report, c.reporter.FailedItem = c.getResults(c.reporter.BeginTime, c.reporter.EndTime)
 	path, err := c.reporter.GenResult()
 	if err != nil {
