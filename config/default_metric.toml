@@ -171,6 +171,17 @@
 
 
 [[metrics]]
+  name = "yasdb_deployment_architecture"
+  name_alias = "数据库部署形态"
+  module_name = "overview"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    NODE_NUM = "部署形态"
+
+
+[[metrics]]
   name = "yasdb_database"
   name_alias = "数据库信息"
   module_name = "overview"

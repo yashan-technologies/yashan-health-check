@@ -10,7 +10,7 @@
   [[modules.children]]
     name = "overview_yasdb"
     name_alias = "数据库概述"
-    metric_names = ["yasdb_instance", "yasdb_database", "yasdb_file_permission", "yasdb_listen_address"]
+    metric_names = ["yasdb_instance", "yasdb_database", "yasdb_file_permission", "yasdb_listen_address","yasdb_deployment_architecture"]
 
 [[modules]]
   name = "host_check"
