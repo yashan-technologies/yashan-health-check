@@ -128,7 +128,7 @@ const (
 	SQL_QUERY_BUFFER_HIT_RATE          = `select (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0)) - sum(decode(NAME, 'DISK READS', VALUE, 0))) / (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0))) * 100 AS HIT_RATE FROM v$sysstat;`
 	SQL_QUERY_TABLE_LOCK_WAIT          = `select count(*) as TOTAL from v$lock lo where REQUEST in ('TS','TX');`
 	SQL_QUERY_ROW_LOCK_WAIT            = `select count(*) as TOTAL from v$lock lo where REQUEST in ('ROW');`
-	SQL_QUERY_LONG_RUNNING_TRANSACTION = `select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE > sysdate - 3 / 24 and t.SID = s.SID;`
+	SQL_QUERY_LONG_RUNNING_TRANSACTION = `select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE < sysdate - 3 / 24 and t.SID = s.SID;`
 	SQL_QUERY_REPLICATION_STATUS       = "select connection, status, peer_role, peer_addr, transport_lag, apply_lag from v$replication_status;"
 	SQL_QUERY_PARAMETER                = "select name, value from v$parameter where value is not null;"
 	SQL_QUERY_TOTAL_OBJECT             = "select count(*) as total_count from dba_objects;"
