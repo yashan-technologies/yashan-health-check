@@ -1,1 +1,36 @@
-# you should add your custom metric in this file rather than 'default_metric.toml'
+# you should add your custom metrics in this file rather than 'default_metric.toml'
+# you can refer to the product documentation to learn how to add custom metrics
+# there are some examples
+# in order for the custom metrics to take effect, the 'report_module.toml' file also needs to be modified.
+
+#[[metrics]]
+#  name = "sql_test"
+#  name_alias = "测试sql"
+#  module_name = "custom_check"
+#  enabled = true
+#  sql = "select * from v$instance;"
+#  metric_type = "sql"
+#  [metrics.column_alias] 
+#    STATUS = "实例状态" # key is table field in upper case, value is alias of table field
+#    VERSION = "版本"
+#    STARTUP_TIME = "启动时间"
+#    HOST_NAME = "主机时间"
+#    DATA_HOME = "数据文件路径"
+#  column_order = ["STATUS","VERSION","STARTUP_TIME","HOST_NAME","DATA_HOME"] # you can use column_order to control the order of table field in word or html
+#  [metrics.item_names] # you can write you submetric in this field, these submetric can be used to gen alert
+#    INSTANCE_STATUS = "instance_status"
+#  [metrics.alert_rules] # you can add you alert rules in this field
+#    [[metrics.alert_rules.critical]]
+#      expression = "instance_status != 'OPEN'"
+#      description = "实例状态异常"
+#      suggestion = "建议检查实例状态"
+
+#[[metrics]]
+#  name = "bash_test"
+#  name_alias = "测试bash"
+#  module_name = "custom_check"
+#  enabled = true
+#  command = "uname -a"
+#  metric_type = "bash"
+
+

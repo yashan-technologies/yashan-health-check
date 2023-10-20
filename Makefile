@@ -44,7 +44,7 @@ SCRIPTS_YASDB_GO=$(BUILD_PATH)/yasdb-go
 SCRIPTS_FILES=$(SCRIPTS_YASDB_GO)
 
 DIR_TO_MAKE=$(BIN_PATH) $(LOG_PATH) $(RESULTS_PATH) $(DOCS_PATH) $(HTML_PATH)
-FILE_TO_COPY=./config ./scripts ./static
+FILE_TO_COPY=./config ./scripts
 
 WORD_GENNER_PATH=./wordgenner
 WORD_GENNER_DIST=$(WORD_GENNER_PATH)/dist/wordgenner
