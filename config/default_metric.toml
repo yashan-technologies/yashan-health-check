@@ -1402,7 +1402,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "SELECT SEQUENCE_OWNER ,SEQUENCE_NAME ,MIN_VALUE / MAX_VALUE * 100 as USED_RATE FROM DBA_SEQUENCES ds WHERE MIN_VALUE / MAX_VALUE > 7/10;"
+  sql = "SELECT SEQUENCE_OWNER ,SEQUENCE_NAME ,LAST_NUMBER / MAX_VALUE * 100 as USED_RATE FROM DBA_SEQUENCES ds WHERE LAST_NUMBER / MAX_VALUE > 7/10;"
   number_columns = ["USED_RATE"]
   [metrics.column_alias]
     SEQUENCE_OWNER = "序列用户"
