@@ -57,6 +57,7 @@ type ModuleName string
 const (
 	METRIC_YASDB_INSTANCE                                                               MetricName = "yasdb_instance"
 	METRIC_YASDB_DATABASE                                                               MetricName = "yasdb_database"
+	METRIC_YASDB_DEPLOYMENT_ARCHITECTURE                                                MetricName = "yasdb_deployment_architecture"
 	METRIC_YASDB_FILE_PERMISSION                                                        MetricName = "yasdb_file_permission"
 	METRIC_YASDB_LISTEN_ADDR                                                            MetricName = "yasdb_listen_address"
 	METRIC_YASDB_OS_AUTH                                                                MetricName = "yasdb_os_auth"

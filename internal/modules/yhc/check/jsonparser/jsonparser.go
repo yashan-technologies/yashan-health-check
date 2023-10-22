@@ -38,6 +38,7 @@ var _mergeMetricMap = map[define.MetricName][]define.MetricName{
 		define.METRIC_YASDB_DATABASE,
 		define.METRIC_YASDB_INSTANCE,
 		define.METRIC_YASDB_LISTEN_ADDR,
+		define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE,
 	},
 	define.METRIC_YASDB_TABLE_LOCK_WAIT: {
 		define.METRIC_YASDB_TABLE_LOCK_WAIT,
@@ -384,6 +385,7 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_YASDB_PARAMETER:                                                              j.parseMap,
 		define.METRIC_YASDB_TABLESPACE:                                                             j.parseTable,
 		define.METRIC_YASDB_CONTROLFILE_COUNT:                                                      j.parseMap,
+		define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE:                                                j.parseMap,
 		define.METRIC_YASDB_CONTROLFILE:                                                            j.parseTable,
 		define.METRIC_YASDB_DATAFILE:                                                               j.parseTable,
 		define.METRIC_YASDB_SESSION:                                                                j.parseMap,

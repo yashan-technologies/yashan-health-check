@@ -51,6 +51,7 @@ var MetricNameToWorkloadTypeMap = map[define.MetricName]define.WorkloadType{
 var SQLMap = map[define.MetricName]string{
 	define.METRIC_YASDB_DATAFILE:                                                               define.SQL_QUERY_DATAFILE,
 	define.METRIC_YASDB_CONTROLFILE_COUNT:                                                      define.SQL_QUERY_CONTROLFILE_COUNT,
+	define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE:                                                define.SQL_QUERY_DEPLYMENT_ARCHITECTURE,
 	define.METRIC_YASDB_DATABASE:                                                               define.SQL_QUERY_DATABASE,
 	define.METRIC_YASDB_INSTANCE:                                                               define.SQL_QUERY_INSTANCE,
 	define.METRIC_YASDB_INDEX_BLEVEL:                                                           define.SQL_QUERY_INDEX_BLEVEL,
@@ -212,6 +213,7 @@ func (c *YHCChecker) funcMap() (res map[define.MetricName]func() error) {
 		define.METRIC_YASDB_CONTROLFILE_COUNT:                                                      c.GetYasdbControlFileCount,
 		define.METRIC_YASDB_DATAFILE:                                                               c.GetYasdbDataFile,
 		define.METRIC_YASDB_DATABASE:                                                               c.GetYasdbDatabase,
+		define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE:                                                c.GetYasdbDeploymentArchitecture,
 		define.METRIC_YASDB_FILE_PERMISSION:                                                        c.GetYasdbFilePermission,
 		define.METRIC_YASDB_INDEX_BLEVEL:                                                           c.GetYasdbIndexBlevel,
 		define.METRIC_YASDB_INDEX_COLUMN:                                                           c.GetYasdbIndexColumn,

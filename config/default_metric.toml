@@ -171,6 +171,17 @@
 
 
 [[metrics]]
+  name = "yasdb_deployment_architecture"
+  name_alias = "数据库部署形态"
+  module_name = "overview"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  [metrics.column_alias]
+    NODE_NUM = "部署形态"
+
+
+[[metrics]]
   name = "yasdb_database"
   name_alias = "数据库信息"
   module_name = "overview"
@@ -229,9 +240,12 @@
   default = true
   enabled = true
   labels = ["filePath"]
+  column_order = ["filePath","owner","group","permission"]
   [metrics.column_alias]
     filePath = "文件路径"
     permission = "文件权限"
+    owner = "所有者"
+    group = "所有组"
   [metrics.item_names]
     permission = "file_permission"
   [metrics.alert_rules]

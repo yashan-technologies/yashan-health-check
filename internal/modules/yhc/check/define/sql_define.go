@@ -14,6 +14,7 @@ const (
 	SQL_QUERY_INSTANCE                            = "select status as instance_status, version, startup_time from v$instance;"
 	SQL_QUERY_LISTEN_ADDR                         = `select VALUE as LISTEN_ADDR from v$parameter where name = 'LISTEN_ADDR';`
 	SQL_QUERY_SESSION                             = `select type from v$session`
+	SQL_QUERY_DEPLYMENT_ARCHITECTURE              = "select count(*) as node_num from v$parameter where value is not null and name like '%ARCHIVE_DEST%';"
 	SQL_QUERY_SHARE_POOL                          = `select NAME, BYTES from v$sgastat WHERE POOL='SHARE POOL';`
 	SQL_QUERY_TABLESPACE                          = `SELECT TABLESPACE_NAME, CONTENTS, STATUS, ALLOCATION_TYPE , TOTAL_BYTES - USER_BYTES AS USED_BYTES, TOTAL_BYTES, (TOTAL_BYTES - USER_BYTES) / TOTAL_BYTES * 100 AS USED_RATE FROM SYS.DBA_TABLESPACES;`
 	SQL_QUERY_TABLESPACE_DATA_PERCENTAGE_FORMATER = `SELECT A.TABLESPACE_NAME, A.B1/B.B2*100 AS DATA_PERCENTAGE FROM 

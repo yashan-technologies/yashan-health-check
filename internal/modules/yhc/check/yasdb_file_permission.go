@@ -9,6 +9,8 @@ import (
 const (
 	KEY_FILE_PATH  = "filePath"
 	KEY_PERMISSION = "permission"
+	KEY_OWNER      = "owner"
+	KEY_GROUP      = "group"
 )
 
 func (c *YHCChecker) GetYasdbFilePermission() (err error) {
@@ -26,16 +28,26 @@ func (c *YHCChecker) GetYasdbFilePermission() (err error) {
 	}
 
 	res := []map[string]string{}
-	for filePath, fileMode := range permissionMap {
-		res = append(res, map[string]string{
-			KEY_FILE_PATH:  filePath,
-			KEY_PERMISSION: fileMode.String(),
-		})
-	}
 	for filePath, err := range errs {
 		res = append(res, map[string]string{
 			KEY_FILE_PATH:  filePath,
 			KEY_PERMISSION: err.Error(),
+		})
+	}
+	for filePath, fileMode := range permissionMap {
+		var keyOwner, keyGroup string
+		owner, err := fileutil.GetOwner(filePath)
+		if err != nil {
+			log.Errorf("failed to get owner of %s, err: %v", filePath, err)
+		} else {
+			keyOwner = owner.Username
+			keyGroup = owner.GroupName
+		}
+		res = append(res, map[string]string{
+			KEY_FILE_PATH:  filePath,
+			KEY_OWNER:      keyOwner,
+			KEY_GROUP:      keyGroup,
+			KEY_PERMISSION: fileMode.String(),
 		})
 	}
 	data.Details = res
