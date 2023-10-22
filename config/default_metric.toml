@@ -1683,7 +1683,7 @@
 
 [[metrics]]
   name = "yasdb_database_change"
-  name_alias = "数据库变更"
+  name_alias = "数据库变更日志"
   module_name = "log_analysis"
   metric_type = "bash"
   default = true
