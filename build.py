@@ -31,11 +31,20 @@ def get_parser():
 
 
 def set_build_argument(subparser):
-    sp = subparser.add_parser("build", help="build yhc", formatter_class=HelpFormatter)
-    sp.add_argument("--skip-check", action="store_true", default=False, help="build without checking code")
-    sp.add_argument("--skip-test", action="store_true", default=False, help="build without running unit test")
-    sp.add_argument("--format-goimports", action="store_true", default=False, help="format go imports")
-    sp.add_argument("-c", "--clean", action="store_true", default=False, help="clean before building")
+    sp = subparser.add_parser(
+        "build", help="build yhc", formatter_class=HelpFormatter)
+    sp.add_argument("--skip-check", action="store_true",
+                    default=False, help="build without checking code")
+    sp.add_argument("--skip-test", action="store_true",
+                    default=False, help="build without running unit test")
+    sp.add_argument("--format-goimports", action="store_true",
+                    default=False, help="format go imports")
+    sp.add_argument("-c", "--clean", action="store_true",
+                    default=False, help="clean before building")
+    sp.add_argument("--skip-build-template", action="store_true",
+                    default=False, help="skip build html template before build")
+    sp.add_argument("--skip-build-wordgenner", action="store_true",
+                    default=False, help="skip build word genner before build")
     sp.add_argument("-f",
                     "--force",
                     action="store_true",
@@ -45,18 +54,22 @@ def set_build_argument(subparser):
 
 
 def set_clean_argument(subparser):
-    sp = subparser.add_parser("clean", help="clean yhc", formatter_class=HelpFormatter)
+    sp = subparser.add_parser(
+        "clean", help="clean yhc", formatter_class=HelpFormatter)
     sp.set_defaults(func=clean)
 
 
 def set_check_argument(subparser):
-    sp = subparser.add_parser("check", help="check code", formatter_class=HelpFormatter)
-    sp.add_argument("--format-goimports", action="store_true", default=False, help="format go imports")
+    sp = subparser.add_parser(
+        "check", help="check code", formatter_class=HelpFormatter)
+    sp.add_argument("--format-goimports", action="store_true",
+                    default=False, help="format go imports")
     sp.set_defaults(func=check)
 
 
 def set_test_argument(subparser):
-    sp = subparser.add_parser("test", help="run unit test", formatter_class=HelpFormatter)
+    sp = subparser.add_parser(
+        "test", help="run unit test", formatter_class=HelpFormatter)
     sp.set_defaults(func=test)
 
 

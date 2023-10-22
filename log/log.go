@@ -30,6 +30,7 @@ const (
 	_LOG_MODULE_MODULE     = "module"
 	_LOG_MODULE_YASQL      = "yasql"
 	_LOG_MODULE_EXECER     = "execer"
+	_LOG_MODULE_UTIL       = "util"
 )
 
 // default option values
@@ -46,6 +47,8 @@ var (
 	Handler    yaslog.YasLog
 	Module     yaslog.YasLog
 	Yasql      yaslog.YasLog
+	Execer     yaslog.YasLog
+	Util       yaslog.YasLog
 	// TODO: more loggers
 )
 
@@ -96,8 +99,7 @@ func SetConsole(v bool) OptFunc {
 
 func DefaultLogOption() *Option {
 	return &Option{
-		level:           "DEBUG",
-		dir:             runtimedef.GetLogPath(),
+		level:           DEFAULT_LOG_LEVEL,
 		maxSizeBytes:    DEFAULT_MAX_SIZE_BYTES,
 		intervalSeconds: DEFAULT_INTERVAL_SECONDS,
 	}
@@ -120,6 +122,7 @@ func InitLogger(servername string, opt *Option) error {
 	Handler = logger.NewModule(_LOG_MODULE_HANDLER)
 	Module = logger.NewModule(_LOG_MODULE_MODULE)
 	Yasql = logger.NewModule(_LOG_MODULE_YASQL)
+	Util = logger.NewModule(_LOG_MODULE_UTIL)
 	logger.Infof("VERSION: %s", compiledef.GetAPPVersion())
 	return nil
 }
