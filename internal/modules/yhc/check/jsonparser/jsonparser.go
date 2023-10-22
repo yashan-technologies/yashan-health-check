@@ -412,7 +412,7 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_YASDB_SEQUENCE_NO_AVAILABLE:                                                  j.parseTable,
 		define.METRIC_YASDB_TASK_RUNNING:                                                           j.parseTable,
 		define.METRIC_YASDB_PACKAGE_NO_PACKAGE_PACKAGE_BODY:                                        j.parseTable,
-		define.METRIC_YASDB_SECURITY_LOGIN_PASSWORD_STRENGTH:                                       j.parseTable,
+		define.METRIC_YASDB_SECURITY_LOGIN_PASSWORD_STRENGTH:                                       j.parseMap,
 		define.METRIC_YASDB_SECURITY_LOGIN_MAXIMUM_LOGIN_ATTEMPTS:                                  j.parseTable,
 		define.METRIC_YASDB_SECURITY_USER_NO_OPEN:                                                  j.parseTable,
 		define.METRIC_YASDB_SECURITY_USER_WITH_SYSTEM_TABLE_PRIVILEGES:                             j.parseTable,

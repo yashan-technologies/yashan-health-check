@@ -3,7 +3,7 @@ package check
 import "yhc/internal/modules/yhc/check/define"
 
 func (c *YHCChecker) GetYasdbUserLoginPasswordStrength() (err error) {
-	data, err := c.queryMultiRows(define.METRIC_YASDB_SECURITY_LOGIN_PASSWORD_STRENGTH)
+	data, err := c.querySingleRow(define.METRIC_YASDB_SECURITY_LOGIN_PASSWORD_STRENGTH)
 	defer c.fillResult(data)
 	return
 }
