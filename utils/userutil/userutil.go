@@ -11,6 +11,7 @@ import (
 
 	"yhc/commons/constants"
 	"yhc/defs/bashdef"
+	"yhc/utils/stringutil"
 
 	"git.yasdb.com/go/yaslog"
 	"git.yasdb.com/go/yasutil/execer"
@@ -106,15 +107,20 @@ func GetRealUser() (*user.User, error) {
 
 func GetUserOfGroup(log yaslog.YasLog, groupName string) ([]string, error) {
 	execer := execer.NewExecer(log, execer.WithPrintResult())
-	cmd := fmt.Sprintf("%s %s | grep %s", bashdef.CMD_CAT, ETC_GROUP, groupName)
+	cmd := fmt.Sprintf("%s %s", bashdef.CMD_CAT, ETC_GROUP)
 	ret, stdout, stderr := execer.Exec(bashdef.CMD_BASH, "-c", cmd)
 	if ret != 0 {
 		return nil, errors.New(stderr)
 	}
-	stdout = strings.TrimSpace(stdout)
-	arr := strings.Split(stdout, ":")
-	if len(arr) < 4 {
-		return []string{}, nil
+	var users []string
+	groups := strings.Split(strings.TrimSpace(stdout), stringutil.STR_NEWLINE)
+	for _, group := range groups {
+		arr := strings.Split(group, stringutil.STR_COLON)
+		// just like:'YASDBA:x:1021:yashan,mongodb,oracle,db,ycm,ny,golang' or 'db:x:1026:'
+		if arr[0] != groupName || len(arr) < 4 || len(arr[3]) <= 0 {
+			continue
+		}
+		users = append(users, strings.Split(arr[3], stringutil.STR_COMMA)...)
 	}
-	return strings.Split(arr[3], ","), nil
+	return users, nil
 }
