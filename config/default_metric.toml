@@ -1651,7 +1651,7 @@
   column_order = ["AUDIT_JOB_CLEAN_JOB","AUDIT_CLEAN_TIME_COUNT","AUDIT_RECORD_COUNT"]
   [metrics.column_alias]
     AUDIT_CLEANUP_COUNT = "审计日志清理次数"
-    AUDIT_CLEAN_TIME_COUNT = "审计日志时间数量"
+    AUDIT_CLEAN_TIME_COUNT = "清理审计日志时间点数量"
     AUDIT_RECORD_COUNT = "审计日志数量"
     AUDIT_JOB_CLEAN_JOB = "审计清理任务"
 
