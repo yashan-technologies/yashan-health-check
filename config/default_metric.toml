@@ -1583,7 +1583,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select username,default_tablespace from dba_users;"
+  sql = "select username,default_tablespace from dba_users where default_tablespace = 'SYSTEM';"
   labels = ["DEFAULT_TABLESPACE"]
   [metrics.column_alias]
     USERNAME = "用户名称"
@@ -1707,17 +1707,18 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "SELECT  a.USED_UBLK * b.value /1024/1024/1044 AS SIZE_GB, XID from V$TRANSACTION as a ,(SELECT VALUE FROM V$PARAMETER WHERE NAME='DB_BLOCK_SIZE') AS B ;"
-  number_columns = ["SIZE_GB","XID"]
+  sql = "SELECT round(a.USED_UBLK * b.value /1024/1024,3)  AS SIZE_MB, XID from V$TRANSACTION as a ,(SELECT VALUE FROM V$PARAMETER WHERE NAME='DB_BLOCK_SIZE') AS B ;"
+  number_columns = ["SIZE_MB","XID"]
+  column_order = ["XID", "SIZE_MB"]
   labels = ["XID"]
   [metrics.column_alias]
-    SIZE_GB= "正在使用的UNDO空间大小"
+    SIZE_MB= "正在使用的UNDO空间大小 (MB)"
   [metrics.item_names]
-    SIZE_GB = "yasdb_current_using_undo_size"
+    SIZE_MB = "yasdb_current_using_undo_size"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_current_using_undo_size >= 10 && yasdb_current_using_undo_size < 30"
+      expression = "yasdb_current_using_undo_size >= 10240 && yasdb_current_using_undo_size < 30720"
       description = "UNDO空间使用超过10G"
       suggestion = "TP型系统，单个事务使用的UNDO不易太大，回滚时可能会导致数据库hang住，会话使用的undo空间超过10GB，建议检查该会话并及时提交，谨慎进行回滚，回滚可能影响系统正常运行"
 
@@ -1760,9 +1761,8 @@
   enabled = true
   sql = "SELECT XID, SID,XRMID,XEXT, XNODE,XSN,STATUS,RESIDUAL, USED_UBLK, FIRST_UBAFIL,FIRST_UBABLK,FIRST_UBAVER ,FIRST_UBAREC,LAST_UBAFIL,LAST_UBABLK, PTX_XID, START_DATE,ISOLATION_LEVEL from V$TRANSACTION ;"
   number_columns = ["XID","SID","XRMID","XEXT","XNODE","XSN","USED_UBLK","FIRST_UBAFIL","FIRST_UBABLK","FIRST_UBAVER","FIRST_UBAREC","LAST_UBAFIL","LAST_UBABLK","PTX_XID"]
+  column_order = ["XID","SID","XRMID","XEXT","XNODE","XSN","USED_UBLK","FIRST_UBAFIL","FIRST_UBABLK","FIRST_UBAVER","FIRST_UBAREC","LAST_UBAFIL","LAST_UBABLK","PTX_XID"]  
   [metrics.column_alias]
-    TOTAL_BLOCK= "正在使用的UNDO块数量"
-  [metrics.item_names]
     XID = "事务的全局ID"
     SID = "该事务绑定的会话ID"
     XRMID = "该事务的XRM ID"
