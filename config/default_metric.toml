@@ -1579,6 +1579,7 @@
   default = true
   enabled = true
   sql = "select GRANTEE from dba_role_privs where GRANTED_ROLE='DBA';"
+  labels = ["GRANTEE"]
   [metrics.column_alias]
     GRANTEE = "拥有DBA角色的用户"
   [metrics.item_names]
@@ -1598,6 +1599,7 @@
   default = true
   enabled = true
   sql = "select GRANTEE from dba_sys_privs where PRIVILEGE='ALL PRIVILEGES' AND GRANTEE IN ( SELECT USERNAME FROM DBA_USERS);"
+  labels = ["GRANTEE"]
   [metrics.column_alias]
     GRANTEE = "拥有ALL PRIVILEGE|SYSTEM的用户"
   [metrics.item_names]
