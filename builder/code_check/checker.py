@@ -12,6 +12,7 @@ _REQUIRES: List[str] = [
     'mypy',
     'yapf',
     'shellcheck',
+    'pyinstaller',
 ]
 
 _GO_FILES: List[str] = [

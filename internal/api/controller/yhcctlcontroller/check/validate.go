@@ -65,7 +65,7 @@ func (c *CheckCmd) validateRange() error {
 	if stringutil.IsEmpty(c.Range) {
 		return nil
 	}
-	if !regexpdef.RangeRegex.MatchString(c.Range) {
+	if !regexpdef.RangeRegexp.MatchString(c.Range) {
 		return errdef.NewErrYHCFlag(f_range, c.Range, _examplesRange, range_help)
 	}
 	minDuration, maxDuration, err := conf.GetMinAndMaxDuration()
@@ -95,7 +95,7 @@ func (c *CheckCmd) validateStartAndEnd() error {
 		err                        error
 	)
 	if !stringutil.IsEmpty(c.Start) {
-		if !regexpdef.TimeRegex.MatchString(c.Start) {
+		if !regexpdef.TimeRegexp.MatchString(c.Start) {
 			return errdef.NewErrYHCFlag(f_start, c.Start, _examplesTime, "")
 		}
 		start, err = timeutil.GetTimeDivBySepa(c.Start, stringutil.STR_HYPHEN)
@@ -109,7 +109,7 @@ func (c *CheckCmd) validateStartAndEnd() error {
 		startNotEmpty = true
 	}
 	if !stringutil.IsEmpty(c.End) {
-		if !regexpdef.TimeRegex.MatchString(c.End) {
+		if !regexpdef.TimeRegexp.MatchString(c.End) {
 			return errdef.NewErrYHCFlag(f_end, c.End, _examplesTime, "")
 		}
 		end, err = timeutil.GetTimeDivBySepa(c.End, stringutil.STR_HYPHEN)
@@ -140,7 +140,7 @@ func (c *CheckCmd) validateStartAndEnd() error {
 
 func (c *CheckCmd) validateOutput() error {
 	output := c.Output
-	if !regexpdef.PathRegex.Match([]byte(output)) {
+	if !regexpdef.PathRegexp.Match([]byte(output)) {
 		return errdef.ErrPathFormat
 	}
 	if !path.IsAbs(output) {

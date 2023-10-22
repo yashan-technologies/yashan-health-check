@@ -11,6 +11,19 @@ import (
 )
 
 func InitYHCConf(yhcConf string) error {
+	if err := initYHCConf(yhcConf); err != nil {
+		return err
+	}
+	if err := initMetricConf(_yhcConf.MetricPaths); err != nil {
+		return err
+	}
+	if err := initModuleConf(_yhcConf.DefaultModulePath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func initYHCConf(yhcConf string) error {
 	if !path.IsAbs(yhcConf) {
 		yhcConf = path.Join(runtimedef.GetYHCHome(), yhcConf)
 	}

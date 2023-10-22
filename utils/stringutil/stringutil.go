@@ -16,6 +16,9 @@ const (
 	STR_HASH          = "#"
 	STR_HTML_BR       = "<br>"
 	STR_QUESTION_MARK = "?"
+	STR_EQUAL_SIGN    = "="
+	STR_SINGEL_QUOTE  = "\""
+	STR_COLON         = ":"
 )
 
 // IsEmpty checks whether a string is empty.
