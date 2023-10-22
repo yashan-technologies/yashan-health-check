@@ -1304,23 +1304,23 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = '''WITH t1 AS
-    (SELECT owner,CONSTRAINT_NAME,TABLE_NAME,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY posi) AS col_lst FROM
-    (SELECT b.OWNER ,b.CONSTRAINT_NAME ,b.TABLE_NAME ,b.COLUMN_NAME ,b.posi FROM
-    (SELECT OWNER ,CONSTRAINT_NAME ,TABLE_NAME FROM DBA_CONSTRAINTS WHERE CONSTRAINT_TYPE ='R') a,
-    (SELECT b.OWNER ,b.CONSTRAINT_NAME ,b.TABLE_NAME ,b.COLUMN_NAME ,b."POSITION" AS posi FROM ALL_CONS_COLUMNS b) b
-    WHERE a.owner=b.OWNER AND a.CONSTRAINT_NAME=b.CONSTRAINT_NAME AND a.table_name=b.TABLE_NAME
-    ) GROUP BY owner,CONSTRAINT_NAME,TABLE_NAME),
+  sql = '''WITH t1 AS 
+    (SELECT fk_owner,CONSTRAINT_NAME,prt_owner,prt_tab,child_tab,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY posi) AS col_lst FROM
+    (SELECT a.OWNER as fk_owner ,a.CONSTRAINT_NAME ,b.OWNER as prt_owner ,b.prt_tab,a.child_tab ,b.COLUMN_NAME ,b.posi FROM
+    (SELECT OWNER,CONSTRAINT_NAME,R_OWNER ,R_CONSTRAINT_NAME ,TABLE_NAME as child_tab FROM DBA_CONSTRAINTS WHERE CONSTRAINT_TYPE ='R') a,
+    (SELECT b.OWNER ,b.CONSTRAINT_NAME ,b.TABLE_NAME as prt_tab,b.COLUMN_NAME ,b."POSITION" AS posi FROM DBA_CONS_COLUMNS b) b
+    WHERE a.R_CONSTRAINT_NAME=b.CONSTRAINT_NAME and a.R_OWNER=b.OWNER
+    ) GROUP BY fk_owner,CONSTRAINT_NAME,prt_owner,prt_tab,child_tab),
     t2 AS
     (SELECT INDEX_OWNER ,INDEX_NAME,TABLE_OWNER ,TABLE_NAME,LISTAGG(COLUMN_NAME,',') WITHIN group(ORDER BY COLUMN_POSITION) AS ind_lst
     FROM DBA_IND_COLUMNS GROUP BY INDEX_OWNER ,INDEX_NAME,TABLE_OWNER ,TABLE_NAME)
-    SELECT DISTINCT t1.owner,t1.CONSTRAINT_NAME,t1.TABLE_NAME,t1.col_lst FROM t1,t2
-    WHERE t1.owner<>'SYS' AND t1.OWNER = t2.TABLE_OWNER AND t1.TABLE_NAME = t2.TABLE_NAME AND t1.col_lst <> t2.ind_lst;'''
-  column_order = ["OWNER", "TABLE_NAME","CONSTRAINT_NAME","COL_LST"]
-  labels = ["OWNER", "TABLE_NAME"]
+    SELECT DISTINCT t1.prt_owner||'.'||t1.prt_tab as parent_tab,t1.CONSTRAINT_NAME,t1.fk_owner||'.'||t1.child_tab as child_tab,t1.col_lst FROM t1 left join t2
+    on t1.FK_OWNER = t2.TABLE_OWNER AND t1.child_tab = t2.TABLE_NAME AND t1.col_lst = t2.ind_lst where t2.TABLE_OWNER is null and t1.FK_OWNER<>'SYS';'''
+  column_order = ["PARENT_TAB", "CHILD_TAB","CONSTRAINT_NAME","COL_LST"]
+  labels = ["PARENT_TAB", "CHILD_TAB"]
   [metrics.column_alias]
-    OWNER = "所属用户"
-    TABLE_NAME = "表名称"
+    PARENT_TAB = "父表"
+    CHILD_TAB = "子表"
     CONSTRAINT_NAME = "约束名称"
     COL_LST = "相关列"
 
