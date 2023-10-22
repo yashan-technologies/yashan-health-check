@@ -59,7 +59,7 @@
     name = "yasdb_performance_analysis"
     name_alias = "性能分析"
 
-    metric_names = ["yasdb_vm_swap_rate", "yasdb_top_sql_by_cpu_time", "yasdb_top_sql_by_buffer_gets", "yasdb_top_sql_by_disk_reads", "yasdb_top_sql_by_parse_calls","yasdb_high_frequency_sql", "yasdb_history_db_time","yasdb_history_buffer_hit_rate","yasdb_buffer_hit_rate","host_huge_page", "host_swap_memory", "yasdb_table_lock_wait", "yasdb_row_lock_wait", "yasdb_long_running_transaction"]
+    metric_names = ["yasdb_vm_swap_rate", "yasdb_wait_event", "yasdb_top_sql_by_cpu_time", "yasdb_top_sql_by_buffer_gets", "yasdb_top_sql_by_disk_reads", "yasdb_top_sql_by_parse_calls","yasdb_high_frequency_sql", "yasdb_history_db_time","yasdb_history_buffer_hit_rate","yasdb_buffer_hit_rate","host_huge_page", "host_swap_memory", "yasdb_table_lock_wait", "yasdb_row_lock_wait", "yasdb_long_running_transaction"]
 
 [[modules]]
   name = "object_check"

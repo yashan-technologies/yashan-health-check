@@ -698,6 +698,22 @@
     RATE = "转换率"
 
 [[metrics]]
+  name = "yasdb_wait_event"
+  name_alias = "等待事件"
+  module_name = "yasdb_check"
+  default = true
+  enabled = true
+  column_order = ["EVENT","WAIT_CLASS","TOTAL_WAIT","AVG_WAIT","WAIT","DB_TIME"]
+  [metrics.column_alias]
+    EVENT = "等待事件名称"
+    WAIT_CLASS = "等待事件类别"
+    TOTAL_WAIT = "总等待事件(s)"
+    AVG_WAIT = "平均等待时间(ms)"
+    WAITS = "等待次数"
+    DB_TIME = "DB Time"
+
+
+[[metrics]]
   name = "yasdb_high_frequency_sql"
   name_alias = "高频SQL"
   module_name = "yasdb_check"
