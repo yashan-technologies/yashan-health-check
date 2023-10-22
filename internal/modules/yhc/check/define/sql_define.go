@@ -4,6 +4,8 @@ const (
 	SQL_QUERY_CONTROLFILE                         = "select  id, name, bytes/1024/1024 as MBytes from v$controlfile;"
 	SQL_QUERY_CONTROLFILE_COUNT                   = "select count(*) as total from v$controlfile;"
 	SQL_QUERY_DATAFILE                            = "select * from dba_data_files;"
+	SQL_QUERY_DB_ID                               = "SELECT DBID,INSTANCE_NUMBER,to_char(STARTUP_TIME,'YYYY-MM-DD HH24:MI:SS')as STARTUP_TIME FROM SYS.WRM$_DATABASE_INSTANCE;"
+	SQL_QUERY_SNAPSHOT_FORMATER                   = "select SNAP_ID from sys.wrm$_snapshot where (BEGIN_INTERVAL_TIME >= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME <= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME >= TIMESTAMP('%s'))"
 	SQL_QUERY_BACKUP_SET                          = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
 	SQL_QUERY_FULL_BACKUP_SET_COUNT               = "select count(*) as TOTAL from dba_backup_set where date_add(COMPLETION_TIME , INTERVAL 10 DAY) >= sysdate AND type = 'FULL';"
 	SQL_QUERY_BACKUP_SET_PATH                     = "select distinct(PATH) as PATH from dba_backup_set;"

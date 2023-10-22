@@ -55,10 +55,11 @@ var (
 		define.METRIC_YASDB_SECURITY_AUDIT_FILE_SIZE:                         {},
 		define.METRIC_YASDB_TABLESPACE:                                       {},
 
-		define.METRIC_HOST_BIOS_INFO: {},
-		define.METRIC_HOST_FIREWALLD: {},
-		define.METRIC_HOST_IPTABLES:  {},
-		define.METRIC_YASDB_DATAFILE: {},
+		define.METRIC_HOST_BIOS_INFO:   {},
+		define.METRIC_HOST_FIREWALLD:   {},
+		define.METRIC_HOST_IPTABLES:    {},
+		define.METRIC_YASDB_DATAFILE:   {},
+		define.METRIC_YASDB_WAIT_EVENT: {},
 
 		define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES: {},
 		define.METRIC_YASDB_RUN_LOG_ERROR:            {},
@@ -83,6 +84,7 @@ var (
 	NeedCheckMetricFuncMap = map[define.MetricName]checkFunc{
 		define.METRIC_YASDB_OBJECT_COUNT:                                                           checkDBAPrivileges,
 		define.METRIC_YASDB_OBJECT_OWNER:                                                           checkDBAPrivileges,
+		define.METRIC_YASDB_WAIT_EVENT:                                                             checkSysUser,
 		define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      checkDBAPrivileges,
 		define.METRIC_YASDB_INDEX_BLEVEL:                                                           checkDBAPrivileges,
 		define.METRIC_YASDB_INDEX_COLUMN:                                                           checkDBAPrivileges,
@@ -162,6 +164,17 @@ func checkDBAPrivileges(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.Y
 		}
 		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
 		return nil
+	}
+	return nil
+}
+
+func checkSysUser(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	if db.YasdbUser != "sys" {
+		return &define.NoNeedCheckMetric{
+			Name:        metric.NameAlias,
+			Description: "执行该项检查需要sys用户",
+			Error:       errors.New("current metric need sys user"),
+		}
 	}
 	return nil
 }
