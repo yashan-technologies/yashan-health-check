@@ -1663,11 +1663,12 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like '%AUD$%' and SEGMENT_TYPE = 'TABLE';"
-  number_columns = ["SIZE_GB"]
+  sql = "select segment_name ,round(bytes/1024/1024,3)  as size_mb from dba_segments where segment_name like '%AUD$%' and SEGMENT_TYPE = 'TABLE';"
+  number_columns = ["SIZE_MB"]
+  column_order = ["SEGMENT_NAME", "SIZE_MB"]
   [metrics.column_alias]
     SEGMENT_NAME = "段名称"
-    SIZE_GB = "大小(GB)"
+    SIZE_MB = "大小(MB)"
 
 
 [[metrics]]
