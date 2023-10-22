@@ -1342,6 +1342,7 @@
   default = true
   enabled = true
   sql = "select OWNER, INDEX_NAME, BLEVEL from dba_indexes where BLEVEL>3;"
+  column_order = ["INDEX_NAME","OWNER","BLEVEL"]
   [metrics.column_alias]
     OWNER = "索引用户"
     INDEX_NAME = "索引名称"
@@ -1356,6 +1357,7 @@
   default = true
   enabled = true
   sql = "select INDEX_OWNER, INDEX_NAME, count(*) as column_count from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"
+  column_order = ["INDEX_NAME","INDEX_OWNER","COLUMN_COUNT"]
   [metrics.column_alias]
     INDEX_OWNER = "索引用户"
     INDEX_NAME = "索引名称"
@@ -1369,6 +1371,7 @@
   default = true
   enabled = true
   sql = "select OWNER, INDEX_NAME, TABLE_OWNER, TABLE_NAME FROM dba_indexes where owner<> 'SYS' and VISIBILITY <> 'VISIBLE';"
+  column_order = ["INDEX_NAME","OWNER","TABLE_NAME","TABLE_OWNER"]
   [metrics.column_alias]
     OWNER = "索引用户"
     INDEX_NAME = "索引名称"
@@ -1385,6 +1388,7 @@
   sql = "SELECT ind.OWNER AS ind_owner,ind.SEGMENT_NAME AS ind_name,ind.SEGMENT_TYPE as IND_SEGMENT_TYPE ,tab.SEGMENT_TYPE as TAB_SEGMENT_TYPE,tab.OWNER AS tab_owner ,tab.SEGMENT_NAME AS tab_name,ind.BYTES AS ind_bytes,tab.BYTES AS tab_bytes FROM DBA_SEGMENTS ind,DBA_SEGMENTS tab,DBA_INDEXES di WHERE IND.SEGMENT_TYPE IN ('INDEX','INDEX PARTITION') AND tab.SEGMENT_TYPE IN ('TABLE','TABLE PARTITION') AND ind.OWNER =di.OWNER AND ind.SEGMENT_NAME =di.INDEX_NAME AND tab.OWNER =di.TABLE_OWNER AND tab.SEGMENT_NAME =di.TABLE_NAME AND ind.BYTES > tab.BYTES;"
   number_columns = ["IND_BYTES","TAB_BYTES"]
   labels = ["IND_NAME"]
+  column_order = ["IND_NAME","IND_OWNER","IND_SEGMENT_TYPE","IND_BYTES","TAB_NAME","TAB_OWNER","TAB_SEGMENT_TYPE","TAB_BYTES"]
   [metrics.column_alias]
     IND_OWNER = "索引用户"
     TAB_OWNER = "表用户"
@@ -1392,8 +1396,8 @@
     TAB_NAME = "表名称"
     TAB_SEGMENT_TYPE = "表段类型"
     IND_SEGMENT_TYPE = "索引段类型"
-    IND_BYTES = "索引大小"
-    TAB_BYTES = "表大小"
+    IND_BYTES = "索引大小(字节)"
+    TAB_BYTES = "表大小(字节)"
   [metrics.item_names]
     IND_BYTES = "yasdb_index_bytes"
     TAB_BYTES = "yasdb_table_bytes"
@@ -1413,6 +1417,7 @@
   enabled = true
   sql = "SELECT OWNER,INDEX_NAME ,TABLE_OWNER ,TABLE_NAME FROM dba_indexes WHERE OWNER <> TABLE_OWNER;"
   labels = ["INDEX_NAME"]
+  column_order = ["INDEX_NAME","OWNER","TAB_NAME","TAB_OWNER"]
   [metrics.column_alias]
     OWNER = "索引用户"
     INDEX_NAME = "索引名称"
@@ -1440,7 +1445,7 @@
   [metrics.column_alias]
     SEQUENCE_OWNER = "序列用户"
     SEQUENCE_NAME = "序列名称"
-    USED_RATE = "使用率"
+    USED_RATE = "使用率(%)"
   [metrics.item_names]
     USED_RATE = "yasdb_sequence_used_rate"
   [metrics.alert_rules]
@@ -1459,6 +1464,7 @@
   enabled = true
   sql = "select OWNER ,JOB_NAME ,JOB_STYLE ,JOB_CREATOR ,JOB_ACTION  from DBA_SCHEDULER_JOBS where STATE='RUNNING';"
   number_columns = ["USED_RATE"]
+  column_order = ["JOB_NAME","OWNER","JOB_STYLE","JOB_CREATOR","JOB_ACTION"]
   [metrics.column_alias]
     OWNER = "JOB的所有者"
     JOB_NAME = "JOB名称"
@@ -1476,6 +1482,7 @@
   sql = "SELECT OWNER ,NAME, JOIN_STR FROM (SELECT  OWNER ,NAME,LISTAGG(TYPE,'-') AS JOIN_STR FROM DBA_SOURCE GROUP by OWNER ,NAME) WHERE JOIN_STR<>'PACKAGE-PACKAGE BODY';"
   number_columns = ["USED_RATE"]
   labels = ["NAME"]
+  column_order = ["NAME","OWNER","JOIN_STR"]
   [metrics.column_alias]
     OWNER = "对象所属的用户"
     NAME = "对象名称"
@@ -1509,7 +1516,7 @@
 
 [[metrics]]
   name = "yasdb_security_maximum_login_attempts"
-  name_alias = "允许用户登录尝试次数"
+  name_alias = "未限制登录次数的Profile"
   module_name = "security_check"
   metric_type = "sql"
   default = true
@@ -1646,6 +1653,7 @@
     AUDIT_CLEANUP_COUNT = "审计日志清理次数"
     AUDIT_CLEAN_TIME_COUNT = "审计日志时间数量"
     AUDIT_RECORD_COUNT = "审计日志数量"
+    AUDIT_JOB_CLEAN_JOB = "审计清理任务"
 
   [metrics.item_names]
     AUDIT_CLEANUP_COUNT = "yasdb_audit_cleanup_task_count"
