@@ -578,6 +578,8 @@
   enabled = true
   number_columns = ["TOTAL"]
   sql = "select count(*) as total from v$controlfile;"
+  [metrics.column_alias]
+    TOTAL = "控制文件总数"
   [metrics.item_names]
     TOTAL = "controlfile_total"
   [metrics.alert_rules]

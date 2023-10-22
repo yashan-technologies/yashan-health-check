@@ -115,6 +115,14 @@ var _mergeOldMenuToNew []merge = []merge{
 		},
 	},
 	{
+		parentModule: string(define.MODULE_YASDB_CONTROLFILE),
+		targetTitle:  "控制文件",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_CONTROLFILE),
+			string(define.METRIC_YASDB_CONTROLFILE_COUNT),
+		},
+	},
+	{
 		parentModule: string(define.MODULE_LOG),
 		targetTitle:  "REDO日志分析",
 		originMetrics: []string{
