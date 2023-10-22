@@ -35,10 +35,3 @@ build:
   after_script:
     - $CI_SCRIPT dump
     - $CI_SCRIPT show
-  artifacts:
-    paths:
-      - code_check.txt
-      - build
-      - unittest
-    expire_in: 900s
-    when: always
