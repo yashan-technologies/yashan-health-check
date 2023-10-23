@@ -1,12 +1,18 @@
 package check
 
 import (
+	"fmt"
 	"time"
 
+	"yhc/defs/bashdef"
+	"yhc/defs/runtimedef"
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+	"yhc/utils/execerutil"
+	"yhc/utils/osutil"
 
+	"git.yasdb.com/go/yaslog"
 	"github.com/shirou/gopsutil/host"
 )
 
@@ -16,6 +22,8 @@ const (
 	KEY_HOST_ID               = "hostid"
 	KEY_VIRTUALIZATION_SYSTEM = "virtualizationSystem"
 	KEY_VIRTUALIZATION_ROLE   = "virtualizationRole"
+	KEY_PLATFORM_FAMILY       = "platformFamily"
+	KEY_PLATFORM_VERSION      = "platformVersion"
 )
 
 func (c *YHCChecker) GetHostInfo() (err error) {
@@ -37,11 +45,11 @@ func (c *YHCChecker) GetHostInfo() (err error) {
 		data.Error = err.Error()
 		return
 	}
-	data.Details = c.dealHostInfo(detail)
+	data.Details = c.dealHostInfo(log, detail)
 	return
 }
 
-func (c *YHCChecker) dealHostInfo(res map[string]interface{}) map[string]interface{} {
+func (c *YHCChecker) dealHostInfo(log yaslog.YasLog, res map[string]interface{}) map[string]interface{} {
 	delete(res, KEY_VIRTUALIZATION_ROLE)
 	delete(res, KEY_VIRTUALIZATION_SYSTEM)
 	delete(res, KEY_HOST_ID)
@@ -49,5 +57,26 @@ func (c *YHCChecker) dealHostInfo(res map[string]interface{}) map[string]interfa
 	res[KEY_BOOT_TIME] = time.Unix(int64(bootTime), 0).Format(timedef.TIME_FORMAT)
 	upTime := res[KEY_UP_TIME].(float64)
 	res[KEY_UP_TIME] = (time.Duration(int64(upTime)) * time.Second).String()
+	if runtimedef.GetOSRelease().Id == osutil.KYLIN_ID {
+		delete(res, KEY_PLATFORM_FAMILY)
+		platformVersion, err := c.getKyPlatformVersion(log)
+		if err != nil {
+			log.Error(err)
+			delete(res, KEY_PLATFORM_VERSION)
+			return res
+		}
+		res[KEY_PLATFORM_VERSION] = platformVersion
+	}
 	return res
+}
+
+func (c *YHCChecker) getKyPlatformVersion(log yaslog.YasLog) (string, error) {
+	execer := execerutil.NewExecer(log)
+	cmd := fmt.Sprintf("%s %s", bashdef.CMD_CAT, KY_PRODUCT_INFO)
+	ret, stdout, stderr := execer.Exec(bashdef.CMD_BASH, "-c", cmd)
+	if ret != 0 {
+		err := fmt.Errorf("failed to get kylin platform info, err: %s", stderr)
+		return "", err
+	}
+	return stdout, nil
 }
