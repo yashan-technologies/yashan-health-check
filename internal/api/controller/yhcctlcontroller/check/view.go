@@ -48,7 +48,7 @@ const (
 	_summary_metric_flex_index = 1
 	_summary_table_flex_index  = 2
 
-	_check_list_width          = 30
+	_check_list_width          = 40
 	_table_cell_max_width      = 50
 	_alert_level_max_width     = 12
 	_validate_dba_sql          = define.SQL_QUERY_TOTAL_OBJECT
