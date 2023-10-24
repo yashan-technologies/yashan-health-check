@@ -6,6 +6,8 @@ import (
 	"yhc/log"
 	"yhc/utils/fileutil"
 	"yhc/utils/yasdbutil"
+
+	"git.yasdb.com/go/yaserr"
 )
 
 const (
@@ -16,19 +18,7 @@ const (
 	STR_TRUE  = "TRUE"
 )
 
-func (c *YHCChecker) GetYasdbBackupSet() (err error) {
-	data, err := c.queryMultiRows(define.METRIC_YASDB_BACKUP_SET)
-	defer c.fillResult(data)
-	return
-}
-
-func (c *YHCChecker) GetYasdbFullBackupSetCount() (err error) {
-	data, err := c.querySingleRow(define.METRIC_YASDB_FULL_BACKUP_SET_COUNT)
-	defer c.fillResult(data)
-	return
-}
-
-func (c *YHCChecker) GetYasdbBackupSetPath() (err error) {
+func (c *YHCChecker) GetYasdbBackupSetPath(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_BACKUP_SET_PATH}
 	defer c.fillResult(data)
 
@@ -36,8 +26,9 @@ func (c *YHCChecker) GetYasdbBackupSetPath() (err error) {
 	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
 	paths, err := yasdb.QueryMultiRows(define.SQL_QUERY_BACKUP_SET_PATH, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
+		err = yaserr.Wrap(err)
+		logger.Error(err)
 		data.Error = err.Error()
-		logger.Errorf("query backup set path failed: %s", err)
 		return
 	}
 

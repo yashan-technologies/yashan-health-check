@@ -19,6 +19,7 @@ import (
 	"yhc/utils/fileutil"
 	"yhc/utils/yasdbutil"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
 	"git.yasdb.com/go/yasutil/execer"
 	"git.yasdb.com/pandora/yasqlgo"
@@ -57,13 +58,14 @@ var waitEventHeaderAlias = map[string]string{
 	"Waits":                "WAITS",
 }
 
-func (c *YHCChecker) GetYasdbWaitEvent() (err error) {
+func (c *YHCChecker) GetYasdbWaitEvent(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_WAIT_EVENT}
 	defer c.fillResult(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_WAIT_EVENT))
 	path, err := c.createYasdbEventSqlFile(log)
 	if err != nil {
+		err = yaserr.Wrap(err)
 		log.Error(err)
 		data.Error = err.Error()
 		return err
@@ -79,6 +81,7 @@ func (c *YHCChecker) GetYasdbWaitEvent() (err error) {
 	}
 	detail, err := c.parseWaitEventStdout(stdout)
 	if err != nil {
+		err = yaserr.Wrap(err)
 		log.Error(err)
 		data.Error = err.Error()
 		return err

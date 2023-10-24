@@ -2,7 +2,7 @@ package barutil
 
 type task struct {
 	name     string
-	worker   func() error
+	worker   func(string) error
 	done     chan struct{}
 	finished bool
 	err      error
@@ -13,7 +13,7 @@ func (t *task) start() {
 	if t.worker == nil {
 		return
 	}
-	t.err = t.worker()
+	t.err = t.worker(t.name)
 }
 
 func (t *task) wait() {

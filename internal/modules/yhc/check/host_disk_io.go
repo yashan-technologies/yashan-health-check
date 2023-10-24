@@ -3,11 +3,11 @@ package check
 import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+
+	"git.yasdb.com/go/yaserr"
 )
 
-// todo: 处理chart图的时候要额外考虑图表怎么画
-
-func (c *YHCChecker) GetHostHistoryDiskIO() (err error) {
+func (c *YHCChecker) GetHostHistoryDiskIO(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_HISTORY_DISK_IO,
 	}
@@ -16,7 +16,8 @@ func (c *YHCChecker) GetHostHistoryDiskIO() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_HISTORY_DISK_IO))
 	resp, err := c.hostHistoryWorkload(log, define.METRIC_HOST_HISTORY_DISK_IO)
 	if err != nil {
-		log.Error("failed to get host disk io info, err: %s", err.Error())
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}
@@ -24,7 +25,7 @@ func (c *YHCChecker) GetHostHistoryDiskIO() (err error) {
 	return
 }
 
-func (c *YHCChecker) GetHostCurrentDiskIO() (err error) {
+func (c *YHCChecker) GetHostCurrentDiskIO(name string) (err error) {
 	data := &define.YHCItem{
 		Name:     define.METRIC_HOST_CURRENT_DISK_IO,
 		DataType: define.DATATYPE_SAR,
@@ -38,7 +39,8 @@ func (c *YHCChecker) GetHostCurrentDiskIO() (err error) {
 	}
 	resp, err := c.hostCurrentWorkload(log, define.METRIC_HOST_CURRENT_DISK_IO, hasSar)
 	if err != nil {
-		log.Error("failed to get host disk io info, err: %s", err.Error())
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}

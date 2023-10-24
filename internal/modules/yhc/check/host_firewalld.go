@@ -22,7 +22,7 @@ const (
 	KEY_FIREWALLD_STATUS = "firewalldStatus"
 )
 
-func (c *YHCChecker) GetHostFirewalldStatus() (err error) {
+func (c *YHCChecker) GetHostFirewalldStatus(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_FIREWALLD,
 	}
@@ -52,7 +52,7 @@ func (c *YHCChecker) GetHostFirewalldStatus() (err error) {
 	return
 }
 
-func (c *YHCChecker) GetHostIPTables() (err error) {
+func (c *YHCChecker) GetHostIPTables(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_IPTABLES,
 	}

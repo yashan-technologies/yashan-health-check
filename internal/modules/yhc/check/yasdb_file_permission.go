@@ -13,7 +13,7 @@ const (
 	KEY_GROUP      = "group"
 )
 
-func (c *YHCChecker) GetYasdbFilePermission() (err error) {
+func (c *YHCChecker) GetYasdbFilePermission(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_FILE_PERMISSION,
 	}
