@@ -46,6 +46,8 @@ const (
 
 	SYSTEM_LOG_MESSAGES = "/var/log/messages"
 	SYSTEM_LOG_SYSLOG   = "/var/log/syslog"
+
+	STR_ERR_NOT_FOUND = "未发现明显错误"
 )
 
 func (c *YHCChecker) GetYasdbRunLogError(name string) (err error) {
@@ -72,6 +74,9 @@ func (c *YHCChecker) GetYasdbRunLogError(name string) (err error) {
 		log.Error(err)
 		data.Error = err.Error()
 		return
+	}
+	if len(res) == 0 {
+		res = append(res, STR_ERR_NOT_FOUND)
 	}
 	data.Details = res
 	return
@@ -136,6 +141,9 @@ func (c *YHCChecker) GetRisingAlertLog(name string) (err error) {
 		data.Error = err.Error()
 		return err
 	}
+	if len(res) == 0 {
+		res = append(res, STR_ERR_NOT_FOUND)
+	}
 	data.Details = res
 	return
 }
@@ -172,6 +180,9 @@ func (c *YHCChecker) GetDmesgLog(name string) (err error) {
 		log.Errorf("get alert log detail err: %s", err.Error())
 		data.Error = err.Error()
 		return err
+	}
+	if len(res) == 0 {
+		res = append(res, STR_ERR_NOT_FOUND)
 	}
 	data.Details = res
 	return nil
@@ -243,6 +254,9 @@ func (c *YHCChecker) GetSystemLog(name string) (err error) {
 		log.Error(err)
 		data.Error = err.Error()
 		return
+	}
+	if len(res) == 0 {
+		res = append(res, STR_ERR_NOT_FOUND)
 	}
 	data.Details = res
 	return
@@ -474,6 +488,9 @@ func (c *YHCChecker) GetDatabaseChangeLog(name string) (err error) {
 		log.Error(err)
 		data.Error = err.Error()
 		return
+	}
+	if len(res) == 0 {
+		res = append(res, STR_ERR_NOT_FOUND)
 	}
 	data.Details = res
 	return

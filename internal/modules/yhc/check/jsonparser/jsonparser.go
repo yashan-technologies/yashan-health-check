@@ -211,7 +211,27 @@ func (j *JsonParser) Parse() *define.PandoraReport {
 	}
 	j.mergeElements(report)
 	j.filterSingleElementTitle(report)
+	j.addElementToEmptyMenus(report)
 	return report
+}
+
+func (j *JsonParser) addElementToEmptyMenus(report *define.PandoraReport) {
+	emptyElement := &define.PandoraElement{
+		ElementType: define.ET_PRE,
+		InnerText:   "当前模块无指标",
+	}
+	for _, menu := range report.ReportData {
+		j.traverseMenu(menu, emptyElement)
+	}
+}
+
+func (j *JsonParser) traverseMenu(menu *define.PandoraMenu, element *define.PandoraElement) {
+	if len(menu.Children) == 0 && len(menu.Elements) == 0 {
+		menu.Elements = append(menu.Elements, element)
+	}
+	for _, child := range menu.Children {
+		j.traverseMenu(child, element)
+	}
 }
 
 func (j *JsonParser) addCheckSummary(report *define.PandoraReport) {
