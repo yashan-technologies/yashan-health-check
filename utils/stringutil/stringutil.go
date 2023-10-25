@@ -1,7 +1,10 @@
 // The stringutil package encapsulates functions related to strings.
 package stringutil
 
-import "regexp"
+import (
+	"encoding/base64"
+	"regexp"
+)
 
 const (
 	STR_EMPTY         = ""
@@ -29,4 +32,9 @@ func IsEmpty(str string) bool {
 func RemoveExtraSpaces(str string) string {
 	regex := regexp.MustCompile(`\s+`)
 	return regex.ReplaceAllString(str, STR_BLANK_SPACE)
+}
+
+func IsBase64(s string) bool {
+	_, err := base64.StdEncoding.DecodeString(s)
+	return err == nil
 }
