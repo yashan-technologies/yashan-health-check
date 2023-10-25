@@ -20,6 +20,7 @@ import (
 	"yhc/utils/stringutil"
 	"yhc/utils/timeutil"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
 	"git.yasdb.com/go/yasutil/execer"
 	"github.com/google/uuid"
@@ -47,20 +48,7 @@ const (
 	SYSTEM_LOG_SYSLOG   = "/var/log/syslog"
 )
 
-func (c *YHCChecker) GetYasdbRedoLog() (err error) {
-	data, err := c.queryMultiRows(define.METRIC_YASDB_REDO_LOG)
-	defer c.fillResult(data)
-	return
-}
-
-func (c *YHCChecker) GetYasdbRedoLogCount() (err error) {
-	data, err := c.querySingleRow(define.METRIC_YASDB_REDO_LOG_COUNT)
-	log.Module.Error(data.Details)
-	defer c.fillResult(data)
-	return
-}
-
-func (c *YHCChecker) GetYasdbRunLogError() (err error) {
+func (c *YHCChecker) GetYasdbRunLogError(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_RUN_LOG_ERROR,
 	}
@@ -105,6 +93,7 @@ func (c *YHCChecker) getYasdbRunLogError(log yaslog.YasLog, srcs []string) (res 
 		logEndTime := time.Now()
 		if path.Base(f) != NAME_YASDB_RUN_LOG {
 			fileds := strings.Split(strings.TrimSuffix(path.Base(f), ".log"), stringutil.STR_HYPHEN)
+			// run.log归档的文件名是run-yyyymmdd.log, 用'-'切分后第二个字符串是最后一行日志的日期
 			if len(fileds) < 2 {
 				log.Errorf("failed to get log end time from %s, skip", f)
 				continue
@@ -126,7 +115,7 @@ func (c *YHCChecker) getYasdbRunLogError(log yaslog.YasLog, srcs []string) (res 
 	return
 }
 
-func (c *YHCChecker) GetRisingAlertLog() (err error) {
+func (c *YHCChecker) GetRisingAlertLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_ALERT_LOG_ERROR,
 	}
@@ -160,7 +149,7 @@ func (c *YHCChecker) yasdbLogTimeParse(date time.Time, line string) (t time.Time
 	return time.ParseInLocation(timedef.TIME_FORMAT_WITH_MICROSECOND, match[1], time.Local)
 }
 
-func (c *YHCChecker) GetDmesgLog() (err error) {
+func (c *YHCChecker) GetDmesgLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_DMESG_LOG_ERROR,
 	}
@@ -236,7 +225,7 @@ func (c *YHCChecker) genDmesgLogPredicateFunc() logPredicate {
 	}
 }
 
-func (c *YHCChecker) GetSystemLog() (err error) {
+func (c *YHCChecker) GetSystemLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_SYSTEM_LOG_ERROR,
 	}
@@ -466,7 +455,7 @@ func (c *YHCChecker) systemLogPredicate(line string) bool {
 	return false
 }
 
-func (c *YHCChecker) GetDatabaseChangeLog() (err error) {
+func (c *YHCChecker) GetDatabaseChangeLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES,
 	}
@@ -474,12 +463,14 @@ func (c *YHCChecker) GetDatabaseChangeLog() (err error) {
 	log := log.Module.M("run-log-database-change")
 	runLogPath, err := c.getRunLogPath(log)
 	if err != nil {
-		data.Error = err.Error()
+		err = yaserr.Wrap(err)
 		log.Error(err)
+		data.Error = err.Error()
 		return
 	}
 	res, err := c.collectLog(log, path.Join(runLogPath, NAME_YASDB_RUN_LOG), time.Now(), c.filterDatabaseChange, c.yasdbLogTimeParse)
 	if err != nil {
+		err = yaserr.Wrap(err)
 		log.Error(err)
 		data.Error = err.Error()
 		return

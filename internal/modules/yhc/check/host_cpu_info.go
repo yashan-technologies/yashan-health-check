@@ -13,6 +13,7 @@ import (
 	"yhc/utils/osutil"
 	"yhc/utils/stringutil"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
 	"github.com/shirou/gopsutil/cpu"
 )
@@ -29,7 +30,7 @@ const (
 	KEY_KY_MAX_SPEED = "Max Speed:"
 )
 
-func (c *YHCChecker) GetHostCPUInfo() (err error) {
+func (c *YHCChecker) GetHostCPUInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_CPU_INFO,
 	}
@@ -38,7 +39,8 @@ func (c *YHCChecker) GetHostCPUInfo() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_CPU_INFO))
 	cpuInfos, err := cpu.Info()
 	if err != nil {
-		log.Errorf("failed to get host cpu info, err: %v", err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}

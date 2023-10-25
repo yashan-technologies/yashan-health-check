@@ -5,6 +5,8 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/yasdbutil"
+
+	"git.yasdb.com/go/yaserr"
 )
 
 const (
@@ -12,7 +14,7 @@ const (
 	KEY_PARAMETER_VALUE = "VALUE"
 )
 
-func (c *YHCChecker) GetYasdbParameter() (err error) {
+func (c *YHCChecker) GetYasdbParameter(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_PARAMETER,
 	}
@@ -20,20 +22,23 @@ func (c *YHCChecker) GetYasdbParameter() (err error) {
 	log := log.Module.M(string(define.METRIC_YASDB_PARAMETER))
 	sql, err := c.getSQL(define.METRIC_YASDB_PARAMETER)
 	if err != nil {
-		log.Errorf("failed to get sql of %s, err: %v", define.METRIC_YASDB_PARAMETER, err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return err
 	}
 	metric, err := c.getMetric(define.METRIC_YASDB_PARAMETER)
 	if err != nil {
-		log.Errorf("failed to get metric by name %s, err: %v", define.METRIC_YASDB_PARAMETER, err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return err
 	}
 	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
 	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
-		log.Errorf("failed to get data with sql '%s', err: %v", sql, err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return err
 	}

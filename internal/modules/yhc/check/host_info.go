@@ -12,6 +12,7 @@ import (
 	"yhc/utils/execerutil"
 	"yhc/utils/osutil"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
 	"github.com/shirou/gopsutil/host"
 )
@@ -26,7 +27,7 @@ const (
 	KEY_PLATFORM_VERSION      = "platformVersion"
 )
 
-func (c *YHCChecker) GetHostInfo() (err error) {
+func (c *YHCChecker) GetHostInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_INFO,
 	}
@@ -35,13 +36,15 @@ func (c *YHCChecker) GetHostInfo() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_INFO))
 	host, err := host.Info()
 	if err != nil {
-		log.Errorf("failed to get host info, err: %v", err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}
 	detail, err := c.convertObjectData(host)
 	if err != nil {
-		log.Errorf("failed to covert host info, err: %v", err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}

@@ -9,19 +9,15 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/yasdbutil"
+
+	"git.yasdb.com/go/yaserr"
 )
 
 const (
 	KEY_HIT_RATE = "HIT_RATE"
 )
 
-func (c *YHCChecker) GetYasdbBufferHitRate() (err error) {
-	data, err := c.querySingleRow(define.METRIC_YASDB_BUFFER_HIT_RATE)
-	defer c.fillResult(data)
-	return
-}
-
-func (c *YHCChecker) GetYasdbHistoryBufferHitRate() (err error) {
+func (c *YHCChecker) GetYasdbHistoryBufferHitRate(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE}
 	defer c.fillResult(data)
 
@@ -33,7 +29,8 @@ func (c *YHCChecker) GetYasdbHistoryBufferHitRate() (err error) {
 			c.formatFunc(c.base.End)),
 		confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
-		logger.Errorf("failed to get data with sql %s, err: %v", define.SQL_QUERY_HISTORY_BUFFER_HIT_RATE, err)
+		err = yaserr.Wrap(err)
+		logger.Error(err)
 		data.Error = err.Error()
 		return
 	}

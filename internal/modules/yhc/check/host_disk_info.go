@@ -5,6 +5,7 @@ import (
 	"yhc/log"
 	"yhc/utils/osutil"
 
+	"git.yasdb.com/go/yaserr"
 	"github.com/shirou/gopsutil/disk"
 )
 
@@ -14,7 +15,7 @@ type DiskUsage struct {
 	disk.UsageStat
 }
 
-func (c *YHCChecker) GetHostDiskInfo() (err error) {
+func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_DISK_INFO,
 	}
@@ -54,7 +55,7 @@ func (c *YHCChecker) GetHostDiskInfo() (err error) {
 	return
 }
 
-func (c *YHCChecker) GetHostDiskBlockInfo() (err error) {
+func (c *YHCChecker) GetHostDiskBlockInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_DISK_BLOCK_INFO,
 	}
@@ -63,7 +64,8 @@ func (c *YHCChecker) GetHostDiskBlockInfo() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_DISK_BLOCK_INFO))
 	devices, err := osutil.Lsblk(log)
 	if err != nil {
-		log.Errorf("failed to get host device: %v", err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return err
 	}
