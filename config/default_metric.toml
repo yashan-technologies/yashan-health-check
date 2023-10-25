@@ -1352,7 +1352,7 @@
     [[metrics.alert_rules.waring]]
       expression = "foreign_keys_without_indexes != ''"
       description = "符合条件的外键名称"
-      suggestion = "当子表在外键上没有索引时，该子表上的某些DML操作将需要在父表上的某个级别上加锁，这可能会从根本上降低性能。"
+      suggestion = "当子表在外键上没有索引时，该【父】表上的某些DML操作将需要在【子】表上的某个级别上加锁，这可能会从根本上降低性能"
 
 [[metrics]]
   name = "yasdb_index_blevel"
