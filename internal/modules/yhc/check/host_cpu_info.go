@@ -10,6 +10,7 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/execerutil"
+	"yhc/utils/mathutil"
 	"yhc/utils/osutil"
 	"yhc/utils/stringutil"
 
@@ -65,7 +66,7 @@ func (c *YHCChecker) countCPUInfo(log yaslog.YasLog, cpuInfos []cpu.InfoStat) (r
 	res[KEY_CPU_MODEL_NAME] = cpuInfos[0].ModelName
 	res[KEY_CPU_VERDOR_ID] = cpuInfos[0].VendorID
 	res[KEY_CPU_FLAGS] = strings.Join(cpuInfos[0].Flags, ",")
-	res[KEY_CPU_GHZ] = fmt.Sprintf("@%.2fGHz", cpuInfos[0].Mhz/1000)
+	res[KEY_CPU_GHZ] = fmt.Sprintf("@%fGHz", mathutil.Round(cpuInfos[0].Mhz/1000, decimal))
 	if runtimedef.GetOSRelease().Id == osutil.KYLIN_ID {
 		freq, err := c.getKyCPUFrequency(log)
 		if err != nil {

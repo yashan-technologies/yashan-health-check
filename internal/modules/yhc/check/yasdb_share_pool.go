@@ -1,12 +1,12 @@
 package check
 
 import (
-	"fmt"
 	"strconv"
 
 	"yhc/defs/confdef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+	"yhc/utils/mathutil"
 	"yhc/utils/yasdbutil"
 
 	"git.yasdb.com/go/yaserr"
@@ -25,7 +25,7 @@ const (
 	NAME_FREE_MEMORY = "free memory"
 )
 
-const decimal = 2
+const decimal = 3
 
 func (c *YHCChecker) GetYasdbSharePool(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_SHARE_POOL}
@@ -61,7 +61,7 @@ func (c *YHCChecker) GetYasdbSharePool(name string) (err error) {
 		KEY_TOTAL_SIZE:      size.GenHumanReadableSize(totalBytes, decimal),
 		KYE_FREE_SIZE:       size.GenHumanReadableSize(freeBytes, decimal),
 		KEY_USED_SIZE:       size.GenHumanReadableSize(usedBytes, decimal),
-		KEY_USED_PERCENTAGE: fmt.Sprintf("%.2f%%", usedPercentage),
+		KEY_USED_PERCENTAGE: mathutil.Round(usedPercentage, decimal),
 	}
 	data.Details = content
 
