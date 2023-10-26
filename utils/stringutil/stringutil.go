@@ -38,3 +38,12 @@ func IsBase64(s string) bool {
 	_, err := base64.StdEncoding.DecodeString(s)
 	return err == nil
 }
+
+func Contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
