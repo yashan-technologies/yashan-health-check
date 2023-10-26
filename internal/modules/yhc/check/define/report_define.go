@@ -53,13 +53,14 @@ type PandoraReport struct {
 }
 
 type PandoraMenu struct {
-	IsMenu    bool              `json:"isMenu,omitempty"`
-	IsChapter bool              `json:"isChapter,omitempty"`
-	Title     string            `json:"title,omitempty"`
-	TitleEn   string            `json:"-"`
-	Children  []*PandoraMenu    `json:"children,omitempty"`
-	MenuIndex int               `json:"menuIndex"`
-	Elements  []*PandoraElement `json:"elements,omitempty"`
+	IsMenu     bool              `json:"isMenu,omitempty"`
+	IsChapter  bool              `json:"isChapter,omitempty"`
+	Title      string            `json:"title,omitempty"`
+	TitleEn    string            `json:"-"`
+	AlertCount int               `json:"alertCount,omitempty"`
+	Children   []*PandoraMenu    `json:"children,omitempty"`
+	MenuIndex  int               `json:"menuIndex"`
+	Elements   []*PandoraElement `json:"elements,omitempty"`
 }
 
 type PandoraElement struct {
