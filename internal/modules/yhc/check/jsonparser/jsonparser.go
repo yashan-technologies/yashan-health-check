@@ -306,6 +306,9 @@ func (j *JsonParser) genModuleElement(module string) *define.PandoraElement {
 			res = append(res, data)
 		}
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i][_alert_number].(int) > res[j][_alert_number].(int)
+	})
 	tabAttr := define.TableAttributes{
 		TableColumns: []*define.TableColumn{
 			{Title: "指标名称", DataIndex: _metric_name},
