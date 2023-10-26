@@ -26,6 +26,14 @@ const (
 	AT_ERROR    AlertType = "error"
 )
 
+var AlertTypeAliasMap = map[AlertType]string{
+	AT_SUCCESS:  "成功",
+	AT_INFO:     "提示",
+	AT_WARNING:  "警告",
+	AT_CRITICAL: "严重",
+	AT_ERROR:    "错误",
+}
+
 type ElementType string
 
 type ChartType string

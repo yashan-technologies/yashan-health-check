@@ -1130,7 +1130,7 @@
 
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "table_column_count > 80"
       description = "表的字段数量"
       suggestion = "该表字段过多，容易存在冗余数据，可重新检查该表字段设计"
@@ -1154,7 +1154,7 @@
 
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "table_index_count > 8"
       description = "表的字段数量"
       suggestion = "该表超过8个索引，可能影响数据插入效率"
@@ -1206,7 +1206,7 @@
 
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "partitioned_table_name_without_partitioned_indexes != ''"
       description = "没有分区索引的分区表"
       suggestion = "该分区表无分区索引，在数据量过大的前提下，等值匹配可能成本较高，建议为较大的分区表创建对应索引。"
@@ -1239,7 +1239,7 @@
 
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "name_of_table_with_row_size_exceeds_block_size != ''"
       description = "符合条件的表的名称"
       suggestion = "当表的行大小大于数据库或表空间的块大小时，则每行需要两个IOs，建议使用更大的数据块来存储该表。您可能需要增加数据库块大小(重组练习)或将表移动到块大小更大的表空间(重新定位)。"
@@ -1264,7 +1264,7 @@
 
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "name_of_partitioned_table_with_number_of_hash_partitions_is_not_a_power_of_two != ''"
       description = "符合条件的表的名称"
       suggestion = "存在哈希分区数量不是2的幂的分区表，可能会导致数据分布不均匀、哈希碰撞、数据倾斜等问题，同时也会增加维护的复杂性。在设计哈希分区时，最好遵循2的幂次方的规则，以获得更好的性能和管理效果。"
@@ -1312,7 +1312,7 @@
 
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "foreign_keys_with_implicit_data_type_conversion != ''"
       description = "符合条件的外键名称"
       suggestion = "当您连接父表(使用PK)和子表(使用FK)时，如果数据类型和/或长度不相同，性能将受到影响。虽然允许pk和fk不匹配本质上是一个关系设计错误，但它会工作的。但是优化器需要向解释计划中添加执行隐式数据类型转换的步骤——这意味着可能不会使用索引。当外键列存在隐式转换时，把这两个列进行连接，则无法使用索引，这可能导致查询性能差，引起性能降低。"
@@ -1349,7 +1349,7 @@
 
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.waring]]
+    [[metrics.alert_rules.warning]]
       expression = "foreign_keys_without_indexes != ''"
       description = "符合条件的外键名称"
       suggestion = "当子表在外键上没有索引时，该【父】表上的某些DML操作将需要在【子】表上的某个级别上加锁，这可能会从根本上降低性能"
