@@ -836,17 +836,19 @@ func (j *JsonParser) parseAlert(menu *define.PandoraMenu, item *define.YHCItem, 
 	return nil
 }
 
-func (j *JsonParser) genAlertDescription(metric *confdef.YHCMetric, alert *define.YHCAlert) string {
-	desc := fmt.Sprintf("表达式：%s，值：%v，告警建议：%s", alert.Expression, alert.Value, alert.Suggestion)
+func (j *JsonParser) genAlertDescription(metric *confdef.YHCMetric, alert *define.YHCAlert) (desc string) {
 	if len(alert.Labels) != 0 {
 		labelArr := []string{}
 		for k, v := range alert.Labels {
 			labelAlias := j.getColumnAlias(metric, k)
 			labelArr = append(labelArr, fmt.Sprintf("%s：%s", labelAlias, v))
 		}
-		desc = fmt.Sprintf("%s，标签：{%s}", desc, strings.Join(labelArr, "；"))
+		desc = fmt.Sprintf("告警标签：{%s}\n", strings.Join(labelArr, "；"))
 	}
-	return desc
+	desc += fmt.Sprintf("检查结果：%v\n", alert.Value)
+	desc += fmt.Sprintf("告警建议：%s\n", alert.Suggestion)
+	desc += fmt.Sprintf("告警表达式：%s\n", alert.Expression)
+	return
 }
 
 // 部分指标由于sql限制，分开采集，生成报告的时候需要合并到同一张表格中
