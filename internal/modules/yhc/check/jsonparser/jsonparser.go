@@ -220,7 +220,30 @@ func (j *JsonParser) Parse() *define.PandoraReport {
 	j.mergeElements(report)
 	j.filterSingleElementTitle(report)
 	j.addElementToEmptyMenus(report)
+	j.countAlerts(report)
 	return report
+}
+
+func (j *JsonParser) countAlerts(report *define.PandoraReport) {
+	var fn func(menu *define.PandoraMenu)
+	fn = func(menu *define.PandoraMenu) {
+		for _, child := range menu.Children {
+			fn(child)
+		}
+		// count alert in current menu
+		for _, child := range menu.Children {
+			menu.AlertCount += child.AlertCount
+		}
+		for _, element := range menu.Elements {
+			if element.ElementType == define.ET_ALERT {
+				menu.AlertCount++
+			}
+		}
+	}
+
+	for _, menu := range report.ReportData {
+		fn(menu)
+	}
 }
 
 func (j *JsonParser) addElementToEmptyMenus(report *define.PandoraReport) {
