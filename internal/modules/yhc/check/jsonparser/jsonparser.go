@@ -232,11 +232,11 @@ func (j *JsonParser) countAlerts(report *define.PandoraReport) {
 		}
 		// count alert in current menu
 		for _, child := range menu.Children {
-			menu.AlertCount += child.AlertCount
+			menu.WarningCount += child.WarningCount
 		}
 		for _, element := range menu.Elements {
 			if element.ElementType == define.ET_ALERT {
-				menu.AlertCount++
+				menu.WarningCount++
 			}
 		}
 	}
