@@ -26,6 +26,14 @@ const (
 
 	_metric_name  = "metricName"
 	_alert_number = "alertNumber"
+
+	_module_name       = "moduleName"
+	_alert_level       = "alertLevel"
+	_alert_labels      = "alertLabels"
+	_alert_expersion   = "alertExpresion"
+	_alert_value       = "alertValue"
+	_alert_suggestion  = "alertSuggestion"
+	_alert_description = "alertDescription"
 )
 
 // 将不同指标的数据合并到一个map中，只支持map之间的合并
@@ -211,12 +219,56 @@ func (j *JsonParser) Parse() *define.PandoraReport {
 	}
 	j.mergeElements(report)
 	j.filterSingleElementTitle(report)
+	j.addElementToEmptyMenus(report)
+	j.countAlerts(report)
 	return report
+}
+
+func (j *JsonParser) countAlerts(report *define.PandoraReport) {
+	var fn func(menu *define.PandoraMenu)
+	fn = func(menu *define.PandoraMenu) {
+		for _, child := range menu.Children {
+			fn(child)
+		}
+		// count alert in current menu
+		for _, child := range menu.Children {
+			menu.WarningCount += child.WarningCount
+		}
+		for _, element := range menu.Elements {
+			if element.ElementType == define.ET_ALERT {
+				menu.WarningCount++
+			}
+		}
+	}
+
+	for _, menu := range report.ReportData {
+		fn(menu)
+	}
+}
+
+func (j *JsonParser) addElementToEmptyMenus(report *define.PandoraReport) {
+	for _, menu := range report.ReportData {
+		j.addElementToEmptyMenu(menu)
+	}
+}
+
+func (j *JsonParser) addElementToEmptyMenu(menu *define.PandoraMenu) {
+	emptyElement := &define.PandoraElement{
+		ElementType: define.ET_PRE,
+		InnerText:   "当前模块无指标",
+	}
+	if len(menu.Children) == 0 && len(menu.Elements) == 0 {
+		menu.Elements = append(menu.Elements, emptyElement)
+	}
+	for _, child := range menu.Children {
+		j.addElementToEmptyMenu(child)
+	}
 }
 
 func (j *JsonParser) addCheckSummary(report *define.PandoraReport) {
 	menu := &define.PandoraMenu{IsMenu: false, Title: "健康检查概览"}
 	j.checkSummary(report.Time, report.CostTime, menu)
+	j.alertSummary(menu)
 	j.moduleSummary(menu)
 	report.ReportData = append(report.ReportData, menu)
 }
@@ -246,8 +298,67 @@ func (j *JsonParser) checkSummary(checkTime string, costTime int, menu *define.P
 	})
 }
 
-func (j *JsonParser) moduleSummary(menu *define.PandoraMenu) {
+func (j *JsonParser) alertSummary(menu *define.PandoraMenu) {
+	res := make([]map[string]interface{}, 0)
+	for _, metricName := range confdef.GetMetricOrder() {
+		result, ok := j.results[define.MetricName(metricName)]
+		if !ok {
+			continue
+		}
+		if len(result.Alerts) == 0 {
+			continue
+		}
+		metric, err := j.getMetric(metricName)
+		if err != nil {
+			j.log.Debugf("failed to get metric by %s, err: %v", metricName, err)
+			continue
+		}
+		moduleNameAlias := []string{}
+		for _, module := range confdef.GetMetricModules(metricName) {
+			moduleNameAlias = append(moduleNameAlias, confdef.GetModuleAlias(module))
+		}
+		for level, alerts := range result.Alerts {
+			for _, alert := range alerts {
+				var labels []string
+				for key, value := range alert.Labels {
+					labels = append(labels, fmt.Sprintf("{%s:%s}", j.getColumnAlias(metric, key), value))
+				}
+				m := map[string]interface{}{
+					_alert_level:       define.AlertTypeAliasMap[define.AlertType(level)],
+					_alert_labels:      strings.Join(labels, stringutil.STR_NEWLINE),
+					_alert_expersion:   alert.Expression,
+					_alert_description: alert.Description,
+					_alert_suggestion:  alert.Suggestion,
+					_alert_value:       alert.Value,
+					_module_name:       strings.Join(moduleNameAlias, "-->"),
+					_metric_name:       metric.NameAlias,
+				}
+				res = append(res, m)
+			}
+		}
+	}
+	tabAttr := define.TableAttributes{
+		TableColumns: []*define.TableColumn{
+			{Title: "指标名称", DataIndex: _metric_name},
+			{Title: "模块", DataIndex: _module_name},
+			{Title: "告警级别", DataIndex: _alert_level},
+			{Title: "告警描述", DataIndex: _alert_description},
+			{Title: "表达式", DataIndex: _alert_expersion},
+			{Title: "值", DataIndex: _alert_value},
+			{Title: "告警建议", DataIndex: _alert_suggestion},
+			{Title: "告警标签", DataIndex: _alert_labels},
+		},
+		DataSource: res,
+	}
+	element := &define.PandoraElement{
+		ElementType:  define.ET_TABLE,
+		ElementTitle: "告警概要信息",
+		Attributes:   tabAttr,
+	}
+	menu.Elements = append(menu.Elements, element)
+}
 
+func (j *JsonParser) moduleSummary(menu *define.PandoraMenu) {
 	modules := []string{
 		string(define.MODULE_OVERVIEW),
 		string(define.MODULE_HOST),
@@ -286,6 +397,9 @@ func (j *JsonParser) genModuleElement(module string) *define.PandoraElement {
 			res = append(res, data)
 		}
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i][_alert_number].(int) > res[j][_alert_number].(int)
+	})
 	tabAttr := define.TableAttributes{
 		TableColumns: []*define.TableColumn{
 			{Title: "指标名称", DataIndex: _metric_name},
@@ -722,17 +836,19 @@ func (j *JsonParser) parseAlert(menu *define.PandoraMenu, item *define.YHCItem, 
 	return nil
 }
 
-func (j *JsonParser) genAlertDescription(metric *confdef.YHCMetric, alert *define.YHCAlert) string {
-	desc := fmt.Sprintf("表达式：%s，值：%v，告警建议：%s", alert.Expression, alert.Value, alert.Suggestion)
+func (j *JsonParser) genAlertDescription(metric *confdef.YHCMetric, alert *define.YHCAlert) (desc string) {
 	if len(alert.Labels) != 0 {
 		labelArr := []string{}
 		for k, v := range alert.Labels {
 			labelAlias := j.getColumnAlias(metric, k)
 			labelArr = append(labelArr, fmt.Sprintf("%s：%s", labelAlias, v))
 		}
-		desc = fmt.Sprintf("%s，标签：{%s}", desc, strings.Join(labelArr, "；"))
+		desc = fmt.Sprintf("告警标签：{%s}\n", strings.Join(labelArr, "；"))
 	}
-	return desc
+	desc += fmt.Sprintf("检查结果：%v\n", alert.Value)
+	desc += fmt.Sprintf("告警建议：%s\n", alert.Suggestion)
+	desc += fmt.Sprintf("告警表达式：%s\n", alert.Expression)
+	return
 }
 
 // 部分指标由于sql限制，分开采集，生成报告的时候需要合并到同一张表格中

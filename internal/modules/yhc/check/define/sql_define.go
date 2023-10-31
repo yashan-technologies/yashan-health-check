@@ -1,27 +1,42 @@
 package define
 
 const (
-	SQL_QUERY_CONTROLFILE                         = "select  id, name, bytes/1024/1024 as MBytes from v$controlfile;"
-	SQL_QUERY_CONTROLFILE_COUNT                   = "select count(*) as total from v$controlfile;"
-	SQL_QUERY_DATAFILE                            = "select * from dba_data_files;"
-	SQL_QUERY_DB_ID                               = "SELECT DBID,INSTANCE_NUMBER,to_char(STARTUP_TIME,'YYYY-MM-DD HH24:MI:SS')as STARTUP_TIME FROM SYS.WRM$_DATABASE_INSTANCE;"
-	SQL_QUERY_SNAPSHOT_FORMATER                   = "select SNAP_ID from sys.wrm$_snapshot where (BEGIN_INTERVAL_TIME >= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME <= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME >= TIMESTAMP('%s'))"
-	SQL_QUERY_BACKUP_SET                          = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
-	SQL_QUERY_FULL_BACKUP_SET_COUNT               = "select count(*) as TOTAL from dba_backup_set where date_add(COMPLETION_TIME , INTERVAL 10 DAY) >= sysdate AND type = 'FULL';"
-	SQL_QUERY_BACKUP_SET_PATH                     = "select distinct(PATH) as PATH from dba_backup_set;"
-	SQL_QUERY_DATABASE                            = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
-	SQL_QUERY_INDEX_BLEVEL                        = "select OWNER, INDEX_NAME, BLEVEL from dba_indexes where BLEVEL>3;"
-	SQL_QUERY_INDEX_COLUMN                        = "select INDEX_OWNER, INDEX_NAME, count(*) as column_count from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"
-	SQL_QUERY_INDEX_INVISIBLE                     = "select OWNER, INDEX_NAME, TABLE_OWNER, TABLE_NAME FROM dba_indexes where owner<> 'SYS' and VISIBILITY <> 'VISIBLE';"
-	SQL_QUERY_INSTANCE                            = "select status as instance_status, version, startup_time from v$instance;"
-	SQL_QUERY_LISTEN_ADDR                         = `select VALUE as LISTEN_ADDR from v$parameter where name = 'LISTEN_ADDR';`
-	SQL_QUERY_SESSION                             = `select type from v$session`
-	SQL_QUERY_DEPLYMENT_ARCHITECTURE              = "select count(*) as node_num from v$parameter where value is not null and name like '%ARCHIVE_DEST%';"
-	SQL_QUERY_SHARE_POOL                          = `select NAME, BYTES from v$sgastat WHERE POOL='SHARE POOL';`
-	SQL_QUERY_TABLESPACE                          = `SELECT TABLESPACE_NAME, CONTENTS, STATUS, ALLOCATION_TYPE , TOTAL_BYTES - USER_BYTES AS USED_BYTES, TOTAL_BYTES, (TOTAL_BYTES - USER_BYTES) / TOTAL_BYTES * 100 AS USED_RATE FROM SYS.DBA_TABLESPACES;`
-	SQL_QUERY_TABLESPACE_DATA_PERCENTAGE_FORMATER = `SELECT A.TABLESPACE_NAME, A.B1/B.B2*100 AS DATA_PERCENTAGE FROM 
-    (SELECT TABLESPACE_NAME,SUM(BYTES) AS B1 FROM dba_segments WHERE SEGMENT_TYPE LIKE 'TABLE%%' GROUP BY TABLESPACE_NAME ) A,
-    (SELECT TABLESPACE_NAME,TOTAL_BYTES AS B2 FROM DBA_TABLESPACES) B WHERE (A.TABLESPACE_NAME=B.TABLESPACE_NAME AND A.TABLESPACE_NAME ='%s');`
+	SQL_QUERY_CONTROLFILE           = "select  id, name, bytes/1024/1024 as MBytes from v$controlfile;"
+	SQL_QUERY_CONTROLFILE_COUNT     = "select count(*) as total from v$controlfile;"
+	SQL_QUERY_DATAFILE              = "select * from dba_data_files;"
+	SQL_QUERY_DB_ID                 = "SELECT DBID,INSTANCE_NUMBER,to_char(STARTUP_TIME,'YYYY-MM-DD HH24:MI:SS')as STARTUP_TIME FROM SYS.WRM$_DATABASE_INSTANCE;"
+	SQL_QUERY_SNAPSHOT_FORMATER     = "select SNAP_ID from sys.wrm$_snapshot where (BEGIN_INTERVAL_TIME >= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME <= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME >= TIMESTAMP('%s'))"
+	SQL_QUERY_BACKUP_SET            = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
+	SQL_QUERY_FULL_BACKUP_SET_COUNT = "select count(*) as TOTAL from dba_backup_set where date_add(COMPLETION_TIME , INTERVAL 10 DAY) >= sysdate AND type = 'FULL';"
+	SQL_QUERY_BACKUP_SET_PATH       = "select distinct(PATH) as PATH from dba_backup_set;"
+	SQL_QUERY_DATABASE              = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
+	SQL_QUERY_INDEX_BLEVEL          = "select OWNER, INDEX_NAME, BLEVEL from dba_indexes where BLEVEL>3;"
+	SQL_QUERY_INDEX_COLUMN          = "select INDEX_OWNER, INDEX_NAME, count(*) as column_count from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"
+	SQL_QUERY_INDEX_INVISIBLE       = "select OWNER, INDEX_NAME, TABLE_OWNER, TABLE_NAME FROM dba_indexes where owner<> 'SYS' and VISIBILITY <> 'VISIBLE';"
+	SQL_QUERY_INSTANCE              = "select status as instance_status, version, startup_time from v$instance;"
+	SQL_QUERY_LISTEN_ADDR           = `select VALUE as LISTEN_ADDR from v$parameter where name = 'LISTEN_ADDR';`
+	SQL_QUERY_SESSION               = `
+    SELECT 
+        A.MAX_SESSIONS AS MAX_SESSIONS , 
+        B.USER_SESSIONS AS USER_SESSIONS, 
+        C.BACKGROUND_SESSIONS AS BACKGROUND_SESSIONS, 
+        B.USER_SESSIONS+C.BACKGROUND_SESSIONS AS TOTAL_SESSIONS, 
+        ROUND((B.USER_SESSIONS+C.BACKGROUND_SESSIONS)/A.MAX_SESSIONS*100,3) AS SESSION_USAGE
+    FROM 
+        ( SELECT TO_NUMBER(VALUE) AS MAX_SESSIONS FROM V$PARAMETER WHERE NAME = 'MAX_SESSIONS' ) A,
+        ( SELECT COUNT(*) AS USER_SESSIONS  FROM V$SESSION WHERE TYPE <> 'BACKGROUND' ) B,
+        ( SELECT COUNT(*) AS BACKGROUND_SESSIONS FROM V$SESSION WHERE TYPE = 'BACKGROUND') C;`
+	SQL_QUERY_DEPLYMENT_ARCHITECTURE = "select count(*) as node_num from v$parameter where value is not null and name like '%ARCHIVE_DEST%';"
+	SQL_QUERY_SHARE_POOL             = `select NAME, BYTES from v$sgastat WHERE POOL='SHARE POOL';`
+	SQL_QUERY_TABLESPACE             = `SELECT A.TABLESPACE_NAME, A.CONTENTS, A.STATUS, A.ALLOCATION_TYPE, A.USED_BYTES, A.TOTAL_BYTES, A.USED_RATE,B.DATA_PERCENTAGE
+    FROM (  
+        SELECT T.TABLESPACE_NAME, T.CONTENTS, T.STATUS, T.ALLOCATION_TYPE, T.TOTAL_BYTES - T.USER_BYTES AS USED_BYTES, T.TOTAL_BYTES, round((T.TOTAL_BYTES - T.USER_BYTES) / T.TOTAL_BYTES * 100,3) AS USED_RATE
+        FROM SYS.DBA_TABLESPACES T ) A
+    LEFT JOIN (
+        SELECT A.TABLESPACE_NAME, round(A.B1/B.B2*100,3) AS DATA_PERCENTAGE 
+        FROM    (   SELECT TABLESPACE_NAME, SUM(BYTES) AS B1 FROM dba_segments WHERE SEGMENT_TYPE LIKE 'TABLE%' GROUP BY TABLESPACE_NAME ) A,
+                (   SELECT TABLESPACE_NAME, TOTAL_BYTES AS B2 FROM DBA_TABLESPACES) B WHERE A.TABLESPACE_NAME=B.TABLESPACE_NAME) B
+    ON A.TABLESPACE_NAME = B.TABLESPACE_NAME;`
 	SQL_QUERY_WAIT_EVENT = `SELECT count(s.WAIT_EVENT) current_waits FROM sys.v$system_event se, sys.v$session s WHERE se.EVENT = s.WAIT_EVENT
     AND se.event not in ('SQL*Net message from client',
     'SQL*Net more data from client',

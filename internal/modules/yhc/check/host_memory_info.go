@@ -4,6 +4,7 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yasutil/size"
 	"github.com/shirou/gopsutil/mem"
 )
@@ -21,7 +22,7 @@ const (
 	SWAP_MEMORY_TYPE   = "swap"
 )
 
-func (c *YHCChecker) GetHostMemoryInfo() (err error) {
+func (c *YHCChecker) GetHostMemoryInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_MEMORY_INFO,
 	}
@@ -30,7 +31,8 @@ func (c *YHCChecker) GetHostMemoryInfo() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_MEMORY_INFO))
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
-		log.Errorf("failed to get host memory info, err: %v", err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return err
 	}

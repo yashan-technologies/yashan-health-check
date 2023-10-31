@@ -40,7 +40,7 @@ func newBar(name string, progress *Progress, opts ...barOption) *bar {
 	return b
 }
 
-func (b *bar) addTask(name string, worker func() error) {
+func (b *bar) addTask(name string, worker func(string) error) {
 	b.tasks = append(b.tasks, &task{
 		name:   name,
 		worker: worker,

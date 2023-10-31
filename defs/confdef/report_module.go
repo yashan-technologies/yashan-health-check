@@ -15,8 +15,10 @@ import (
 var _moduleConfig *YHCModuleConfig
 
 type YHCModuleConfig struct {
-	Modules        []*YHCModuleNode `toml:"modules"`
-	moduleAliasMap map[string]string
+	Modules          []*YHCModuleNode `toml:"modules"`
+	moduleAliasMap   map[string]string
+	metricModulesMap map[string][]string
+	metricOrder      []string
 }
 
 type YHCModuleNode struct {
@@ -35,6 +37,8 @@ func initModuleConf(p string) error {
 		return err
 	}
 	conf.moduleAliasMap = genModuleAliasMap(conf.Modules)
+	conf.metricModulesMap = genMetricModulesMap(conf.Modules)
+	conf.metricOrder = genMetricOrder(conf.Modules)
 	_moduleConfig = conf
 	return nil
 }
@@ -62,6 +66,42 @@ func genModuleAliasMap(modules []*YHCModuleNode) map[string]string {
 	return res
 }
 
+func genMetricModulesMap(nodes []*YHCModuleNode) map[string][]string {
+	var fn func(node *YHCModuleNode, path []string, index map[string][]string)
+	fn = func(node *YHCModuleNode, path []string, index map[string][]string) {
+		path = append(path, node.Name)
+		for _, metricName := range node.MetricNames {
+			index[metricName] = append([]string{}, path...)
+		}
+		for _, child := range node.Children {
+			fn(child, path, index)
+		}
+	}
+
+	index := make(map[string][]string)
+	for _, node := range nodes {
+		fn(node, []string{}, index)
+	}
+	return index
+}
+
+func genMetricOrder(modules []*YHCModuleNode) []string {
+	var result []string
+
+	var fn func(node *YHCModuleNode, result *[]string)
+	fn = func(node *YHCModuleNode, result *[]string) {
+		*result = append(*result, node.MetricNames...)
+		for _, child := range node.Children {
+			fn(child, result)
+		}
+	}
+
+	for _, module := range modules {
+		fn(module, &result)
+	}
+	return result
+}
+
 func loadModuleConf(p string) (*YHCModuleConfig, error) {
 	conf := &YHCModuleConfig{}
 	if !fs.IsFileExist(p) {
@@ -84,4 +124,12 @@ func GetModuleAliasMap() map[string]string {
 func GetModuleAlias(name string) string {
 	name = strings.TrimSpace(name)
 	return _moduleConfig.moduleAliasMap[name]
+}
+
+func GetMetricModules(metricName string) []string {
+	return _moduleConfig.metricModulesMap[metricName]
+}
+
+func GetMetricOrder() []string {
+	return _moduleConfig.metricOrder
 }

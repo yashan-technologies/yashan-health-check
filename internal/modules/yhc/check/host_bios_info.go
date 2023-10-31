@@ -10,13 +10,15 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/execerutil"
+
+	"git.yasdb.com/go/yaserr"
 )
 
 const (
 	KEY_BIOS_INFORMATION = "BIOS Information"
 )
 
-func (c *YHCChecker) GetHostBIOSInfo() (err error) {
+func (c *YHCChecker) GetHostBIOSInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_BIOS_INFO,
 	}
@@ -33,6 +35,7 @@ func (c *YHCChecker) GetHostBIOSInfo() (err error) {
 	}
 	detail, err := c.parseDmidecodeOutput(stdout)
 	if err != nil {
+		err = yaserr.Wrap(err)
 		log.Error(err)
 		data.Error = err.Error()
 		return err

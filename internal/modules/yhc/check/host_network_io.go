@@ -4,9 +4,11 @@ import (
 	"yhc/defs/confdef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+
+	"git.yasdb.com/go/yaserr"
 )
 
-func (c *YHCChecker) GetHostHistoryNetworkIO() (err error) {
+func (c *YHCChecker) GetHostHistoryNetworkIO(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_HISTORY_NETWORK_IO,
 	}
@@ -15,7 +17,8 @@ func (c *YHCChecker) GetHostHistoryNetworkIO() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_HISTORY_NETWORK_IO))
 	resp, err := c.hostHistoryWorkload(log, define.METRIC_HOST_HISTORY_NETWORK_IO)
 	if err != nil {
-		log.Error("failed to get host network io info, err: %s", err.Error())
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}
@@ -23,7 +26,7 @@ func (c *YHCChecker) GetHostHistoryNetworkIO() (err error) {
 	return
 }
 
-func (c *YHCChecker) GetHostCurrentNetworkIO() (err error) {
+func (c *YHCChecker) GetHostCurrentNetworkIO(name string) (err error) {
 	data := &define.YHCItem{
 		Name:     define.METRIC_HOST_CURRENT_NETWORK_IO,
 		DataType: define.DATATYPE_SAR,
@@ -37,7 +40,8 @@ func (c *YHCChecker) GetHostCurrentNetworkIO() (err error) {
 	}
 	resp, err := c.hostCurrentWorkload(log, define.METRIC_HOST_CURRENT_NETWORK_IO, hasSar)
 	if err != nil {
-		log.Error("failed to get host network io info, err: %s", err.Error())
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}

@@ -26,6 +26,14 @@ const (
 	AT_ERROR    AlertType = "error"
 )
 
+var AlertTypeAliasMap = map[AlertType]string{
+	AT_SUCCESS:  "成功",
+	AT_INFO:     "提示",
+	AT_WARNING:  "警告",
+	AT_CRITICAL: "严重",
+	AT_ERROR:    "错误",
+}
+
 type ElementType string
 
 type ChartType string
@@ -45,13 +53,14 @@ type PandoraReport struct {
 }
 
 type PandoraMenu struct {
-	IsMenu    bool              `json:"isMenu,omitempty"`
-	IsChapter bool              `json:"isChapter,omitempty"`
-	Title     string            `json:"title,omitempty"`
-	TitleEn   string            `json:"-"`
-	Children  []*PandoraMenu    `json:"children,omitempty"`
-	MenuIndex int               `json:"menuIndex"`
-	Elements  []*PandoraElement `json:"elements,omitempty"`
+	IsMenu       bool              `json:"isMenu,omitempty"`
+	IsChapter    bool              `json:"isChapter,omitempty"`
+	Title        string            `json:"title,omitempty"`
+	TitleEn      string            `json:"-"`
+	WarningCount int               `json:"warningCount,omitempty"`
+	Children     []*PandoraMenu    `json:"children,omitempty"`
+	MenuIndex    int               `json:"menuIndex"`
+	Elements     []*PandoraElement `json:"elements,omitempty"`
 }
 
 type PandoraElement struct {
