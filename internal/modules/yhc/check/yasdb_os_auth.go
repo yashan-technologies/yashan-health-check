@@ -10,6 +10,7 @@ import (
 	"yhc/utils/stringutil"
 	"yhc/utils/userutil"
 
+	"git.yasdb.com/go/yaserr"
 	ini "gopkg.in/ini.v1"
 )
 
@@ -25,7 +26,7 @@ const (
 	FILE_YASDB_NET_INI = "yasdb_net.ini"
 )
 
-func (c *YHCChecker) GetYasdbOSAuth() (err error) {
+func (c *YHCChecker) GetYasdbOSAuth(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_OS_AUTH,
 	}
@@ -38,9 +39,9 @@ func (c *YHCChecker) GetYasdbOSAuth() (err error) {
 	if fileutil.IsExist(yasdbNetIniPath) {
 		iniConf, e := ini.Load(yasdbNetIniPath)
 		if e != nil {
-			err = e
+			err = yaserr.Wrap(e)
+			log.Error(err)
 			data.Error = err.Error()
-			log.Errorf("failed to load yasdb_net.ini, err: %v", err)
 			return
 		}
 		for _, section := range iniConf.Sections() {
@@ -57,8 +58,9 @@ func (c *YHCChecker) GetYasdbOSAuth() (err error) {
 	}
 	users, err := userutil.GetUserOfGroup(log, GROUP_YASDBA)
 	if err != nil {
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
-		log.Errorf("failed to get user of group %s, err: %v", GROUP_YASDBA, err)
 		return
 	}
 	res[KEY_YASDBA_GROUP_USER] = strings.Join(users, stringutil.STR_COMMA)

@@ -2,6 +2,7 @@ package check
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -17,8 +18,10 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/fileutil"
+	"yhc/utils/stringutil"
 	"yhc/utils/yasdbutil"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
 	"git.yasdb.com/go/yasutil/execer"
 	"git.yasdb.com/pandora/yasqlgo"
@@ -57,13 +60,14 @@ var waitEventHeaderAlias = map[string]string{
 	"Waits":                "WAITS",
 }
 
-func (c *YHCChecker) GetYasdbWaitEvent() (err error) {
+func (c *YHCChecker) GetYasdbWaitEvent(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_WAIT_EVENT}
 	defer c.fillResult(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_WAIT_EVENT))
 	path, err := c.createYasdbEventSqlFile(log)
 	if err != nil {
+		err = yaserr.Wrap(err)
 		log.Error(err)
 		data.Error = err.Error()
 		return err
@@ -79,6 +83,7 @@ func (c *YHCChecker) GetYasdbWaitEvent() (err error) {
 	}
 	detail, err := c.parseWaitEventStdout(stdout)
 	if err != nil {
+		err = yaserr.Wrap(err)
 		log.Error(err)
 		data.Error = err.Error()
 		return err
@@ -95,6 +100,7 @@ func (c *YHCChecker) parseWaitEventStdout(stdout string) ([]map[string]any, erro
 		return nil, err
 	}
 	table := map[int]map[string]any{}
+	isBase64 := c.isWaitEventBodyBase64(waitEvents)
 	for col, h := range waitEvents.Table.Header {
 		if headerAlias, ok := waitEventHeaderAlias[h]; ok {
 			h = headerAlias
@@ -104,7 +110,15 @@ func (c *YHCChecker) parseWaitEventStdout(stdout string) ([]map[string]any, erro
 			if !ok {
 				m = map[string]any{}
 			}
-			m[h] = b[col]
+			content := b[col]
+			if isBase64 {
+				b, err := base64.StdEncoding.DecodeString(content)
+				if err != nil {
+					return nil, err
+				}
+				content = string(b)
+			}
+			m[h] = content
 			table[row] = m
 		}
 	}
@@ -113,6 +127,16 @@ func (c *YHCChecker) parseWaitEventStdout(stdout string) ([]map[string]any, erro
 		res = append(res, table[i])
 	}
 	return res, nil
+}
+
+func (c *YHCChecker) isWaitEventBodyBase64(waitEvents *WaitEventOutput) bool {
+	if len(waitEvents.Table.Body) == 0 {
+		return false
+	}
+	if len(waitEvents.Table.Body[0]) == 0 {
+		return false
+	}
+	return stringutil.IsBase64(waitEvents.Table.Body[0][0])
 }
 
 func (c *YHCChecker) createYasdbEventSqlFile(log yaslog.YasLog) (filePath string, err error) {

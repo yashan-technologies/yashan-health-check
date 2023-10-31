@@ -92,8 +92,8 @@ func (c *CheckHandler) afterCheck() error {
 	return nil
 }
 
-func (c *CheckHandler) moduleMetricsFunc() (moduleCheckFunc map[string]map[string]func() error) {
-	moduleCheckFunc = make(map[string]map[string]func() error)
+func (c *CheckHandler) moduleMetricsFunc() (moduleCheckFunc map[string]map[string]func(string) error) {
+	moduleCheckFunc = make(map[string]map[string]func(string) error)
 	for module, metrics := range c.metrics {
 		funcMap := c.checker.CheckFuncs(metrics)
 		if len(funcMap) == 0 {
@@ -104,7 +104,7 @@ func (c *CheckHandler) moduleMetricsFunc() (moduleCheckFunc map[string]map[strin
 	return
 }
 
-func (c *CheckHandler) newProgress(moduleCheckFunc map[string]map[string]func() error) *barutil.Progress {
+func (c *CheckHandler) newProgress(moduleCheckFunc map[string]map[string]func(string) error) *barutil.Progress {
 	progress := barutil.NewProgress(
 		barutil.WithWidth(100),
 	)

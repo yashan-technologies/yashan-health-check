@@ -22,7 +22,7 @@ const (
 	KEY_DB_TIMES   = "DB_TIMES"
 )
 
-func (c *YHCChecker) GetYasdbHistoryDBTime() (err error) {
+func (c *YHCChecker) GetYasdbHistoryDBTime(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_HISTORY_DB_TIME}
 	defer c.fillResult(data)
 

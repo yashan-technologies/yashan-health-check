@@ -1,14 +1,15 @@
 package check
 
 import (
-	"fmt"
 	"strconv"
 
 	"yhc/defs/confdef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+	"yhc/utils/mathutil"
 	"yhc/utils/yasdbutil"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yasutil/size"
 )
 
@@ -24,9 +25,9 @@ const (
 	NAME_FREE_MEMORY = "free memory"
 )
 
-const decimal = 2
+const decimal = 3
 
-func (c *YHCChecker) GetYasdbSharePool() (err error) {
+func (c *YHCChecker) GetYasdbSharePool(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_SHARE_POOL}
 	defer c.fillResult(data)
 
@@ -34,7 +35,8 @@ func (c *YHCChecker) GetYasdbSharePool() (err error) {
 	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
 	sharePoolData, err := yasdb.QueryMultiRows(define.SQL_QUERY_SHARE_POOL, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
-		logger.Errorf("query share pool failed: %s", err)
+		err = yaserr.Wrap(err)
+		logger.Error(err)
 		data.Error = err.Error()
 		return
 	}
@@ -43,9 +45,9 @@ func (c *YHCChecker) GetYasdbSharePool() (err error) {
 	for _, row := range sharePoolData {
 		bytes, e := strconv.ParseFloat(row[COLUMN_BYTES], 64)
 		if err != nil {
-			err = e
+			err = yaserr.Wrap(e)
+			logger.Error(err)
 			data.Error = err.Error()
-			logger.Error("parse %s to float64 failed: %v", row[COLUMN_BYTES], err)
 			return
 		}
 		totalBytes += bytes
@@ -59,7 +61,7 @@ func (c *YHCChecker) GetYasdbSharePool() (err error) {
 		KEY_TOTAL_SIZE:      size.GenHumanReadableSize(totalBytes, decimal),
 		KYE_FREE_SIZE:       size.GenHumanReadableSize(freeBytes, decimal),
 		KEY_USED_SIZE:       size.GenHumanReadableSize(usedBytes, decimal),
-		KEY_USED_PERCENTAGE: fmt.Sprintf("%.2f%%", usedPercentage),
+		KEY_USED_PERCENTAGE: mathutil.Round(usedPercentage, decimal),
 	}
 	data.Details = content
 

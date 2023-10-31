@@ -109,8 +109,8 @@ var (
 		define.METRIC_HOST_SYSTEM_LOG_ERROR:                                                        checkPermission,
 		define.METRIC_HOST_DMESG_LOG_ERROR:                                                         checkDmesg,
 		define.METRIC_YASDB_BACKUP_SET:                                                             checkDBAPrivileges,
-		define.METRIC_YASDB_HISTORY_DB_TIME:                                                        checkDBAPrivileges,
-		define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE:                                                checkDBAPrivileges,
+		define.METRIC_YASDB_HISTORY_DB_TIME:                                                        checkSysWrmAndWrh,
+		define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE:                                                checkSysWrmAndWrh,
 		define.METRIC_YASDB_INVALID_OBJECT:                                                         checkDBAPrivileges,
 		define.METRIC_YASDB_INVISIBLE_INDEX:                                                        checkDBAPrivileges,
 		define.METRIC_YASDB_DISABLED_CONSTRAINT:                                                    checkDBAPrivileges,
@@ -164,6 +164,67 @@ func checkDBAPrivileges(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.Y
 		}
 		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
 		return nil
+	}
+	return nil
+}
+
+func checkSysWrmDatabaseInstance(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	sql := "select * from sys.wrm$_database_instance limit 1;"
+	if _, err := yhccommons.QueryYasdb(log, db, sql, confdef.GetYHCConf().SqlTimeout); err != nil {
+		if strings.Contains(err.Error(), YAS_USER_LACK_AUTH) || strings.Contains(err.Error(), YAS_TABLE_OR_VIEW_DOES_NOT_EXIST) {
+			return &define.NoNeedCheckMetric{
+				Name:        metric.NameAlias,
+				Error:       err,
+				Description: "需要权限访问SYS.WRM$_DATABAS_INSTANCE视图",
+			}
+		}
+		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
+		return nil
+	}
+	return nil
+}
+
+func checkSysWrhSysstat(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	sql := "select * from sys.wrh$_sysstat limit 1;"
+	if _, err := yhccommons.QueryYasdb(log, db, sql, confdef.GetYHCConf().SqlTimeout); err != nil {
+		if strings.Contains(err.Error(), YAS_USER_LACK_AUTH) || strings.Contains(err.Error(), YAS_TABLE_OR_VIEW_DOES_NOT_EXIST) {
+			return &define.NoNeedCheckMetric{
+				Name:        metric.NameAlias,
+				Error:       err,
+				Description: "需要权限访问SYS.WRH$_SYSSTAT视图",
+			}
+		}
+		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
+		return nil
+	}
+	return nil
+}
+
+func checkSysWrmSnapshot(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	sql := "select * from sys.wrm$_snapshot limit 1;"
+	if _, err := yhccommons.QueryYasdb(log, db, sql, confdef.GetYHCConf().SqlTimeout); err != nil {
+		if strings.Contains(err.Error(), YAS_USER_LACK_AUTH) || strings.Contains(err.Error(), YAS_TABLE_OR_VIEW_DOES_NOT_EXIST) {
+			return &define.NoNeedCheckMetric{
+				Name:        metric.NameAlias,
+				Error:       err,
+				Description: "需要权限访问SYS.WRM$_SNAPSHOT视图",
+			}
+		}
+		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
+		return nil
+	}
+	return nil
+}
+
+func checkSysWrmAndWrh(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	if needCheck := checkSysWrmDatabaseInstance(log, db, metric); needCheck != nil {
+		return needCheck
+	}
+	if needCheck := checkSysWrhSysstat(log, db, metric); needCheck != nil {
+		return needCheck
+	}
+	if needCheck := checkSysWrmSnapshot(log, db, metric); needCheck != nil {
+		return needCheck
 	}
 	return nil
 }

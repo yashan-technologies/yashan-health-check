@@ -7,6 +7,7 @@ import (
 	"yhc/log"
 	"yhc/utils/stringutil"
 
+	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yasutil/netcli"
 	"github.com/shirou/gopsutil/net"
 )
@@ -20,7 +21,7 @@ const (
 	KEY_NETWORK_HARDWARE_ADDR = "hardwareAddr"
 )
 
-func (c *YHCChecker) GetHostNetworkInfo() (err error) {
+func (c *YHCChecker) GetHostNetworkInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_NETWORK_INFO,
 	}
@@ -29,7 +30,8 @@ func (c *YHCChecker) GetHostNetworkInfo() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_NETWORK_INFO))
 	netInfo, err := net.Interfaces()
 	if err != nil {
-		log.Errorf("failed to get host network info, err: %s", err.Error())
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}

@@ -7,6 +7,8 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/yasdbutil"
+
+	"git.yasdb.com/go/yaserr"
 )
 
 const (
@@ -15,7 +17,7 @@ const (
 	KEY_INCREASE_PERCENT = "INCREASE_PERCENT"
 )
 
-func (c *YHCChecker) GetYasdbDataFile() (err error) {
+func (c *YHCChecker) GetYasdbDataFile(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_DATAFILE,
 	}
@@ -24,7 +26,8 @@ func (c *YHCChecker) GetYasdbDataFile() (err error) {
 	log := log.Module.M(string(define.METRIC_YASDB_DATAFILE))
 	sql, err := c.getSQL(define.METRIC_YASDB_DATAFILE)
 	if err != nil {
-		log.Errorf("failed to get sql of %s, err: %v", define.METRIC_YASDB_DATAFILE, err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}
@@ -37,7 +40,8 @@ func (c *YHCChecker) GetYasdbDataFile() (err error) {
 	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
 	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
 	if err != nil {
-		log.Errorf("failed to get data with sql '%s', err: %v", sql, err)
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}

@@ -41,7 +41,7 @@ func NewProgress(opts ...ProgressOpt) *Progress {
 }
 
 // AddBar accepts the prefix name of the progress bar and the specific task map in this progress bar.
-func (p *Progress) AddBar(name string, namedWorker map[string]func() error) {
+func (p *Progress) AddBar(name string, namedWorker map[string]func(string) error) {
 	bar := newBar(name, p, withBarWidth(p.width))
 	if len(namedWorker) == 0 {
 		return

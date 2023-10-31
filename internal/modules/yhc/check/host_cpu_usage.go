@@ -3,9 +3,11 @@ package check
 import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+
+	"git.yasdb.com/go/yaserr"
 )
 
-func (c *YHCChecker) GetHostHistoryCPUUsage() (err error) {
+func (c *YHCChecker) GetHostHistoryCPUUsage(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_HISTORY_CPU_USAGE,
 	}
@@ -14,7 +16,8 @@ func (c *YHCChecker) GetHostHistoryCPUUsage() (err error) {
 	log := log.Module.M(string(define.METRIC_HOST_HISTORY_CPU_USAGE))
 	resp, err := c.hostHistoryWorkload(log, define.METRIC_HOST_HISTORY_CPU_USAGE)
 	if err != nil {
-		log.Error("failed to get host cpu usage info, err: %s", err.Error())
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}
@@ -22,7 +25,7 @@ func (c *YHCChecker) GetHostHistoryCPUUsage() (err error) {
 	return
 }
 
-func (c *YHCChecker) GetHostCurrentCPUUsage() (err error) {
+func (c *YHCChecker) GetHostCurrentCPUUsage(name string) (err error) {
 	data := &define.YHCItem{
 		Name:     define.METRIC_HOST_CURRENT_CPU_USAGE,
 		DataType: define.DATATYPE_SAR,
@@ -36,7 +39,8 @@ func (c *YHCChecker) GetHostCurrentCPUUsage() (err error) {
 	}
 	resp, err := c.hostCurrentWorkload(log, define.METRIC_HOST_HISTORY_CPU_USAGE, hasSar)
 	if err != nil {
-		log.Error("failed to get host cpu usage info, err: %s", err.Error())
+		err = yaserr.Wrap(err)
+		log.Error(err)
 		data.Error = err.Error()
 		return
 	}

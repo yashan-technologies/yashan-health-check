@@ -1,6 +1,7 @@
 package check
 
 import (
+	"fmt"
 	"strings"
 
 	"yhc/defs/bashdef"
@@ -8,6 +9,7 @@ import (
 	"yhc/log"
 	"yhc/utils/execerutil"
 
+	"git.yasdb.com/go/yaserr"
 	"github.com/shirou/gopsutil/mem"
 )
 
@@ -18,7 +20,7 @@ const (
 	HUGE_PAGE_DISABLED = "never"
 )
 
-func (c *YHCChecker) GetHugePageEnabled() (err error) {
+func (c *YHCChecker) GetHugePageEnabled(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_HOST_HUGE_PAGE}
 	defer c.fillResult(data)
 
@@ -27,7 +29,9 @@ func (c *YHCChecker) GetHugePageEnabled() (err error) {
 	execer := execerutil.NewExecer(logger)
 	ret, stdout, stderr := execer.Exec(bashdef.CMD_BASH, "-c", command)
 	if ret != 0 {
-		data.Error = stderr
+		err = fmt.Errorf("failed to exec %s, err: %s", command, stderr)
+		logger.Error(err)
+		data.Error = err.Error()
 		return
 	}
 	enabled := STR_FALSE
@@ -40,7 +44,7 @@ func (c *YHCChecker) GetHugePageEnabled() (err error) {
 	return
 }
 
-func (c *YHCChecker) GetSwapMemoryEnabled() (err error) {
+func (c *YHCChecker) GetSwapMemoryEnabled(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_HOST_SWAP_MEMORY}
 	defer c.fillResult(data)
 
@@ -48,8 +52,9 @@ func (c *YHCChecker) GetSwapMemoryEnabled() (err error) {
 
 	swapMemory, err := mem.SwapMemory()
 	if err != nil {
+		err = yaserr.Wrap(err)
+		logger.Error(err)
 		data.Error = err.Error()
-		logger.Errorf("get swap memory failed: %s", err)
 		return
 	}
 	enabled := STR_FALSE
