@@ -67,7 +67,7 @@ var (
 
 	alertRuleOrder = []string{
 		confdef.AL_CRITICAL,
-		confdef.AL_WARING,
+		confdef.AL_WARNING,
 		confdef.AL_INFO,
 		confdef.AL_INVALID,
 	}

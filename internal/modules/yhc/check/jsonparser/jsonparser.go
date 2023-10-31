@@ -1,6 +1,7 @@
 package jsonparser
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -184,9 +185,10 @@ type JsonParser struct {
 	endCheckTime   time.Time
 	metrics        []*confdef.YHCMetric
 	results        map[define.MetricName]*define.YHCItem
+	evaluateResult *define.EvaluateResult
 }
 
-func NewJsonParser(log yaslog.YasLog, base define.CheckerBase, startCheck, endCheck time.Time, metrics []*confdef.YHCMetric, results map[define.MetricName]*define.YHCItem) *JsonParser {
+func NewJsonParser(log yaslog.YasLog, base define.CheckerBase, startCheck, endCheck time.Time, metrics []*confdef.YHCMetric, results map[define.MetricName]*define.YHCItem, evaluateResult *define.EvaluateResult) *JsonParser {
 	parser := &JsonParser{
 		log:            log,
 		metrics:        metrics,
@@ -194,6 +196,7 @@ func NewJsonParser(log yaslog.YasLog, base define.CheckerBase, startCheck, endCh
 		startCheckTime: startCheck,
 		endCheckTime:   endCheck,
 		base:           base,
+		evaluateResult: evaluateResult,
 	}
 	return parser
 }
@@ -268,9 +271,68 @@ func (j *JsonParser) addElementToEmptyMenu(menu *define.PandoraMenu) {
 func (j *JsonParser) addCheckSummary(report *define.PandoraReport) {
 	menu := &define.PandoraMenu{IsMenu: false, Title: "健康检查概览"}
 	j.checkSummary(report.Time, report.CostTime, menu)
+	j.evaluateSummary(menu)
 	j.alertSummary(menu)
 	j.moduleSummary(menu)
 	report.ReportData = append(report.ReportData, menu)
+}
+
+func (j *JsonParser) evaluateSummary(menu *define.PandoraMenu) {
+	descAttr := &define.DescriptionAttributes{}
+	data := []*define.DescriptionData{
+		{Label: "健康检查总分", Value: fmt.Sprintf("%.2f", j.evaluateResult.EvaluateModel.TotalScore)},
+		{Label: "本次健康检查得分", Value: fmt.Sprintf("%.2f", j.evaluateResult.Score)},
+		{Label: "本次巡检健康状况", Value: j.evaluateResult.HealthStatus},
+		{Label: "本次巡检告警统计", Value: fmt.Sprintf("严重级别告警%d个，警告级别告警%d个，提示级别告警%d个，建议查看【告警详情】模块确认并处理相关问题",
+			j.evaluateResult.AlertSummary.CriticalCount,
+			j.evaluateResult.AlertSummary.WarningCount,
+			j.evaluateResult.AlertSummary.InfoCount)},
+		{Label: "得分评估模型", Value: j.getScoreModelString()},
+		{Label: "告警权重", Value: j.getAlertWeightString()},
+	}
+	descAttr.Data = data
+	menu.Elements = append(menu.Elements, &define.PandoraElement{
+		ElementType:  define.ET_DESCRIPTION,
+		Attributes:   descAttr,
+		ElementTitle: "健康检查得分详情",
+	})
+}
+
+func (j *JsonParser) getScoreModelString() string {
+	var buf bytes.Buffer
+	healthStatusList := []string{confdef.HL_EXCELLENT, confdef.HL_GOOD, confdef.HL_Fair, confdef.HL_POOR, confdef.HL_CRITACAL}
+	for _, healthStatus := range healthStatusList {
+		interval, ok := j.evaluateResult.EvaluateModel.HealthModel[healthStatus]
+		if !ok {
+			continue
+		}
+		healthStatusAlias, ok := j.evaluateResult.EvaluateModel.HealthStatusAlias[healthStatus]
+		if !ok {
+			healthStatusAlias = healthStatus
+		}
+		buf.WriteString(fmt.Sprintf("%s(%.2f<=分数<=%.2f)  ", healthStatusAlias, interval.Min, interval.Max))
+	}
+	return buf.String()
+}
+
+func (j *JsonParser) getAlertWeightString() string {
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("单项指标告警总权重：%.2f，", j.evaluateResult.EvaluateModel.MaxAlertTotalWeight))
+	buf.WriteString(fmt.Sprintf("相同指标忽略相同级别告警：%v，", j.evaluateResult.EvaluateModel.IgnoreSameAlert))
+	buf.WriteString("单项告警权重：")
+	alertList := []string{confdef.AL_CRITICAL, confdef.AL_WARNING, confdef.AL_INFO}
+	for _, alert := range alertList {
+		weight, ok := j.evaluateResult.EvaluateModel.AlertsWeight[alert]
+		if !ok {
+			continue
+		}
+		alertLevelAlisa, ok := confdef.AlertLevelMap[alert]
+		if !ok {
+			alertLevelAlisa = alert
+		}
+		buf.WriteString(fmt.Sprintf("%s(%.2f)  ", alertLevelAlisa, weight))
+	}
+	return buf.String()
 }
 
 func (j *JsonParser) checkSummary(checkTime string, costTime int, menu *define.PandoraMenu) {
@@ -352,7 +414,7 @@ func (j *JsonParser) alertSummary(menu *define.PandoraMenu) {
 	}
 	element := &define.PandoraElement{
 		ElementType:  define.ET_TABLE,
-		ElementTitle: "告警概要信息",
+		ElementTitle: "告警详情",
 		Attributes:   tabAttr,
 	}
 	menu.Elements = append(menu.Elements, element)
