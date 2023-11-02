@@ -1771,7 +1771,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "SELECT round(a.USED_UBLK * b.value /1024/1024,3)  AS SIZE_MB, XID from V$TRANSACTION as a ,(SELECT VALUE FROM V$PARAMETER WHERE NAME='DB_BLOCK_SIZE') AS B ;"
+  sql = "SELECT round(a.USED_UBLK * b.value /1024/1024,3)  AS SIZE_MB, XID from V$TRANSACTION as a , ( SELECT to_number(decode(value, '8K','8192','16K','16384','32K','32768',value)) as VALUE FROM v$parameter WHERE NAME = 'DB_BLOCK_SIZE') as b;"
   number_columns = ["SIZE_MB","XID"]
   column_order = ["XID", "SIZE_MB"]
   labels = ["XID"]
