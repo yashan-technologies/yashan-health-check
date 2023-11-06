@@ -148,6 +148,7 @@ const (
 	SQL_QUERY_ROW_LOCK_WAIT            = `select count(*) as TOTAL from v$lock lo where REQUEST in ('ROW');`
 	SQL_QUERY_LONG_RUNNING_TRANSACTION = `select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE < sysdate - 3 / 24 and t.SID = s.SID;`
 	SQL_QUERY_REPLICATION_STATUS       = "select connection, status, peer_role, peer_addr, transport_lag, apply_lag from v$replication_status;"
+	SQL_QUERY_ARCHIVE_DEST_STATUS      = "select DEST_ID,CONNECTED,PEER_ADDR,STATUS,DATABASE_MODE,RECEIVED_LFN,APPLIED_LFN,SYNCHRONIZED,GAP_STATUS,DISCONNECT_TIME FROM V$ARCHIVE_DEST_STATUS;"
 	SQL_QUERY_PARAMETER                = "select name, value from v$parameter where value is not null;"
 	SQL_QUERY_TOTAL_OBJECT             = "select count(*) as total_count from dba_objects;"
 	SQL_QUERY_OWNER_OBJECT             = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects

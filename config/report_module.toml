@@ -28,7 +28,7 @@
   [[modules.children]]
     name = "yasdb_standby_check"
     name_alias = "主备检查"
-    metric_names = ["yasdb_replication_status"]
+    metric_names = ["yasdb_archive_dest_status"]
 
   [[modules.children]]
     name = "yasdb_config_check"
