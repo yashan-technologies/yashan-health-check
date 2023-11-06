@@ -565,7 +565,7 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_HOST_HISTORY_MEMORY_USAGE:                                                    j.parseHostWorkload,
 		define.METRIC_HOST_CURRENT_NETWORK_IO:                                                      j.parseHostWorkload,
 		define.METRIC_HOST_HISTORY_NETWORK_IO:                                                      j.parseHostWorkload,
-		define.METRIC_YASDB_REPLICATION_STATUS:                                                     j.parseTable,
+		define.METRIC_YASDB_ARCHIVE_DEST_STATUS:                                                    j.parseTable,
 		define.METRIC_YASDB_PARAMETER:                                                              j.parseMap,
 		define.METRIC_YASDB_TABLESPACE:                                                             j.parseTable,
 		define.METRIC_YASDB_CONTROLFILE_COUNT:                                                      j.parseMap,
