@@ -1,0 +1,69 @@
+# 用于评估检查结果
+
+total_score = 100  # 总分
+default_metric_weight = 5 # 未在metrics_weight字段显式指定权重的指标，其默认权重
+max_alert_total_weight = 10 # 单个指标产生告警的总权重
+ignore_same_alert = false # 单个指标同一级别告警是否只扣一次分, 例如如果某一指标产生了十个严重的告警，将只扣一次严重告警的分数
+ignore_failed_metric = true # 是否忽略检查失败的指标项
+
+[metrics_weight] # 显式指定某一指标的权重
+  # 一类指标
+  yasdb_database = 30
+  host_disk_info = 30
+  yasdb_replication_status = 30
+  yasdb_controlfile_count = 30
+
+  # 二类指标
+  yasdb_tablespace = 20
+  yasdb_datafile = 20
+  yasdb_session = 20
+  yasdb_undo_size = 20
+
+  # 三类指标
+
+  # 四类指标
+  host_huge_page = 7
+  host_swap_memory = 7
+  yasdb_security_user_use_system_tablespace = 7
+  yasdb_redo_log_count = 7
+
+  # 五类指标
+  yasdb_file_permission = 5
+  yasdb_parameter = 5
+  yasdb_os_auth = 5
+  yasdb_controlfile = 5
+  yasdb_security_password_strength = 5
+  yasdb_security_maximum_login_attempts = 5
+  yasdb_security_audit_cleanup_task = 5
+
+
+
+[alerts_weight] # 指定告警扣分的权重，某项告警扣分公式为: 单个指标对应分数*告警扣分权重/单个指标产生告警的总权重
+  critical = 3
+  warning = 2
+  info = 1
+
+
+[health_model] # 健康模型，分数对应的健康状态
+  [health_model.excellent]
+    min = 95
+    max = 100
+  [health_model.good]
+    min = 80
+    max = 95
+  [health_model.fair]
+    min = 70
+    max = 80
+  [health_model.poor]
+    min = 60
+    max = 70
+  [health_model.critical]
+    min = 0
+    max = 60
+
+[health_status_alias]
+  critical = "危急"
+  excellent = "优秀"
+  fair = "尚可"
+  good = "良好"
+  poor = "较差"
