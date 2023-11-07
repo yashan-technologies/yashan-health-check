@@ -59,9 +59,16 @@ type MetricType string
 const (
 	AL_INVALID  = "invalid"
 	AL_INFO     = "info"
-	AL_WARING   = "warning"
+	AL_WARNING  = "warning"
 	AL_CRITICAL = "critical"
 )
+
+var AlertLevelMap = map[string]string{
+	AL_INVALID:  "无效",
+	AL_INFO:     "提示",
+	AL_WARNING:  "警告",
+	AL_CRITICAL: "严重",
+}
 
 func initMetricConf(paths []string) error {
 	conf := YHCMetricConfig{}

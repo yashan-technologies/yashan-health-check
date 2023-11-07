@@ -19,6 +19,7 @@ type YHCModuleConfig struct {
 	moduleAliasMap   map[string]string
 	metricModulesMap map[string][]string
 	metricOrder      []string
+	moduleMetricsMap map[string][]string
 }
 
 type YHCModuleNode struct {
@@ -39,6 +40,7 @@ func initModuleConf(p string) error {
 	conf.moduleAliasMap = genModuleAliasMap(conf.Modules)
 	conf.metricModulesMap = genMetricModulesMap(conf.Modules)
 	conf.metricOrder = genMetricOrder(conf.Modules)
+	conf.moduleMetricsMap = genModuleMetricsMap(conf.Modules)
 	_moduleConfig = conf
 	return nil
 }
@@ -83,6 +85,21 @@ func genMetricModulesMap(nodes []*YHCModuleNode) map[string][]string {
 		fn(node, []string{}, index)
 	}
 	return index
+}
+
+func genModuleMetricsMap(modules []*YHCModuleNode) map[string][]string {
+	moduleMetricMap := make(map[string][]string)
+	var fn func(module *YHCModuleNode, moduleMetricMap map[string][]string)
+	fn = func(module *YHCModuleNode, moduleMetricMap map[string][]string) {
+		moduleMetricMap[module.Name] = module.MetricNames
+		for _, child := range module.Children {
+			fn(child, moduleMetricMap)
+		}
+	}
+	for _, module := range modules {
+		fn(module, moduleMetricMap)
+	}
+	return moduleMetricMap
 }
 
 func genMetricOrder(modules []*YHCModuleNode) []string {
@@ -132,4 +149,8 @@ func GetMetricModules(metricName string) []string {
 
 func GetMetricOrder() []string {
 	return _moduleConfig.metricOrder
+}
+
+func GetModuleMetrics() map[string][]string {
+	return _moduleConfig.moduleMetricsMap
 }

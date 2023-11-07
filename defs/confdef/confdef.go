@@ -20,6 +20,9 @@ func InitYHCConf(yhcConf string) error {
 	if err := initModuleConf(_yhcConf.DefaultModulePath); err != nil {
 		return err
 	}
+	if err := initEvaluateModel(_yhcConf.EvaluateModelPath); err != nil {
+		return err
+	}
 	return nil
 }
 
