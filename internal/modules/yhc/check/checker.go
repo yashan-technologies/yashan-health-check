@@ -16,6 +16,7 @@ import (
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/alertgenner"
 	"yhc/internal/modules/yhc/check/define"
+	"yhc/internal/modules/yhc/check/evaluator"
 	"yhc/internal/modules/yhc/check/gopsutil"
 	"yhc/internal/modules/yhc/check/jsonparser"
 	"yhc/internal/modules/yhc/check/sar"
@@ -75,7 +76,7 @@ var SQLMap = map[define.MetricName]string{
 	define.METRIC_YASDB_LISTEN_ADDR:                                                            define.SQL_QUERY_LISTEN_ADDR,
 	define.METRIC_YASDB_TABLESPACE:                                                             define.SQL_QUERY_TABLESPACE,
 	define.METRIC_YASDB_WAIT_EVENT:                                                             define.SQL_QUERY_WAIT_EVENT,
-	define.METRIC_YASDB_REPLICATION_STATUS:                                                     define.SQL_QUERY_REPLICATION_STATUS,
+	define.METRIC_YASDB_ARCHIVE_DEST_STATUS:                                                    define.SQL_QUERY_ARCHIVE_DEST_STATUS,
 	define.METRIC_YASDB_PARAMETER:                                                              define.SQL_QUERY_PARAMETER,
 	define.METRIC_YASDB_OBJECT_COUNT:                                                           define.SQL_QUERY_TOTAL_OBJECT,
 	define.METRIC_YASDB_OBJECT_OWNER:                                                           define.SQL_QUERY_OWNER_OBJECT,
@@ -117,11 +118,12 @@ type Checker interface {
 }
 
 type YHCChecker struct {
-	mtx        sync.RWMutex
-	base       *define.CheckerBase
-	metrics    []*confdef.YHCMetric
-	Result     map[define.MetricName]*define.YHCItem
-	FailedItem map[define.MetricName]string
+	mtx            sync.RWMutex
+	base           *define.CheckerBase
+	metrics        []*confdef.YHCMetric
+	Result         map[define.MetricName]*define.YHCItem
+	evaluateResult *define.EvaluateResult
+	FailedItem     map[define.MetricName]string
 }
 
 func NewYHCChecker(base *define.CheckerBase, metrics []*confdef.YHCMetric) *YHCChecker {
@@ -137,12 +139,13 @@ func NewYHCChecker(base *define.CheckerBase, metrics []*confdef.YHCMetric) *YHCC
 func (c *YHCChecker) GetResult(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport, map[define.MetricName]string) {
 	c.filterFailed()
 	c.genAlerts()
+	c.evaluate()
 	return c.Result, c.genReportJson(startCheck, endCheck), c.FailedItem
 }
 
 func (c *YHCChecker) genReportJson(startCheck, endCheck time.Time) *define.PandoraReport {
 	log := log.Module.M("gen-report-json")
-	parser := jsonparser.NewJsonParser(log, *c.base, startCheck, endCheck, c.metrics, c.Result)
+	parser := jsonparser.NewJsonParser(log, *c.base, startCheck, endCheck, c.metrics, c.Result, c.evaluateResult)
 	return parser.Parse()
 }
 
@@ -150,6 +153,12 @@ func (c *YHCChecker) genAlerts() {
 	log := log.Module.M("gen-alert")
 	alertGenner := alertgenner.NewAlterGenner(log, c.metrics, c.Result)
 	c.Result = alertGenner.GenAlerts()
+}
+
+func (c *YHCChecker) evaluate() {
+	log := log.Module.M("evaluate")
+	evaluator := evaluator.NewEvaluator(log, c.Result, c.FailedItem)
+	c.evaluateResult = evaluator.Evaluate()
 }
 
 func (c *YHCChecker) filterFailed() {
@@ -228,7 +237,7 @@ func (c *YHCChecker) funcMap() (res map[define.MetricName]func(string) error) {
 		define.METRIC_YASDB_OBJECT_COUNT:                                                           c.GetYasdbSingleRowData,
 		define.METRIC_YASDB_OBJECT_OWNER:                                                           c.GetYasdbSingleRowData,
 		define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_REPLICATION_STATUS:                                                     c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_ARCHIVE_DEST_STATUS:                                                    c.GetYasdbArchiveDestStatus,
 		define.METRIC_YASDB_PARAMETER:                                                              c.GetYasdbParameter,
 		define.METRIC_YASDB_SESSION:                                                                c.GetYasdbSingleRowData,
 		define.METRIC_YASDB_TABLESPACE:                                                             c.GetYasdbMultiRowData,

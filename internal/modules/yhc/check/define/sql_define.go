@@ -148,6 +148,7 @@ const (
 	SQL_QUERY_ROW_LOCK_WAIT            = `select count(*) as TOTAL from v$lock lo where REQUEST in ('ROW');`
 	SQL_QUERY_LONG_RUNNING_TRANSACTION = `select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE < sysdate - 3 / 24 and t.SID = s.SID;`
 	SQL_QUERY_REPLICATION_STATUS       = "select connection, status, peer_role, peer_addr, transport_lag, apply_lag from v$replication_status;"
+	SQL_QUERY_ARCHIVE_DEST_STATUS      = "select DEST_ID,CONNECTED,PEER_ADDR,STATUS,DATABASE_MODE,RECEIVED_LFN,APPLIED_LFN,SYNCHRONIZED,GAP_STATUS,DISCONNECT_TIME FROM V$ARCHIVE_DEST_STATUS;"
 	SQL_QUERY_PARAMETER                = "select name, value from v$parameter where value is not null;"
 	SQL_QUERY_TOTAL_OBJECT             = "select count(*) as total_count from dba_objects;"
 	SQL_QUERY_OWNER_OBJECT             = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects
@@ -255,7 +256,7 @@ const (
 	SQL_QUERY_AUDIT_CLEANUP_TASK                           = `select AUDIT_TRAIL,LAST_ARCHIVE_TS,DATABASE_ID from DBA_AUDIT_MGMT_LAST_ARCH_TS;`
 	SQL_QUERY_AUDIT_FILE_SIZE                              = `select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like 'AUD$';`
 	/**日志分析**/
-	SQL_QUERY_UNDO_LOG_SIZE                 = `SELECT  a.USED_UBLK * b.value /1024/1024/1044 AS SIZE_GB, XID from V$TRANSACTION as a ,(SELECT VALUE FROM V$PARAMETER WHERE NAME='DB_BLOCK_SIZE') AS B ;`
+	SQL_QUERY_UNDO_LOG_SIZE                 = `SELECT round(a.USED_UBLK * b.value /1024/1024,3)  AS SIZE_MB, XID from V$TRANSACTION as a , ( SELECT to_number(decode(value, '8K','8192','16K','16384','32K','32768',value)) as VALUE FROM v$parameter WHERE NAME = 'DB_BLOCK_SIZE') as b;`
 	SQL_QUERY_UNDO_LOG_TOTAL_BLOCK          = `SELECT  SUM(USED_UBLK) as TOTAL_BLOCK from V$TRANSACTION ;`
 	SQL_QUERY_UNDO_LOG_RUNNING_TRANSACTIONS = `SELECT XID, SID,XRMID,XEXT, XNODE,XSN,STATUS,RESIDUAL, USED_UBLK, FIRST_UBAFIL,FIRST_UBABLK,FIRST_UBAVER ,FIRST_UBAREC,LAST_UBAFIL,LAST_UBABLK, PTX_XID, START_DATE,ISOLATION_LEVEL from V$TRANSACTION ;`
 )

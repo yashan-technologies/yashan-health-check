@@ -78,7 +78,7 @@ const (
 	METRIC_HOST_CURRENT_MEMORY_USAGE                                                    MetricName = "host_current_memory_usage"
 	METRIC_HOST_HISTORY_NETWORK_IO                                                      MetricName = "host_history_network_io"
 	METRIC_HOST_CURRENT_NETWORK_IO                                                      MetricName = "host_current_network_io"
-	METRIC_YASDB_REPLICATION_STATUS                                                     MetricName = "yasdb_replication_status"
+	METRIC_YASDB_ARCHIVE_DEST_STATUS                                                    MetricName = "yasdb_archive_dest_status"
 	METRIC_YASDB_PARAMETER                                                              MetricName = "yasdb_parameter"
 	METRIC_YASDB_TABLESPACE                                                             MetricName = "yasdb_tablespace"
 	METRIC_YASDB_CONTROLFILE_COUNT                                                      MetricName = "yasdb_controlfile_count"

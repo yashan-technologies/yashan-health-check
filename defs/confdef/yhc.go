@@ -23,6 +23,7 @@ type YHC struct {
 	Output            string   `toml:"output"`
 	MetricPaths       []string `toml:"metric_paths"`
 	DefaultModulePath string   `toml:"default_module_path"`
+	EvaluateModelPath string   `toml:"evaluate_model_path"`
 	NetworkIODiscard  string   `toml:"network_io_discard"`
 }
 
