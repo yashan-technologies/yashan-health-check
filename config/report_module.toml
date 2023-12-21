@@ -56,6 +56,11 @@
     metric_names = ["yasdb_session", "yasdb_share_pool"]
 
   [[modules.children]]
+    name = "yasdb_archive_log"
+    name_alias = "归档日志检查"
+    metric_names = ["yasdb_archive_log_space","yasdb_archive_log"]
+
+  [[modules.children]]
     name = "yasdb_performance_analysis"
     name_alias = "性能分析"
 

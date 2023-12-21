@@ -21,7 +21,7 @@ const (
 )
 
 func (c *YHCChecker) GetYasdbArchiveDestStatus(name string) (err error) {
-	log := log.Module.M(string(define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE))
+	log := log.Module.M(string(define.METRIC_YASDB_ARCHIVE_DEST_STATUS))
 	role, err := c.getNodeRole(log)
 	if err != nil {
 		c.fillResult(&define.YHCItem{

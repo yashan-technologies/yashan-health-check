@@ -771,6 +771,92 @@
     DB_TIMES = "DB Time(ms)"
 
 [[metrics]]
+  name = "yasdb_archive_log_space"
+  name_alias = "数据库归档情况"
+  module_name = "yasdb_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = '''
+    WITH value_stats AS (
+        SELECT SUM(BLOCK_SIZE * BLOCKS) AS total_blocks
+        FROM V$ARCHIVED_LOG
+    ), arch_clean_upper_threshold AS (
+        SELECT CASE 
+            WHEN VALUE LIKE '%T' THEN TRIM(TRAILING 'T' FROM VALUE) * 1024 * 1024 * 1024 * 1024
+            WHEN VALUE LIKE '%G' THEN TRIM(TRAILING 'G' FROM VALUE) * 1024 * 1024 * 1024
+            WHEN VALUE LIKE '%M' THEN TRIM(TRAILING 'M' FROM VALUE) * 1024 * 1024
+            WHEN VALUE LIKE '%K' THEN TRIM(TRAILING 'K' FROM VALUE) * 1024
+            WHEN REGEXP_LIKE(VALUE, '^[1-9]+[0-9]*$') = TRUE THEN TO_NUMBER(VALUE)
+        END AS value
+        FROM V$PARAMETER
+        WHERE name = 'ARCH_CLEAN_UPPER_THRESHOLD'
+    ), usable_pct AS (
+        SELECT TO_CHAR(100 * (b.total_blocks / a.value), '99.99') AS USABLE_PCT
+        FROM arch_clean_upper_threshold a, value_stats b
+    ), space_limit AS (
+        SELECT round(value/1024/1024/1024,2) AS SPACE_LIMIT
+        FROM arch_clean_upper_threshold
+    ), number_of_files AS (
+        SELECT COUNT(1) AS NUMBER_OF_FILES
+        FROM V$ARCHIVED_LOG
+    ), space_used AS (
+        SELECT ROUND(SUM(BLOCK_SIZE * BLOCKS)/1024/1024/1024,2) AS SPACE_USED
+        FROM V$ARCHIVED_LOG
+    ), space_reclaimable AS (
+        SELECT ROUND(SUM(b.size)/1024/1024/1024,2) AS SPACE_RECLAIMABLE
+        FROM (SELECT REGEXP_SUBSTR(RCY_POINT, '[^-]+', 1, 2, 'i') AS value FROM v$database) a, 
+            (SELECT SEQUENCE# AS value, BLOCK_SIZE * BLOCKS AS size FROM V$ARCHIVED_LOG) b
+        WHERE a.value > b.value
+    ), archive_dest AS (
+        select value AS ARCHIVE_DEST from V$SYSTEM_PARAMETER where name='ARCHIVE_LOCAL_DEST'
+    )
+    select USABLE_PCT,SPACE_LIMIT,NUMBER_OF_FILES,SPACE_USED,SPACE_RECLAIMABLE,ARCHIVE_DEST
+    FROM usable_pct,space_limit,number_of_files,space_used,space_reclaimable,archive_dest;
+'''
+  column_order = ["ARCHIVE_DEST","NUMBER_OF_FILES","SPACE_LIMIT","SPACE_USED","SPACE_RECLAIMABLE"]
+  [metrics.column_alias]
+    USABLE_PCT = "可用空间百分比(%)"
+    SPACE_USED = "归档已用空间(GB)"
+    NUMBER_OF_FILES = "归档文件数量"
+    SPACE_LIMIT = "归档最大空间(GB)"
+    ARCHIVE_DEST = "归档路径"
+    SPACE_RECLAIMABLE = "归档可回收空间(GB)"
+
+[[metrics]]
+  name = "yasdb_archive_log"
+  name_alias = "数据库归档日志"
+  module_name = "yasdb_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  sql = '''select 
+        NAME, 
+        SEQUENCE# AS SEQUENCE, 
+        to_char(FIRST_TIME, 'yyyy-mm-dd hh24:mi:ss') as FIRST_TIME, 
+        to_char(NEXT_TIME, 'yyyy-mm-dd hh24:mi:ss') as NEXT_TIME, 
+        to_char(COMPLETION_TIME, 'yyyy-mm-dd hh24:mi:ss') as COMPLETION_TIME, 
+        BLOCKS, 
+        BLOCK_SIZE, 
+        COMPRESSED, 
+        FAL 
+    from 
+        v$archived_log;
+    '''
+  column_order = ["NAME","SEQUENCE","FIRST_TIME","NEXT_TIME","COMPLETION_TIME","BLOCKS","BLOCK_SIZE","COMPRESSED","FAL"]
+  [metrics.column_alias]
+    NAME = "文件路径"
+    SEQUENCE = "序列号"
+    FIRST_TIME = "开始时间"
+    NEXT_TIME = "结束时间"
+    BLOCKS = "页面数量"
+    COMPLETION_TIME = "生成时间"
+    BLOCK_SIZE = "页面大小"
+    COMPRESSED = "是否压缩文件"
+    FAL = "是否由FAL线程生成"
+
+
+[[metrics]]
   name = "yasdb_history_buffer_hit_rate"
   name_alias = "历史内存命中率"
   module_name = "yasdb_check"
@@ -1517,7 +1603,7 @@
   enabled = true
   sql = "SELECT OWNER ,NAME, JOIN_STR FROM (SELECT  OWNER ,NAME,LISTAGG(TYPE,'-') AS JOIN_STR FROM DBA_SOURCE GROUP by OWNER ,NAME) WHERE JOIN_STR<>'PACKAGE-PACKAGE BODY';"
   number_columns = ["USED_RATE"]
-  labels = ["NAME"]
+  labels = ["NAME","OWNER"]
   column_order = ["NAME","OWNER","JOIN_STR"]
   [metrics.column_alias]
     OWNER = "对象所属的用户"
@@ -1581,6 +1667,7 @@
   default = true
   enabled = true
   sql = "select username,ACCOUNT_STATUS from dba_users where ACCOUNT_STATUS!='OPEN';"
+  labels = ["USERNAME"]
   [metrics.column_alias]
     USERNAME = "用户名称"
     ACCOUNT_STATUS = "账户状态"
