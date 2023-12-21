@@ -104,6 +104,8 @@ var _mergeOldMenuToNew []merge = []merge{
 			string(define.METRIC_HOST_DISK_BLOCK_INFO),
 			string(define.METRIC_HOST_MEMORY_INFO),
 			string(define.METRIC_HOST_NETWORK_INFO),
+			string(define.METRIC_HOST_FIREWALLD),
+			string(define.METRIC_HOST_IPTABLES),
 		},
 	},
 	{

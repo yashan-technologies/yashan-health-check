@@ -5,7 +5,7 @@
   [[modules.children]]
     name = "overview_host"
     name_alias = "主机概述"
-    metric_names = ["host_info", "host_cpu_info", "host_disk_info", "host_disk_block_info", "host_bios_info", "host_memory_info", "host_network_info"]
+    metric_names = ["host_info", "host_cpu_info", "host_disk_info", "host_disk_block_info", "host_bios_info", "host_memory_info", "host_network_info", "host_firewalld", "host_iptables"]
 
   [[modules.children]]
     name = "overview_yasdb"
@@ -19,7 +19,7 @@
   [[modules.children]]
     name = "host_workload_check"
     name_alias = "主机负载检查"
-    metric_names = ["host_history_cpu_usage", "host_current_cpu_usage", "host_history_disk_io", "host_current_disk_io", "host_current_memory_usage", "host_history_memory_usage", "host_history_network_io", "host_current_network_io", "host_firewalld", "host_iptables"]
+    metric_names = ["host_history_cpu_usage", "host_current_cpu_usage", "host_history_disk_io", "host_current_disk_io", "host_current_memory_usage", "host_history_memory_usage", "host_history_network_io", "host_current_network_io"]
 
 [[modules]]
   name = "yasdb_check"
