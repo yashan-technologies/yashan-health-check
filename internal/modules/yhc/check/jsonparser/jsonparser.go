@@ -412,7 +412,8 @@ func (j *JsonParser) alertSummary(menu *define.PandoraMenu) {
 			{Title: "告警建议", DataIndex: _alert_suggestion},
 			{Title: "告警标签", DataIndex: _alert_labels},
 		},
-		DataSource: res,
+		DataSource:  res,
+		TableLayout: define.TABLE_LAYOUT_FIXED,
 	}
 	element := &define.PandoraElement{
 		ElementType:  define.ET_TABLE,
