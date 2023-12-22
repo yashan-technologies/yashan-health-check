@@ -791,8 +791,8 @@
         END AS value
         FROM V$PARAMETER
         WHERE name = 'ARCH_CLEAN_UPPER_THRESHOLD'
-    ), usable_pct AS (
-        SELECT TO_CHAR(100 * (b.total_blocks / a.value), '99.99') AS USABLE_PCT
+    ), used_pct AS (
+        SELECT round(100 * (b.total_blocks / a.value), 2) AS USED_PCT
         FROM arch_clean_upper_threshold a, value_stats b
     ), space_limit AS (
         SELECT round(value/1024/1024/1024,2) AS SPACE_LIMIT
@@ -811,17 +811,27 @@
     ), archive_dest AS (
         select value AS ARCHIVE_DEST from V$SYSTEM_PARAMETER where name='ARCHIVE_LOCAL_DEST'
     )
-    select USABLE_PCT,SPACE_LIMIT,NUMBER_OF_FILES,SPACE_USED,SPACE_RECLAIMABLE,ARCHIVE_DEST
-    FROM usable_pct,space_limit,number_of_files,space_used,space_reclaimable,archive_dest;
+    select USED_PCT,SPACE_LIMIT,NUMBER_OF_FILES,SPACE_USED,SPACE_RECLAIMABLE,ARCHIVE_DEST
+    FROM used_pct,space_limit,number_of_files,space_used,space_reclaimable,archive_dest;
 '''
   column_order = ["ARCHIVE_DEST","NUMBER_OF_FILES","SPACE_LIMIT","SPACE_USED","SPACE_RECLAIMABLE"]
+  number_columns = ["USED_PCT"]
   [metrics.column_alias]
-    USABLE_PCT = "可用空间百分比(%)"
+    USED_PCT = "已用空间百分比(%)"
     SPACE_USED = "归档已用空间(GB)"
     NUMBER_OF_FILES = "归档文件数量"
     SPACE_LIMIT = "归档最大空间(GB)"
     ARCHIVE_DEST = "归档路径"
     SPACE_RECLAIMABLE = "归档可回收空间(GB)"
+
+  [metrics.item_names]
+    USED_PCT = "archive_log_used_percent"
+  [metrics.alert_rules]
+
+    [[metrics.alert_rules.warning]]
+      expression = "archive_log_used_percent > 100"
+      description = "归档自动清理"
+      suggestion = "已使用的归档空间大于最大限制，请及时检查归档，查看是否自动清理"
 
 [[metrics]]
   name = "yasdb_archive_log"
