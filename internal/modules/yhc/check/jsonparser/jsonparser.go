@@ -104,6 +104,8 @@ var _mergeOldMenuToNew []merge = []merge{
 			string(define.METRIC_HOST_DISK_BLOCK_INFO),
 			string(define.METRIC_HOST_MEMORY_INFO),
 			string(define.METRIC_HOST_NETWORK_INFO),
+			string(define.METRIC_HOST_FIREWALLD),
+			string(define.METRIC_HOST_IPTABLES),
 		},
 	},
 	{
@@ -566,6 +568,8 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_HOST_CURRENT_NETWORK_IO:                                                      j.parseHostWorkload,
 		define.METRIC_HOST_HISTORY_NETWORK_IO:                                                      j.parseHostWorkload,
 		define.METRIC_YASDB_ARCHIVE_DEST_STATUS:                                                    j.parseTable,
+		define.METRIC_YASDB_ARCHIVE_LOG:                                                            j.parseTable,
+		define.METRIC_YASDB_ARCHIVE_LOG_SPACE:                                                      j.parseMap,
 		define.METRIC_YASDB_PARAMETER:                                                              j.parseMap,
 		define.METRIC_YASDB_TABLESPACE:                                                             j.parseTable,
 		define.METRIC_YASDB_CONTROLFILE_COUNT:                                                      j.parseMap,
