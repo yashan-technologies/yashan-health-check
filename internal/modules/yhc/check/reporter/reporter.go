@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"yhc/defs/bashdef"
+	"yhc/defs/confdef"
 	"yhc/defs/timedef"
 	yhccommons "yhc/internal/modules/yhc/check/commons"
 	"yhc/internal/modules/yhc/check/define"
@@ -102,6 +103,11 @@ func (r *YHCReport) genReport() error {
 }
 
 func (r *YHCReport) genHtmlReport() error {
+	log := log.Module.M("gen-html")
+	if confdef.GetYHCConf().SkipGenHtmlReport {
+		log.Debug("skip to gen html report")
+		return nil
+	}
 	templateFile := r.getHtmlTemplateFile()
 	f, err := os.Open(templateFile)
 	if err != nil {
@@ -126,6 +132,10 @@ func (r *YHCReport) genHtmlReport() error {
 
 func (r *YHCReport) genWordReport() error {
 	log := log.Module.M("gen-word")
+	if confdef.GetYHCConf().SkipGenWordReport {
+		log.Debug("skip to gen word report")
+		return nil
+	}
 	wordGenner := r.getWordGennerFile()
 	exec := execer.NewExecer(log)
 	cmd := []string{

@@ -25,6 +25,8 @@ type YHC struct {
 	DefaultModulePath string   `toml:"default_module_path"`
 	EvaluateModelPath string   `toml:"evaluate_model_path"`
 	NetworkIODiscard  string   `toml:"network_io_discard"`
+	SkipGenWordReport bool     `toml:"skip_gen_word_report"`
+	SkipGenHtmlReport bool     `toml:"skip_gen_html_report"`
 }
 
 func GetYHCConf() YHC {

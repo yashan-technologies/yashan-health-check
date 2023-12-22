@@ -36,7 +36,7 @@ func (c *YHCChecker) GetYasdbHistoryBufferHitRate(name string) (err error) {
 	}
 	content := make(define.WorkloadOutput)
 	for _, row := range dbTimes {
-		t, err := time.Parse(timedef.TIME_FORMAT, row[KEY_SNAP_TIME])
+		t, err := time.ParseInLocation(timedef.TIME_FORMAT, row[KEY_SNAP_TIME], time.Local)
 		if err != nil {
 			logger.Errorf("parse time %s failed: %s", row[KEY_SNAP_TIME], err)
 			continue
