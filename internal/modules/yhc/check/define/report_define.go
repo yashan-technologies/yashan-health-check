@@ -26,6 +26,10 @@ const (
 	AT_ERROR    AlertType = "error"
 )
 
+const (
+	TABLE_LAYOUT_FIXED = "fixed"
+)
+
 var AlertTypeAliasMap = map[AlertType]string{
 	AT_SUCCESS:  "成功",
 	AT_INFO:     "提示",
@@ -90,6 +94,7 @@ type TableAttributes struct {
 	Title        string                   `json:"title,omitempty"`
 	DataSource   []map[string]interface{} `json:"dataSource"`
 	TableColumns []*TableColumn           `json:"columns,omitempty"`
+	TableLayout  string                   `json:"tableLayout,omitempty"`
 }
 
 type TableColumn struct {
