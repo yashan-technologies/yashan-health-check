@@ -20,8 +20,8 @@ GO_BUILD_WITH_INFO=$(GO_BUILD) -ldflags "\
 	-X 'yhc/defs/compiledef._gitDescribe=$(GIT_DESCRIBE)'"
 
 # package defines
-PKG_PERFIX=yashan-health-check
-PKG=$(PKG_PERFIX)-$(VERSION)-$(OS)-$(ARCH).tar.gz
+PKG_PERFIX=yashan-health-check-$(VERSION)
+PKG=$(PKG_PERFIX)-$(OS)-$(ARCH).tar.gz
 
 BUILD_PATH=./build
 PKG_PATH=$(BUILD_PATH)/$(PKG_PERFIX)
