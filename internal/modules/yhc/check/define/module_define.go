@@ -25,6 +25,7 @@ const (
 	MODULE_YASDB_CONTROLFILE ModuleName = "yasdb_controlfile_check"
 	MODULE_YASDB_BACKUP      ModuleName = "yasdb_backup_check"
 	MODULE_YASDB_WORKLOAD    ModuleName = "yasdb_workload_check"
+	MODULE_YASDB_ARCHIVE_LOG ModuleName = "yasdb_archive_log"
 	MODULE_YASDB_PERFORMANCE ModuleName = "yasdb_performance_analysis"
 
 	// parent module: MN_OBJECT
@@ -79,6 +80,8 @@ const (
 	METRIC_HOST_HISTORY_NETWORK_IO                                                      MetricName = "host_history_network_io"
 	METRIC_HOST_CURRENT_NETWORK_IO                                                      MetricName = "host_current_network_io"
 	METRIC_YASDB_ARCHIVE_DEST_STATUS                                                    MetricName = "yasdb_archive_dest_status"
+	METRIC_YASDB_ARCHIVE_LOG                                                            MetricName = "yasdb_archive_log"
+	METRIC_YASDB_ARCHIVE_LOG_SPACE                                                      MetricName = "yasdb_archive_log_space"
 	METRIC_YASDB_PARAMETER                                                              MetricName = "yasdb_parameter"
 	METRIC_YASDB_TABLESPACE                                                             MetricName = "yasdb_tablespace"
 	METRIC_YASDB_CONTROLFILE_COUNT                                                      MetricName = "yasdb_controlfile_count"

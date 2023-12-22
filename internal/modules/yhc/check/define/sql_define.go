@@ -149,9 +149,60 @@ const (
 	SQL_QUERY_LONG_RUNNING_TRANSACTION = `select t.XID, to_char(t.START_DATE, 'yyyy-mm-dd hh24:mi:ss') as START_DATE, t.STATUS , t.RESIDUAL, s.USERNAME, t.SID, t.USED_UBLK from v$transaction t, v$session s where t.START_DATE < sysdate - 3 / 24 and t.SID = s.SID;`
 	SQL_QUERY_REPLICATION_STATUS       = "select connection, status, peer_role, peer_addr, transport_lag, apply_lag from v$replication_status;"
 	SQL_QUERY_ARCHIVE_DEST_STATUS      = "select DEST_ID,CONNECTED,PEER_ADDR,STATUS,DATABASE_MODE,RECEIVED_LFN,APPLIED_LFN,SYNCHRONIZED,GAP_STATUS,DISCONNECT_TIME FROM V$ARCHIVE_DEST_STATUS;"
-	SQL_QUERY_PARAMETER                = "select name, value from v$parameter where value is not null;"
-	SQL_QUERY_TOTAL_OBJECT             = "select count(*) as total_count from dba_objects;"
-	SQL_QUERY_OWNER_OBJECT             = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects
+	SQL_QUERY_ARCHIVE_LOG              = `
+    select 
+        NAME, 
+        SEQUENCE# AS SEQUENCE, 
+        to_char(FIRST_TIME, 'yyyy-mm-dd hh24:mi:ss') as FIRST_TIME, 
+        to_char(NEXT_TIME, 'yyyy-mm-dd hh24:mi:ss') as NEXT_TIME, 
+        to_char(COMPLETION_TIME, 'yyyy-mm-dd hh24:mi:ss') as COMPLETION_TIME, 
+        BLOCKS, 
+        BLOCK_SIZE, 
+        COMPRESSED, 
+        FAL 
+    from 
+        v$archived_log;
+    `
+	SQL_QUERY_ARCHIVE_LOG_SPACE = `
+    WITH value_stats AS (
+        SELECT SUM(BLOCK_SIZE * BLOCKS) AS total_blocks
+        FROM V$ARCHIVED_LOG
+    ), arch_clean_upper_threshold AS (
+        SELECT CASE 
+            WHEN VALUE LIKE '%T' THEN TRIM(TRAILING 'T' FROM VALUE) * 1024 * 1024 * 1024 * 1024
+            WHEN VALUE LIKE '%G' THEN TRIM(TRAILING 'G' FROM VALUE) * 1024 * 1024 * 1024
+            WHEN VALUE LIKE '%M' THEN TRIM(TRAILING 'M' FROM VALUE) * 1024 * 1024
+            WHEN VALUE LIKE '%K' THEN TRIM(TRAILING 'K' FROM VALUE) * 1024
+            WHEN REGEXP_LIKE(VALUE, '^[1-9]+[0-9]*$') = TRUE THEN TO_NUMBER(VALUE)
+        END AS value
+        FROM V$PARAMETER
+        WHERE name = 'ARCH_CLEAN_UPPER_THRESHOLD'
+    ), usable_pct AS (
+        SELECT TO_CHAR(100 * (b.total_blocks / a.value), '99.99') AS USABLE_PCT
+        FROM arch_clean_upper_threshold a, value_stats b
+    ), space_limit AS (
+        SELECT round(value/1024/1024/1024,2) AS SPACE_LIMIT
+        FROM arch_clean_upper_threshold
+    ), number_of_files AS (
+        SELECT COUNT(1) AS NUMBER_OF_FILES
+        FROM V$ARCHIVED_LOG
+    ), space_used AS (
+        SELECT ROUND(SUM(BLOCK_SIZE * BLOCKS)/1024/1024/1024,2) AS SPACE_USED
+        FROM V$ARCHIVED_LOG
+    ), space_reclaimable AS (
+        SELECT ROUND(SUM(b.size)/1024/1024/1024,2) AS SPACE_RECLAIMABLE
+        FROM (SELECT REGEXP_SUBSTR(RCY_POINT, '[^-]+', 1, 2, 'i') AS value FROM v$database) a, 
+            (SELECT SEQUENCE# AS value, BLOCK_SIZE * BLOCKS AS size FROM V$ARCHIVED_LOG) b
+        WHERE a.value > b.value
+    ), archive_dest AS (
+        select value AS ARCHIVE_DEST from V$SYSTEM_PARAMETER where name='ARCHIVE_LOCAL_DEST'
+    )
+    select USABLE_PCT,SPACE_LIMIT,NUMBER_OF_FILES,SPACE_USED,SPACE_RECLAIMABLE,ARCHIVE_DEST
+    FROM usable_pct,space_limit,number_of_files,space_used,space_reclaimable,archive_dest;
+    `
+	SQL_QUERY_PARAMETER    = "select name, value from v$parameter where value is not null;"
+	SQL_QUERY_TOTAL_OBJECT = "select count(*) as total_count from dba_objects;"
+	SQL_QUERY_OWNER_OBJECT = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects
     WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%'
     GROUP BY owner, object_type
     ORDER BY owner,object_type;`
