@@ -11,10 +11,10 @@ import (
 
 	"yhc/commons/constants"
 	"yhc/defs/bashdef"
+	"yhc/utils/execerutil"
 	"yhc/utils/stringutil"
 
 	"git.yasdb.com/go/yaslog"
-	"git.yasdb.com/go/yasutil/execer"
 )
 
 const (
@@ -106,7 +106,7 @@ func GetRealUser() (*user.User, error) {
 }
 
 func GetUserOfGroup(log yaslog.YasLog, groupName string) ([]string, error) {
-	execer := execer.NewExecer(log, execer.WithPrintResult())
+	execer := execerutil.NewExecer(log)
 	cmd := fmt.Sprintf("%s %s", bashdef.CMD_CAT, ETC_GROUP)
 	ret, stdout, stderr := execer.Exec(bashdef.CMD_BASH, "-c", cmd)
 	if ret != 0 {

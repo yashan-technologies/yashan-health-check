@@ -17,13 +17,13 @@ import (
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+	"yhc/utils/execerutil"
 	"yhc/utils/fileutil"
 	"yhc/utils/stringutil"
 	"yhc/utils/yasdbutil"
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
-	"git.yasdb.com/go/yasutil/execer"
 	"git.yasdb.com/pandora/yasqlgo"
 	"github.com/google/uuid"
 )
@@ -97,7 +97,7 @@ func (c *YHCChecker) parseWaitEventStdout(stdout string) ([]map[string]any, erro
 	stdout = strings.TrimSuffix(stdout, KEY_PLSQL_SUCCEED)
 	waitEvents := &WaitEventOutput{}
 	if err := json.Unmarshal([]byte(stdout), waitEvents); err != nil {
-		return nil, err
+		return nil, yaserr.Wrapf(err, "json unmarshal")
 	}
 	table := map[int]map[string]any{}
 	isBase64 := c.isWaitEventBodyBase64(waitEvents)
@@ -114,7 +114,7 @@ func (c *YHCChecker) parseWaitEventStdout(stdout string) ([]map[string]any, erro
 			if isBase64 {
 				b, err := base64.StdEncoding.DecodeString(content)
 				if err != nil {
-					return nil, err
+					return nil, yaserr.Wrapf(err, "base64 decode")
 				}
 				content = string(b)
 			}
@@ -200,6 +200,6 @@ func (c *YHCChecker) execSqlFile(log yaslog.YasLog, sqlFile string) (int, string
 		fmt.Sprintf("%s=%s", yasqlgo.YASDB_DATA, c.base.DBInfo.YasdbData),
 	}
 	cmd := fmt.Sprintf("%s %s -f %s", yasqlBin, connectPath, sqlFile)
-	exec := execer.NewExecer(log)
+	exec := execerutil.NewExecer(log)
 	return exec.EnvExec(env, bashdef.CMD_BASH, "-c", cmd)
 }

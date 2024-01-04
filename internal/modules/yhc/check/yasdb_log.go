@@ -16,13 +16,13 @@ import (
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+	"yhc/utils/execerutil"
 	"yhc/utils/fileutil"
 	"yhc/utils/stringutil"
 	"yhc/utils/timeutil"
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
-	"git.yasdb.com/go/yasutil/execer"
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/host"
 )
@@ -163,7 +163,7 @@ func (c *YHCChecker) GetDmesgLog(name string) (err error) {
 	}
 	defer c.fillResult(data)
 	log := log.Module.M("get-dmesg-log")
-	exec := execer.NewExecer(log)
+	exec := execerutil.NewExecer(log)
 	tmpFileName := path.Join("/tmp", uuid.NewString()[0:6]+".log")
 	ret, _, stderr := exec.Exec(bashdef.CMD_BASH, "-c", fmt.Sprintf("%s > %s", bashdef.CMD_DMESG, tmpFileName))
 	if ret != 0 {
