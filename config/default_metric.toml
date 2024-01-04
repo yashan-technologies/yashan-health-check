@@ -1728,7 +1728,7 @@
   [metrics.alert_rules] 
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_user_with_dba_role != 'SYS'"
+      expression = "yasdb_user_with_dba_role != 'SYS' && yasdb_user_with_dba_role != 'YASOM'"
       description = "非SYS用户拥有DBA角色"
       suggestion = "谨慎为普通用户授予管理数据库的DBA角色"
 
@@ -1748,7 +1748,7 @@
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_user_all_privilege_or_system_privileges != 'SYS'"
+      expression = "yasdb_user_all_privilege_or_system_privileges != 'SYS' && yasdb_user_all_privilege_or_system_privileges != 'YASOM'"
       description = "非sys用户拥有ALL PRIVILEGE或者SYSTEM权限"
       suggestion = "谨慎为普通用户授予管理数据库的系统权限"
 
