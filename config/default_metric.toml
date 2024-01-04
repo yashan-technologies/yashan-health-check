@@ -507,6 +507,7 @@
     STATUS = "tablespace_status"
     ALLOCATION_TYPE = "allocation_type"
     USED_RATE = "tablespace_used_rate"
+    TABLESPACE_NAME = "tablespace_name"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
@@ -515,7 +516,7 @@
       suggestion = "表空间状态不正常，建议检查表空间状态，确认异常原因"
 
     [[metrics.alert_rules.warning]]
-      expression = "allocation_type == 'AUTO'"
+      expression = "allocation_type == 'AUTO' && tablespace_name == 'UNDO'"
       description = "表空间开启自动扩展"
       suggestion = "建议关闭此功能，避免有事务占用过多的UNDO导致磁盘空间不可用"
 
