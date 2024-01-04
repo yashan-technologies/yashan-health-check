@@ -661,19 +661,29 @@ func (j *JsonParser) parseTable(menu *define.PandoraMenu, item *define.YHCItem, 
 	attributes := define.TableAttributes{
 		Title: metric.NameAlias,
 	}
-	switch item.Details.(type) {
+	switch details := item.Details.(type) {
 	case map[string]string:
-		j.dealTableStringRow(&attributes, metric, item.Details.(map[string]string))
+		for key := range item.HiddenFields {
+			delete(details, key)
+		}
+		j.dealTableStringRow(&attributes, metric, details)
 	case map[string]interface{}:
-		j.dealTableAnyRow(&attributes, metric, item.Details.(map[string]interface{}))
+		for key := range item.HiddenFields {
+			delete(details, key)
+		}
+		j.dealTableAnyRow(&attributes, metric, details)
 	case []map[string]string:
-		datas := item.Details.([]map[string]string)
-		for _, data := range datas {
+		for _, data := range details {
+			for key := range item.HiddenFields {
+				delete(data, key)
+			}
 			j.dealTableStringRow(&attributes, metric, data)
 		}
 	case []map[string]interface{}:
-		datas := item.Details.([]map[string]interface{})
-		for _, data := range datas {
+		for _, data := range details {
+			for key := range item.HiddenFields {
+				delete(data, key)
+			}
 			j.dealTableAnyRow(&attributes, metric, data)
 		}
 	default:

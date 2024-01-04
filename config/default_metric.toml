@@ -78,15 +78,16 @@
     used = "已使用空间"
     usedPercent = "磁盘空间使用率(%)"
     inodesTotal = "i节点总数"
-    inodesUsed = "已使用i节点数量"
-    inodesFree = "空闲i节点数量"
+    inodesUsed = "已使用i节点"
+    inodesFree = "空闲i节点"
     inodesUsedPercent = "i节点使用率(%)"
   [metrics.item_names]
     fstype = "disk_fstype"
+    isYasdbDataDisk = "is_yasdb_data_disk"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.info]]
-      expression = "disk_fstype != 'ext4' && disk_fstype != 'xfs'"
+      expression = "is_yasdb_data_disk == 'TRUE' && disk_fstype != 'ext4' && disk_fstype != 'xfs'"
       description = "磁盘文件系统检查"
       suggestion = "数据库文件所在的分区的文件系统的版本不符合要求"
 

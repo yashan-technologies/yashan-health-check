@@ -34,11 +34,12 @@ type HostWorkResponse struct {
 }
 
 type YHCItem struct {
-	Name     MetricName             `json:"-"` // 检查项名称
-	Error    string                 `json:"error,omitempty"`
-	Details  interface{}            `json:"details,omitempty"`  // 每个检查项包含的数据
-	DataType DataType               `json:"datatype,omitempty"` // 数据类型，在Details可能使用多种数据时使用
-	Alerts   map[string][]*YHCAlert `json:"alerts,omitempty"`
+	Name         MetricName             `json:"-"` // 检查项名称
+	Error        string                 `json:"error,omitempty"`
+	Details      interface{}            `json:"details,omitempty"`  // 每个检查项包含的数据
+	DataType     DataType               `json:"datatype,omitempty"` // 数据类型，在Details可能使用多种数据时使用
+	Alerts       map[string][]*YHCAlert `json:"alerts,omitempty"`
+	HiddenFields map[string]struct{}    `json:"-"`
 }
 
 type YHCAlert struct {

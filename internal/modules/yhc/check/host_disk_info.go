@@ -2,6 +2,7 @@ package check
 
 import (
 	"strconv"
+	"strings"
 
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
@@ -24,9 +25,18 @@ const (
 	KEY_DISK_BLOCK_SIZE = "size"
 )
 
+const (
+	_json_name_is_yasdb_data_disk = "isYasdbDataDisk"
+)
+
+var hiddenFields = map[string]struct{}{
+	_json_name_is_yasdb_data_disk: {},
+}
+
 type DiskUsage struct {
-	Device       string `json:"device"`
-	MountOptions string `json:"mountOptions"`
+	Device          string `json:"device"`
+	MountOptions    string `json:"mountOptions"`
+	IsYasdbDataDisk string `json:"isYasdbDataDisk" `
 	disk.UsageStat
 }
 
@@ -42,6 +52,12 @@ func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 		log.Errorf("failed to get host disk info, err: %s", err.Error())
 		data.Error = err.Error()
 		return
+	}
+	var mountPonit string
+	for _, p := range partitions {
+		if strings.HasPrefix(c.base.DBInfo.YasdbData, p.Mountpoint) && len(p.Mountpoint) > len(mountPonit) {
+			mountPonit = p.Mountpoint
+		}
 	}
 	details := []map[string]any{}
 	for _, partition := range partitions {
@@ -59,6 +75,9 @@ func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 			MountOptions: partition.Opts,
 			UsageStat:    *usageStat,
 		}
+		if partition.Mountpoint == mountPonit {
+			usage.IsYasdbDataDisk = STR_TRUE
+		}
 		var detail map[string]any
 		detail, err = c.convertObjectData(usage)
 		if err != nil {
@@ -68,6 +87,7 @@ func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 		details = append(details, c.formatHostDiskInfo(detail))
 	}
 	data.Details = details
+	data.HiddenFields = hiddenFields
 	return
 }
 
