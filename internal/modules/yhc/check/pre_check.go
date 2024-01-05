@@ -26,6 +26,8 @@ import (
 const (
 	YAS_USER_LACK_AUTH               = "YAS-02213"
 	YAS_TABLE_OR_VIEW_DOES_NOT_EXIST = "YAS-02012"
+
+	SYS_USERNAME = "sys"
 )
 
 type checkFunc func(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric
@@ -230,7 +232,7 @@ func checkSysWrmAndWrh(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YH
 }
 
 func checkSysUser(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if db.YasdbUser != "sys" {
+	if strings.ToLower(db.YasdbUser) != SYS_USERNAME {
 		return &define.NoNeedCheckMetric{
 			Name:        metric.NameAlias,
 			Description: "执行该项检查需要sys用户",
