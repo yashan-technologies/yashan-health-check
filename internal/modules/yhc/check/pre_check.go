@@ -86,7 +86,7 @@ var (
 	NeedCheckMetricFuncMap = map[define.MetricName]checkFunc{
 		define.METRIC_YASDB_OBJECT_COUNT:                                                           checkDBAPrivileges,
 		define.METRIC_YASDB_OBJECT_OWNER:                                                           checkDBAPrivileges,
-		define.METRIC_YASDB_WAIT_EVENT:                                                             checkSysUser,
+		define.METRIC_YASDB_WAIT_EVENT:                                                             checkDBAPrivileges,
 		define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      checkDBAPrivileges,
 		define.METRIC_YASDB_INDEX_BLEVEL:                                                           checkDBAPrivileges,
 		define.METRIC_YASDB_INDEX_COLUMN:                                                           checkDBAPrivileges,
