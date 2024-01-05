@@ -663,25 +663,25 @@ func (j *JsonParser) parseTable(menu *define.PandoraMenu, item *define.YHCItem, 
 	}
 	switch details := item.Details.(type) {
 	case map[string]string:
-		for key := range item.HiddenFields {
+		for _, key := range metric.HiddenColumns {
 			delete(details, key)
 		}
 		j.dealTableStringRow(&attributes, metric, details)
 	case map[string]interface{}:
-		for key := range item.HiddenFields {
+		for _, key := range metric.HiddenColumns {
 			delete(details, key)
 		}
 		j.dealTableAnyRow(&attributes, metric, details)
 	case []map[string]string:
 		for _, data := range details {
-			for key := range item.HiddenFields {
+			for _, key := range metric.HiddenColumns {
 				delete(data, key)
 			}
 			j.dealTableStringRow(&attributes, metric, data)
 		}
 	case []map[string]interface{}:
 		for _, data := range details {
-			for key := range item.HiddenFields {
+			for _, key := range metric.HiddenColumns {
 				delete(data, key)
 			}
 			j.dealTableAnyRow(&attributes, metric, data)
@@ -811,15 +811,19 @@ func (j *JsonParser) parseMap(menu *define.PandoraMenu, item *define.YHCItem, me
 		ElementType:  define.ET_DESCRIPTION,
 	}
 	attributes := define.DescriptionAttributes{}
-	switch item.Details.(type) {
+	switch details := item.Details.(type) {
 	case map[string]string:
-		datas := item.Details.(map[string]string)
-		for key, value := range datas {
+		for _, key := range metric.HiddenColumns {
+			delete(details, key)
+		}
+		for key, value := range details {
 			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: key, Value: value})
 		}
 	case map[string]interface{}:
-		datas := item.Details.(map[string]interface{})
-		for key, value := range datas {
+		for _, key := range metric.HiddenColumns {
+			delete(details, key)
+		}
+		for key, value := range details {
 			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: key, Value: value})
 		}
 	default:

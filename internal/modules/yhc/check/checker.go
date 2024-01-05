@@ -26,6 +26,7 @@ import (
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
+	"git.yasdb.com/go/yasutil/size"
 )
 
 const (
@@ -566,6 +567,39 @@ func (c *YHCChecker) convertSqlData(metric *confdef.YHCMetric, data map[string]s
 			continue
 		}
 		res[col] = f
+	}
+	for _, col := range metric.ByteColumns {
+		value, ok := data[col]
+		if !ok {
+			log.Debugf("column %s not found, skip", col)
+			continue
+		}
+		if len(value) == 0 {
+			res[col] = 0
+			continue
+		}
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Errorf("failed to parse column %s to float64, value: %s, metric: %s, err: %v", col, value, metric.Name, err)
+			continue
+		}
+		res[col] = size.GenHumanReadableSize(f, decimal)
+	}
+	for _, col := range metric.PercentColumns {
+		value, ok := data[col]
+		if !ok {
+			log.Debugf("column %s not found, skip", col)
+			continue
+		}
+		if len(value) == 0 {
+			continue
+		}
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Errorf("failed to parse column %s to float64, value: %s, metric: %s, err: %v", col, value, metric.Name, err)
+			continue
+		}
+		res[col] = fmt.Sprintf("%.2f%%", f)
 	}
 	for k, v := range data {
 		if _, ok := res[k]; !ok {

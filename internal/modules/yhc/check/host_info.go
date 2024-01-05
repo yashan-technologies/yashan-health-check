@@ -59,7 +59,17 @@ func (c *YHCChecker) dealHostInfo(log yaslog.YasLog, res map[string]interface{})
 	bootTime := res[KEY_BOOT_TIME].(float64)
 	res[KEY_BOOT_TIME] = time.Unix(int64(bootTime), 0).Format(timedef.TIME_FORMAT)
 	upTime := res[KEY_UP_TIME].(float64)
-	res[KEY_UP_TIME] = (time.Duration(int64(upTime)) * time.Second).String()
+	formatDuration := func(duration time.Duration) string {
+		hours := int(duration.Hours()) % 24
+		minutes := int(duration.Minutes()) % 60
+		seconds := int(duration.Seconds()) % 60
+		days := int(duration.Hours()) / 24
+		if days > 0 {
+			return fmt.Sprintf("%d天 %d小时 %d分钟 %d秒", days, hours, minutes, seconds)
+		}
+		return fmt.Sprintf("%d小时 %d分钟 %d秒", hours, minutes, seconds)
+	}
+	res[KEY_UP_TIME] = formatDuration(time.Second * time.Duration(upTime))
 	if runtimedef.GetOSRelease().Id == osutil.KYLIN_ID {
 		delete(res, KEY_PLATFORM_FAMILY)
 		platformVersion, err := c.getKyPlatformVersion(log)

@@ -67,6 +67,7 @@
   default = true
   enabled = true
   column_order = ["device","path","fstype","mountOptions","total","free","used","usedPercent","inodesTotal","inodesFree","inodesUsed","inodesUsedPercent"]
+  hidden_columns = ["isYasdbDataDisk"]
   labels = ["device"]
   [metrics.column_alias]
     device = "设备名称"
@@ -482,10 +483,12 @@
   metric_type = "sql"
   default = true
   enabled = true
-  column_order = ["TABLESPACE_NAME", "CONTENTS", "STATUS", "ALLOCATION_TYPE", "USED_GBYTES", "TOTAL_GBYTES", "USED_RATE", "DATA_PERCENTAGE"]
+  column_order = ["TABLESPACE_NAME", "CONTENTS", "STATUS", "ALLOCATION_TYPE", "USED_BYTES", "TOTAL_BYTES", "USED_RATE", "DATA_PERCENTAGE"]
   number_columns = ["USED_RATE","USED_BYTES","TOTAL_BYTES"]
+  byte_columns = ["USED_BYTES","TOTAL_BYTES"]
+  percent_columns = ["USED_RATE","DATA_PERCENTAGE"]
   labels = ["TABLESPACE_NAME"]
-  sql = '''SELECT A.TABLESPACE_NAME, A.CONTENTS, A.STATUS, A.ALLOCATION_TYPE, round(A.USED_BYTES/1024/1024,3) as USED_GBYTES, round(A.TOTAL_BYTES/1024/1024,3) as TOTAL_GBYTES, A.USED_RATE,B.DATA_PERCENTAGE
+  sql = '''SELECT A.TABLESPACE_NAME, A.CONTENTS, A.STATUS, A.ALLOCATION_TYPE, A.USED_BYTES, A.TOTAL_BYTES, A.USED_RATE,B.DATA_PERCENTAGE
     FROM (  
         SELECT T.TABLESPACE_NAME, T.CONTENTS, T.STATUS, T.ALLOCATION_TYPE, T.TOTAL_BYTES - T.USER_BYTES AS USED_BYTES, T.TOTAL_BYTES, round((T.TOTAL_BYTES - T.USER_BYTES) / T.TOTAL_BYTES * 100,3) AS USED_RATE
         FROM SYS.DBA_TABLESPACES T ) A
@@ -499,8 +502,8 @@
     CONTENTS = "表空间类型"
     STATUS = "表空间状态"
     ALLOCATION_TYPE = "EXTEND分配方式"
-    USED_GBYTES = "已使用(GB)"
-    TOTAL_GBYTES = "总大小(GB)"
+    USED_BYTES = "已使用"
+    TOTAL_BYTES = "总大小"
     USED_RATE = "使用率(%)"
     DATA_PERCENTAGE = "数据段使用占比(%)"
   [metrics.item_names]
@@ -521,12 +524,12 @@
       suggestion = "建议关闭此功能，避免有事务占用过多的UNDO导致磁盘空间不可用"
 
     [[metrics.alert_rules.warning]]
-      expression = "tablespace_used_rate >= 80 && tablespace_used_rate < 90"
+      expression = "tablespace_used_rate >= 80 && tablespace_used_rate < 90 && allocation_type != 'AUTO'"
       description = "表空间使用率"
       suggestion = "表空间使用率过高，建议检查表空间使用情况并通过清理空间或者增加数据文件的方法降低表空间使用率，表空间完全满之后可能导致业务挂起或者数据库挂起"
 
     [[metrics.alert_rules.critical]]
-      expression = "tablespace_used_rate >= 90"
+      expression = "tablespace_used_rate >= 90 && allocation_type != 'AUTO'"
       description = "表空间使用率"
       suggestion = "表空间使用率过高，建议检查表空间使用情况并通过清理空间或者增加数据文件的方法降低表空间使用率，表空间完全满之后可能导致业务挂起或者数据库挂起"
 

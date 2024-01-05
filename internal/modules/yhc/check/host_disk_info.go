@@ -25,14 +25,6 @@ const (
 	KEY_DISK_BLOCK_SIZE = "size"
 )
 
-const (
-	_json_name_is_yasdb_data_disk = "isYasdbDataDisk"
-)
-
-var hiddenFields = map[string]struct{}{
-	_json_name_is_yasdb_data_disk: {},
-}
-
 type DiskUsage struct {
 	Device          string `json:"device"`
 	MountOptions    string `json:"mountOptions"`
@@ -87,7 +79,6 @@ func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 		details = append(details, c.formatHostDiskInfo(detail))
 	}
 	data.Details = details
-	data.HiddenFields = hiddenFields
 	return
 }
 
