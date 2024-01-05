@@ -518,7 +518,7 @@
       description = "表空间状态检查"
       suggestion = "表空间状态不正常，建议检查表空间状态，确认异常原因"
 
-    [[metrics.alert_rules.warning]]
+    [[metrics.alert_rules.info]]
       expression = "allocation_type == 'AUTO' && tablespace_name == 'UNDO'"
       description = "表空间开启自动扩展"
       suggestion = "建议关闭此功能，避免有事务占用过多的UNDO导致磁盘空间不可用"
@@ -1690,7 +1690,7 @@
     ACCOUNT_STATUS = "yasdb_user_account_status"
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.warning]]
+    [[metrics.alert_rules.info]]
       expression = "yasdb_user_account_status != 'OPEN'"
       description = "存在非OPEN状态的用户"
       suggestion = "如应用账户被锁定，应及时解锁。"
