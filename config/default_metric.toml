@@ -1116,7 +1116,7 @@
 
 [[metrics]]
   name = "yasdb_object_count"
-  name_alias = "对象总数"
+  name_alias = "对象数量"
   module_name = "object_check"
   metric_type = "sql"
   default = true
@@ -1126,31 +1126,42 @@
     TOTAL_COUNT = "对象总数"
 
 [[metrics]]
-  name = "yasdb_object_owner"
+  name = "yasdb_object_summary"
   name_alias = "各owner对象统计"
   module_name = "object_check"
   metric_type = "sql"
   default = true
   enabled = true
   column_order = ["OWNER","OBJECT_TYPE","OWNER_OBJECT_COUNT"]
-  sql = "SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%' GROUP BY owner, object_type ORDER BY owner,object_type;"
+  sql = "SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects GROUP BY owner, object_type ORDER BY owner,object_type;"
   [metrics.column_alias]
     OWNER = "owner名称"
     OBJECT_TYPE = "对象类型"
-    OWNER_OBJECT_COUNT = "owner拥有对象数"
+    OWNER_OBJECT_COUNT = "对象数量"
 
 [[metrics]]
-  name = "yasdb_object_tablespace"
-  name_alias = "各tablespace对象统计"
+  name = "yasdb_segments_count"
+  name_alias = "segment总数"
   module_name = "object_check"
   metric_type = "sql"
   default = true
   enabled = true
-  column_order = ["TABLESPACE_NAME","TABLESPACE_OBJECT_COUNT"]
-  sql = "SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE') GROUP BY tablespace_name ORDER BY tablespace_name;"
+  sql = "select count(*) as total_count from dba_segments;"
   [metrics.column_alias]
-    TABLESPACE_NAME = "表空间名称"
-    TABLESPACE_OBJECT_COUNT = "表空间拥有对象数"
+    TOTAL_COUNT = "数据段总数"
+
+[[metrics]]
+  name = "yasdb_segments_summary"
+  name_alias = "各表空间数据段统计"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  column_order = ["TABLESPACE_NAME","SEGMENT_COUNT"]
+  sql = "SELECT tablespace_name, COUNT(*) AS segment_count FROM dba_segments GROUP BY tablespace_name ORDER BY tablespace_name;"
+  [metrics.column_alias]
+    TABLESPACE_NAME = "所属表空间"
+    SEGMENT_COUNT = "分配的segment数量"
 
 [[metrics]]
   name = "yasdb_invalid_object"

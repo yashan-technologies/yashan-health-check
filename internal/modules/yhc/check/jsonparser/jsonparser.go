@@ -121,8 +121,9 @@ var _mergeOldMenuToNew []merge = []merge{
 		targetTitle:  "对象总数",
 		originMetrics: []string{
 			string(define.METRIC_YASDB_OBJECT_COUNT),
-			string(define.METRIC_YASDB_OBJECT_TABLESPACE),
-			string(define.METRIC_YASDB_OBJECT_OWNER),
+			string(define.METRIC_YASDB_SEGMENTS_COUNT),
+			string(define.METRIC_YASDB_SEGMENTS_SUMMARY),
+			string(define.METRIC_YASDB_OBJECT_SUMMARY),
 		},
 	},
 	{
@@ -580,8 +581,9 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_YASDB_SESSION:                                                                j.parseMap,
 		define.METRIC_YASDB_WAIT_EVENT:                                                             j.parseTable,
 		define.METRIC_YASDB_OBJECT_COUNT:                                                           j.parseMap,
-		define.METRIC_YASDB_OBJECT_OWNER:                                                           j.parseTable,
-		define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      j.parseTable,
+		define.METRIC_YASDB_OBJECT_SUMMARY:                                                         j.parseTable,
+		define.METRIC_YASDB_SEGMENTS_COUNT:                                                         j.parseMap,
+		define.METRIC_YASDB_SEGMENTS_SUMMARY:                                                       j.parseTable,
 		define.METRIC_YASDB_INDEX_BLEVEL:                                                           j.parseTable,
 		define.METRIC_YASDB_INDEX_COLUMN:                                                           j.parseTable,
 		define.METRIC_YASDB_INDEX_INVISIBLE:                                                        j.parseTable,

@@ -200,16 +200,11 @@ const (
     select USABLE_PCT,SPACE_LIMIT,NUMBER_OF_FILES,SPACE_USED,SPACE_RECLAIMABLE,ARCHIVE_DEST
     FROM usable_pct,space_limit,number_of_files,space_used,space_reclaimable,archive_dest;
     `
-	SQL_QUERY_PARAMETER    = "select name, value from v$parameter where value is not null;"
-	SQL_QUERY_TOTAL_OBJECT = "select count(*) as total_count from dba_objects;"
-	SQL_QUERY_OWNER_OBJECT = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects
-    WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%'
-    GROUP BY owner, object_type
-    ORDER BY owner,object_type;`
-	SQL_QUERY_TABLESPACE_OBJECT = `SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments
-    WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE')
-    GROUP BY tablespace_name
-    ORDER BY tablespace_name;`
+	SQL_QUERY_PARAMETER                                     = "select name, value from v$parameter where value is not null;"
+	SQL_QUERY_TOTAL_OBJECT                                  = "select count(*) as total_count from dba_objects;"
+	SQL_QUERY_OBJECT_SUMMARY                                = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects GROUP BY owner, object_type ORDER BY owner,object_type;`
+	SQL_QUERY_YASDB_SEGMENTS_COUNT                          = "select count(*) as total_count from dba_segments;"
+	SQL_QUERY_METRIC_YASDB_SEGMENTS_SUMMARY                 = `SELECT tablespace_name, COUNT(*) AS segment_count FROM dba_segments GROUP BY tablespace_name ORDER BY tablespace_name;`
 	SQL_QUERY_INVALID_OBJECT                                = `select OBJECT_ID, OWNER, OBJECT_NAME, OBJECT_TYPE, STATUS from dba_objects where STATUS = 'INVALID';`
 	SQL_QUERY_INVISIBLE_INDEX                               = `select OWNER,INDEX_NAME,VISIBILITY from dba_indexes where VISIBILITY !='VISIBLE';`
 	SQL_QUERY_DISABLED_CONSTRAINT                           = `select OWNER,CONSTRAINT_NAME,CONSTRAINT_TYPE,STATUS from dba_constraints where STATUS ='DISABLED';`
