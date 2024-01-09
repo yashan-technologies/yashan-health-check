@@ -50,9 +50,12 @@ func newTextView(text string, border bool, align int, color tcell.Color) *tview.
 }
 
 func newButton(title string, border bool) *tview.Button {
-	b := tview.NewButton(title)
-	b.SetBorder(border)
-	return b
+	button := tview.NewButton(title)
+	button.SetStyle(tcell.StyleDefault.Background(tcell.ColorBlue).Foreground(tcell.ColorWhite).Bold(true))
+	button.SetActivatedStyle(tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorBlue).Bold(true))
+	button.SetDisabledStyle(tcell.StyleDefault.Background(tcell.ColorBlue).Foreground(tcell.ColorWhite).Bold(false))
+	button.SetBorder(border)
+	return button
 }
 
 func newPages(views ...*PagePrimitive) *tview.Pages {
