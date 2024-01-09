@@ -101,7 +101,7 @@ func StartTerminalView(modules []*constdef.ModuleMetrics, yasdb *yasdb.YashanDB)
 
 func captureCtrlCFunc(app *tview.Application) func(event *tcell.EventKey) *tcell.EventKey {
 	return func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlC {
+		if event.Key() == tcell.KeyCtrlC || event.Key() == tcell.KeyESC {
 			exitFunc(app, EXIT_CONTROL_C)
 		}
 		return event
@@ -272,7 +272,7 @@ func nextClickFunc(app *tview.Application, page *tview.Pages, previous *tview.Bu
 					return
 				}
 				previous.SetDisabled(false)
-				metricValidate(yasdbEnv, modules)
+				validateMetrics(yasdbEnv, modules)
 				if len(moduleNoNeedCheckMetrics) != 0 {
 					// write no need check metrics to console.log
 					std.WriteToFile("the following metric will not be checked \n")
@@ -417,7 +417,7 @@ func yasdbValidate(form *tview.Form) (*yasdb.YashanDB, error) {
 
 }
 
-func metricValidate(env *yasdb.YashanDB, modules []*constdef.ModuleMetrics) {
+func validateMetrics(yasdb *yasdb.YashanDB, modules []*constdef.ModuleMetrics) {
 	log := log.Controller.M("metric validate")
 	for _, module := range modules {
 		for _, metric := range module.Metrics {
@@ -429,7 +429,7 @@ func metricValidate(env *yasdb.YashanDB, modules []*constdef.ModuleMetrics) {
 				log.Warnf("metric %s is defined in NeedCheckMetricMap, but NeedCheckMetricFuncMap is not defined", metric.Name)
 				continue
 			}
-			if noNeedCheck := check.NeedCheckMetricFuncMap[metricDefine](log, env, metric); noNeedCheck != nil {
+			if noNeedCheck := check.NeedCheckMetricFuncMap[metricDefine](log, yasdb, metric); noNeedCheck != nil {
 				if _, ok := moduleNoNeedCheckMetrics[module.Name]; !ok {
 					moduleNoNeedCheckMetrics[module.Name] = make(map[string]*define.NoNeedCheckMetric)
 				}

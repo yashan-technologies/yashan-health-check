@@ -24,10 +24,15 @@ import (
 )
 
 type CheckGlobal struct {
-	Range  string `name:"range"  short:"r" help:"The time range of the check, such as '1M', '1d', '1h', '1m'. If <range> is given, <start> and <end> will be discard."`
-	Start  string `name:"start"  short:"s" help:"The start datetime of the check, such as 'yyyy-MM-dd', 'yyyy-MM-dd-hh', 'yyyy-MM-dd-hh-mm'"`
-	End    string `name:"end"    short:"e" help:"The end timestamp of the check, such as 'yyyy-MM-dd', 'yyyy-MM-dd-hh', 'yyyy-MM-dd-hh-mm', default value is current datetime."`
-	Output string `name:"output" short:"o" help:"The output dir of the check."`
+	Range              string `name:"range"               short:"r"          help:"The time range of the check, such as '1M', '1d', '1h', '1m'. If <range> is given, <start> and <end> will be discard."`
+	Start              string `name:"start"               short:"s"          help:"The start datetime of the check, such as 'yyyy-MM-dd', 'yyyy-MM-dd-hh', 'yyyy-MM-dd-hh-mm'"`
+	End                string `name:"end"                 short:"e"          help:"The end timestamp of the check, such as 'yyyy-MM-dd', 'yyyy-MM-dd-hh', 'yyyy-MM-dd-hh-mm', default value is current datetime."`
+	Output             string `name:"output"              short:"o"          help:"The output dir of the check."`
+	DisableInteraction bool   `name:"disable-interaction" short:"d"          help:"Disable interaction."`
+	YasdbHome          string `name:"yasdb-home"          help:"Home path of YashanDB(env: YASDB_HOME)."`
+	YasdbData          string `name:"yasdb-data"          help:"Data path of YashanDB(env: YASDB_DATA)."`
+	YasdbUser          string `name:"user"          short:"u"          help:"YashanDB user for checking."`
+	YasdbPassword      string `name:"password"      short:"p"          help:"YashanDB user password for checking."`
 }
 
 type CheckCmd struct {
@@ -42,7 +47,17 @@ func (c *CheckCmd) Run() error {
 	}
 	log.Controller.Debugf("module report: %s", jsonutil.ToJSONString(confdef.GetModuleConf()))
 	yasdb, modules := c.getViewModels()
-	StartTerminalView(modules, yasdb)
+	c.fillYasdbFromFlags(yasdb)
+	if c.DisableInteraction {
+		validateMetrics(yasdb, modules)
+		if len(moduleNoNeedCheckMetrics) != 0 {
+			std.WriteToFile("the following metric will not be checked \n")
+			noNeedStr := genNoNeedCheckMetricsStr()
+			std.WriteToFile(noNeedStr)
+		}
+	} else {
+		StartTerminalView(modules, yasdb)
+	}
 	// globalExitCode will be fill after terminal view exit
 	if globalExitCode != EXIT_CONTINUE {
 		return errors.New(exitCodeMap[globalExitCode])
@@ -61,6 +76,17 @@ func (c *CheckCmd) Run() error {
 		return err
 	}
 	return nil
+}
+
+func (c *CheckCmd) fillYasdbFromFlags(yasdb *yasdb.YashanDB) {
+	if len(c.YasdbHome) > 0 {
+		yasdb.YasdbHome = c.YasdbHome
+	}
+	if len(c.YasdbData) > 0 {
+		yasdb.YasdbData = c.YasdbData
+	}
+	yasdb.YasdbUser = c.YasdbUser
+	yasdb.YasdbPassword = c.YasdbPassword
 }
 
 func (c *CheckCmd) transferToModuleMetric(config *confdef.YHCMetricConfig) (modules []*constdef.ModuleMetrics) {
