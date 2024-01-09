@@ -26,6 +26,8 @@ import (
 const (
 	YAS_USER_LACK_AUTH               = "YAS-02213"
 	YAS_TABLE_OR_VIEW_DOES_NOT_EXIST = "YAS-02012"
+
+	SYS_USERNAME = "sys"
 )
 
 type checkFunc func(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric
@@ -35,8 +37,9 @@ type getPathFunc func(log yaslog.YasLog, db *yasdb.YashanDB) (string, error)
 var (
 	NeedCheckMetricMap = map[define.MetricName]struct{}{
 		define.METRIC_YASDB_OBJECT_COUNT:                                     {},
-		define.METRIC_YASDB_OBJECT_OWNER:                                     {},
-		define.METRIC_YASDB_OBJECT_TABLESPACE:                                {},
+		define.METRIC_YASDB_OBJECT_SUMMARY:                                   {},
+		define.METRIC_YASDB_SEGMENTS_COUNT:                                   {},
+		define.METRIC_YASDB_SEGMENTS_SUMMARY:                                 {},
 		define.METRIC_YASDB_INDEX_BLEVEL:                                     {},
 		define.METRIC_YASDB_INDEX_COLUMN:                                     {},
 		define.METRIC_YASDB_INDEX_INVISIBLE:                                  {},
@@ -83,9 +86,10 @@ var (
 
 	NeedCheckMetricFuncMap = map[define.MetricName]checkFunc{
 		define.METRIC_YASDB_OBJECT_COUNT:                                                           checkDBAPrivileges,
-		define.METRIC_YASDB_OBJECT_OWNER:                                                           checkDBAPrivileges,
-		define.METRIC_YASDB_WAIT_EVENT:                                                             checkSysUser,
-		define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      checkDBAPrivileges,
+		define.METRIC_YASDB_OBJECT_SUMMARY:                                                         checkDBAPrivileges,
+		define.METRIC_YASDB_WAIT_EVENT:                                                             checkDBAPrivileges,
+		define.METRIC_YASDB_SEGMENTS_COUNT:                                                         checkDBAPrivileges,
+		define.METRIC_YASDB_SEGMENTS_SUMMARY:                                                       checkDBAPrivileges,
 		define.METRIC_YASDB_INDEX_BLEVEL:                                                           checkDBAPrivileges,
 		define.METRIC_YASDB_INDEX_COLUMN:                                                           checkDBAPrivileges,
 		define.METRIC_YASDB_INDEX_INVISIBLE:                                                        checkDBAPrivileges,
@@ -229,16 +233,17 @@ func checkSysWrmAndWrh(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YH
 	return nil
 }
 
-func checkSysUser(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
-	if db.YasdbUser != "sys" {
-		return &define.NoNeedCheckMetric{
-			Name:        metric.NameAlias,
-			Description: "执行该项检查需要sys用户",
-			Error:       errors.New("current metric need sys user"),
-		}
-	}
-	return nil
-}
+// TODO: uncomment when needed
+// func checkSysUser(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+// 	if strings.ToLower(db.YasdbUser) != SYS_USERNAME {
+// 		return &define.NoNeedCheckMetric{
+// 			Name:        metric.NameAlias,
+// 			Description: "执行该项检查需要sys用户",
+// 			Error:       errors.New("current metric need sys user"),
+// 		}
+// 	}
+// 	return nil
+// }
 
 func checkAuditEnable(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
 	sql := "select value from v$parameter where name = 'UNIFIED_AUDITING'"

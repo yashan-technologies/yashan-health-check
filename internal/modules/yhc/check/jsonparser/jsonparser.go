@@ -121,8 +121,9 @@ var _mergeOldMenuToNew []merge = []merge{
 		targetTitle:  "对象总数",
 		originMetrics: []string{
 			string(define.METRIC_YASDB_OBJECT_COUNT),
-			string(define.METRIC_YASDB_OBJECT_TABLESPACE),
-			string(define.METRIC_YASDB_OBJECT_OWNER),
+			string(define.METRIC_YASDB_SEGMENTS_COUNT),
+			string(define.METRIC_YASDB_SEGMENTS_SUMMARY),
+			string(define.METRIC_YASDB_OBJECT_SUMMARY),
 		},
 	},
 	{
@@ -237,11 +238,27 @@ func (j *JsonParser) countAlerts(report *define.PandoraReport) {
 		}
 		// count alert in current menu
 		for _, child := range menu.Children {
+			menu.InfoCount += child.InfoCount
 			menu.WarningCount += child.WarningCount
+			menu.CriticalCount += child.CriticalCount
 		}
 		for _, element := range menu.Elements {
 			if element.ElementType == define.ET_ALERT {
-				menu.WarningCount++
+				attributes, ok := element.Attributes.(define.AlertAttributes)
+				if !ok {
+					j.log.Errorf("attributes type of element type %s is not %T but %T", define.ET_ALERT, define.AlertAttributes{}, element.Attributes)
+					continue
+				}
+				switch attributes.AlertType {
+				case define.AT_INFO:
+					menu.InfoCount++
+				case define.AT_WARNING:
+					menu.WarningCount++
+				case define.AT_CRITICAL:
+					menu.CriticalCount++
+				default:
+					j.log.Errorf("unknown alert type %s", attributes.AlertType)
+				}
 			}
 		}
 	}
@@ -580,8 +597,9 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_YASDB_SESSION:                                                                j.parseMap,
 		define.METRIC_YASDB_WAIT_EVENT:                                                             j.parseTable,
 		define.METRIC_YASDB_OBJECT_COUNT:                                                           j.parseMap,
-		define.METRIC_YASDB_OBJECT_OWNER:                                                           j.parseTable,
-		define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      j.parseTable,
+		define.METRIC_YASDB_OBJECT_SUMMARY:                                                         j.parseTable,
+		define.METRIC_YASDB_SEGMENTS_COUNT:                                                         j.parseMap,
+		define.METRIC_YASDB_SEGMENTS_SUMMARY:                                                       j.parseTable,
 		define.METRIC_YASDB_INDEX_BLEVEL:                                                           j.parseTable,
 		define.METRIC_YASDB_INDEX_COLUMN:                                                           j.parseTable,
 		define.METRIC_YASDB_INDEX_INVISIBLE:                                                        j.parseTable,
@@ -661,19 +679,29 @@ func (j *JsonParser) parseTable(menu *define.PandoraMenu, item *define.YHCItem, 
 	attributes := define.TableAttributes{
 		Title: metric.NameAlias,
 	}
-	switch item.Details.(type) {
+	switch details := item.Details.(type) {
 	case map[string]string:
-		j.dealTableStringRow(&attributes, metric, item.Details.(map[string]string))
+		for _, key := range metric.HiddenColumns {
+			delete(details, key)
+		}
+		j.dealTableStringRow(&attributes, metric, details)
 	case map[string]interface{}:
-		j.dealTableAnyRow(&attributes, metric, item.Details.(map[string]interface{}))
+		for _, key := range metric.HiddenColumns {
+			delete(details, key)
+		}
+		j.dealTableAnyRow(&attributes, metric, details)
 	case []map[string]string:
-		datas := item.Details.([]map[string]string)
-		for _, data := range datas {
+		for _, data := range details {
+			for _, key := range metric.HiddenColumns {
+				delete(data, key)
+			}
 			j.dealTableStringRow(&attributes, metric, data)
 		}
 	case []map[string]interface{}:
-		datas := item.Details.([]map[string]interface{})
-		for _, data := range datas {
+		for _, data := range details {
+			for _, key := range metric.HiddenColumns {
+				delete(data, key)
+			}
 			j.dealTableAnyRow(&attributes, metric, data)
 		}
 	default:
@@ -801,15 +829,19 @@ func (j *JsonParser) parseMap(menu *define.PandoraMenu, item *define.YHCItem, me
 		ElementType:  define.ET_DESCRIPTION,
 	}
 	attributes := define.DescriptionAttributes{}
-	switch item.Details.(type) {
+	switch details := item.Details.(type) {
 	case map[string]string:
-		datas := item.Details.(map[string]string)
-		for key, value := range datas {
+		for _, key := range metric.HiddenColumns {
+			delete(details, key)
+		}
+		for key, value := range details {
 			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: key, Value: value})
 		}
 	case map[string]interface{}:
-		datas := item.Details.(map[string]interface{})
-		for key, value := range datas {
+		for _, key := range metric.HiddenColumns {
+			delete(details, key)
+		}
+		for key, value := range details {
 			attributes.Data = append(attributes.Data, &define.DescriptionData{Label: key, Value: value})
 		}
 	default:

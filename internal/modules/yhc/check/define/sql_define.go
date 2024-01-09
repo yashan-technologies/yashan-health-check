@@ -4,7 +4,7 @@ const (
 	SQL_QUERY_CONTROLFILE           = "select  id, name, bytes/1024/1024 as MBytes from v$controlfile;"
 	SQL_QUERY_CONTROLFILE_COUNT     = "select count(*) as total from v$controlfile;"
 	SQL_QUERY_DATAFILE              = "select * from dba_data_files;"
-	SQL_QUERY_DB_ID                 = "SELECT DBID,INSTANCE_NUMBER,to_char(STARTUP_TIME,'YYYY-MM-DD HH24:MI:SS')as STARTUP_TIME FROM SYS.WRM$_DATABASE_INSTANCE;"
+	SQL_QUERY_DB_ID                 = "SELECT DBID,INSTANCE_NUMBER,to_char(STARTUP_TIME,'YYYY-MM-DD HH24:MI:SS')as STARTUP_TIME FROM SYS.WRM$_DATABASE_INSTANCE ORDER BY STARTUP_TIME DESC;"
 	SQL_QUERY_SNAPSHOT_FORMATER     = "select SNAP_ID from sys.wrm$_snapshot where (BEGIN_INTERVAL_TIME >= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME <= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME >= TIMESTAMP('%s'))"
 	SQL_QUERY_BACKUP_SET            = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
 	SQL_QUERY_FULL_BACKUP_SET_COUNT = "select count(*) as TOTAL from dba_backup_set where date_add(COMPLETION_TIME , INTERVAL 10 DAY) >= sysdate AND type = 'FULL';"
@@ -200,16 +200,11 @@ const (
     select USABLE_PCT,SPACE_LIMIT,NUMBER_OF_FILES,SPACE_USED,SPACE_RECLAIMABLE,ARCHIVE_DEST
     FROM usable_pct,space_limit,number_of_files,space_used,space_reclaimable,archive_dest;
     `
-	SQL_QUERY_PARAMETER    = "select name, value from v$parameter where value is not null;"
-	SQL_QUERY_TOTAL_OBJECT = "select count(*) as total_count from dba_objects;"
-	SQL_QUERY_OWNER_OBJECT = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects
-    WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%'
-    GROUP BY owner, object_type
-    ORDER BY owner,object_type;`
-	SQL_QUERY_TABLESPACE_OBJECT = `SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments
-    WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE')
-    GROUP BY tablespace_name
-    ORDER BY tablespace_name;`
+	SQL_QUERY_PARAMETER                                     = "select name, value from v$parameter where value is not null;"
+	SQL_QUERY_TOTAL_OBJECT                                  = "select count(*) as total_count from dba_objects;"
+	SQL_QUERY_OBJECT_SUMMARY                                = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects GROUP BY owner, object_type ORDER BY owner,object_type;`
+	SQL_QUERY_YASDB_SEGMENTS_COUNT                          = "select count(*) as total_count from dba_segments;"
+	SQL_QUERY_METRIC_YASDB_SEGMENTS_SUMMARY                 = `SELECT tablespace_name, COUNT(*) AS segment_count FROM dba_segments GROUP BY tablespace_name ORDER BY tablespace_name;`
 	SQL_QUERY_INVALID_OBJECT                                = `select OBJECT_ID, OWNER, OBJECT_NAME, OBJECT_TYPE, STATUS from dba_objects where STATUS = 'INVALID';`
 	SQL_QUERY_INVISIBLE_INDEX                               = `select OWNER,INDEX_NAME,VISIBILITY from dba_indexes where VISIBILITY !='VISIBLE';`
 	SQL_QUERY_DISABLED_CONSTRAINT                           = `select OWNER,CONSTRAINT_NAME,CONSTRAINT_TYPE,STATUS from dba_constraints where STATUS ='DISABLED';`

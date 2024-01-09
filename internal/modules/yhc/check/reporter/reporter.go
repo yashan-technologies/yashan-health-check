@@ -20,7 +20,6 @@ import (
 	"yhc/utils/execerutil"
 	"yhc/utils/fileutil"
 
-	"git.yasdb.com/go/yasutil/execer"
 	"git.yasdb.com/go/yasutil/fs"
 )
 
@@ -137,7 +136,7 @@ func (r *YHCReport) genWordReport() error {
 		return nil
 	}
 	wordGenner := r.getWordGennerFile()
-	exec := execer.NewExecer(log)
+	exec := execerutil.NewExecer(log)
 	cmd := []string{
 		wordGenner,
 		"-i",
