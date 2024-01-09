@@ -238,11 +238,27 @@ func (j *JsonParser) countAlerts(report *define.PandoraReport) {
 		}
 		// count alert in current menu
 		for _, child := range menu.Children {
+			menu.InfoCount += child.InfoCount
 			menu.WarningCount += child.WarningCount
+			menu.CriticalCount += child.CriticalCount
 		}
 		for _, element := range menu.Elements {
 			if element.ElementType == define.ET_ALERT {
-				menu.WarningCount++
+				attributes, ok := element.Attributes.(define.AlertAttributes)
+				if !ok {
+					j.log.Errorf("attributes type of element type %s is not %T but %T", define.ET_ALERT, define.AlertAttributes{}, element.Attributes)
+					continue
+				}
+				switch attributes.AlertType {
+				case define.AT_INFO:
+					menu.InfoCount++
+				case define.AT_WARNING:
+					menu.WarningCount++
+				case define.AT_CRITICAL:
+					menu.CriticalCount++
+				default:
+					j.log.Errorf("unknown alert type %s", attributes.AlertType)
+				}
 			}
 		}
 	}
