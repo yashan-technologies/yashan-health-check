@@ -165,7 +165,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select status as instance_status, version, startup_time from v$instance;"
+  sql = "select status as instance_status, version, to_char(startup_time, 'yyyy-mm-dd hh24:mi:ss') startup_time from v$instance;"
   [metrics.column_alias]
     INSTANCE_STATUS = "数据库实例状态"
     STARTUP_TIME = "数据库实例启动时间"
@@ -198,7 +198,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
+  sql = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, to_char(create_time, 'yyyy-mm-dd hh24:mi:ss') create_time from v$database;"
   [metrics.column_alias]
     CREATE_TIME = "数据库创建时间"
     DATABASE_NAME = "数据库名称"
@@ -504,8 +504,8 @@
     ALLOCATION_TYPE = "EXTEND分配方式"
     USED_BYTES = "已使用"
     TOTAL_BYTES = "总大小"
-    USED_RATE = "使用率(%)"
-    DATA_PERCENTAGE = "数据段使用占比(%)"
+    USED_RATE = "使用率"
+    DATA_PERCENTAGE = "数据段使用占比"
   [metrics.item_names]
     STATUS = "tablespace_status"
     ALLOCATION_TYPE = "allocation_type"
@@ -626,7 +626,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
+  sql = "select RECID# as RECID, to_char(START_TIME, 'YYYY-MM-DD HH24:MI:SS') as START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
   column_order = ["RECID","START_TIME","TYPE","SUCCESS"]
   [metrics.column_alias]
     RECID = "备份集编号"
@@ -695,12 +695,13 @@
         ( SELECT COUNT(*) AS BACKGROUND_SESSIONS FROM V$SESSION WHERE TYPE = 'BACKGROUND') C;
     '''
   column_order = ["BACKGROUND_SESSIONS","USER_SESSIONS","MAX_SESSIONS","SESSION_USAGE"]
+  percent_columns = ["SESSION_USAGE"]
   [metrics.column_alias]
     USER_SESSIONS = "用户会话数"
     BACKGROUND_SESSIONS = "系统会话数"
     TOTAL_SESSIONS = "总会话数"
     MAX_SESSIONS = "最大会话数"
-    SESSION_USAGE = "会话使用率(%)"
+    SESSION_USAGE = "会话使用率"
   [metrics.item_names]
     SESSION_USAGE = "session_session_usage"
   [metrics.alert_rules]
@@ -821,8 +822,9 @@
 '''
   column_order = ["ARCHIVE_DEST","NUMBER_OF_FILES","SPACE_LIMIT","SPACE_USED","SPACE_RECLAIMABLE"]
   number_columns = ["USED_PCT"]
+  percent_columns = ["USED_PCT"]
   [metrics.column_alias]
-    USED_PCT = "已用空间百分比(%)"
+    USED_PCT = "已用空间百分比"
     SPACE_USED = "归档已用空间(GB)"
     NUMBER_OF_FILES = "归档文件数量"
     SPACE_LIMIT = "归档最大空间(GB)"
@@ -888,8 +890,9 @@
   enabled = true
   sql = "select round((sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0)) - sum(decode(NAME, 'DISK READS', VALUE, 0))) / (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0))) * 100,3) AS HIT_RATE FROM v$sysstat;"
   number_columns = ["HIT_RATE"]
+  percent_columns = ["HIT_RATE"]
   [metrics.column_alias]
-    HIT_RATE = "当前命中率（%）"
+    HIT_RATE = "当前命中率"
 
   [metrics.item_names]
     HIT_RATE = "buffer_hit_rate"
@@ -1152,7 +1155,7 @@
 
 [[metrics]]
   name = "yasdb_segments_summary"
-  name_alias = "各表空间数据段统计"
+  name_alias = "各表空间segment统计"
   module_name = "object_check"
   metric_type = "sql"
   default = true
@@ -1537,6 +1540,7 @@
   number_columns = ["IND_BYTES","TAB_BYTES"]
   labels = ["IND_NAME"]
   column_order = ["IND_NAME","IND_OWNER","IND_SEGMENT_TYPE","IND_BYTES","TAB_NAME","TAB_OWNER","TAB_SEGMENT_TYPE","TAB_BYTES"]
+  byte_columns = ["IND_BYTES", "TAB_BYTES"]
   [metrics.column_alias]
     IND_OWNER = "索引用户"
     TAB_OWNER = "表用户"
@@ -1544,15 +1548,15 @@
     TAB_NAME = "表名称"
     TAB_SEGMENT_TYPE = "表段类型"
     IND_SEGMENT_TYPE = "索引段类型"
-    IND_BYTES = "索引大小(字节)"
-    TAB_BYTES = "表大小(字节)"
+    IND_BYTES = "索引大小"
+    TAB_BYTES = "表大小"
   [metrics.item_names]
     IND_BYTES = "yasdb_index_bytes"
     TAB_BYTES = "yasdb_table_bytes"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_index_bytes>yasdb_table_bytes"
+      expression = "yasdb_index_bytes{IND_NAME ~= '^(?!.*(^WRH\\$_.*|I_HISTGRM1)).*$'}>yasdb_table_bytes"
       description = "存在索引过大的情况"
       suggestion = "存在索引过大的情况，需审视是否需要该索引，或者是否该索引碎片过多"
 
@@ -1590,10 +1594,11 @@
   enabled = true
   sql = "SELECT SEQUENCE_OWNER ,SEQUENCE_NAME ,LAST_NUMBER / MAX_VALUE * 100 as USED_RATE FROM DBA_SEQUENCES ds WHERE LAST_NUMBER / MAX_VALUE > 7/10;"
   number_columns = ["USED_RATE"]
+  percent_columns = ["USED_RATE"]
   [metrics.column_alias]
     SEQUENCE_OWNER = "序列用户"
     SEQUENCE_NAME = "序列名称"
-    USED_RATE = "使用率(%)"
+    USED_RATE = "使用率"
   [metrics.item_names]
     USED_RATE = "yasdb_sequence_used_rate"
   [metrics.alert_rules]
@@ -1833,6 +1838,40 @@
 [[metrics]]
   name = "yasdb_database_change"
   name_alias = "数据库变更日志"
+  module_name = "log_analysis"
+  metric_type = "bash"
+  default = true
+  enabled = true
+
+
+[[metrics]]
+  name = "yasdb_slow_log_parameter"
+  name_alias = "慢日志相关配置"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb_slow_log"
+  name_alias = "慢日志系统表"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  column_order = ["RECORD_TIME","QUERY_TIME","ROWS_SENT","USER_NAME","USER_HOST","SQL_ID","SQL_TEXT"]
+  [metrics.column_alias]
+    RECORD_TIME = "时间"
+    QUERY_TIME = "执行时间(ms)"
+    ROWS_SENT = "返回数据行数"  
+    USER_NAME = "用户名"
+    USER_HOST = "用户主机"
+    SQL_ID = "SQL ID"
+    SQL_TEXT = "SQL文本"
+
+[[metrics]]
+  name = "yasdb_slow_log_file"
+  name_alias = "慢日志文件"
   module_name = "log_analysis"
   metric_type = "bash"
   default = true

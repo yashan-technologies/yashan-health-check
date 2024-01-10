@@ -65,6 +65,9 @@ var (
 		define.METRIC_YASDB_WAIT_EVENT: {},
 
 		define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES: {},
+		define.METRIC_YASDB_SLOW_LOG_PARAMETER:       {},
+		define.METRIC_YASDB_SLOW_LOG:                 {},
+		define.METRIC_YASDB_SLOW_LOG_FILE:            {},
 		define.METRIC_YASDB_RUN_LOG_ERROR:            {},
 		define.METRIC_YASDB_ALERT_LOG_ERROR:          {},
 		define.METRIC_HOST_SYSTEM_LOG_ERROR:          {},
@@ -108,6 +111,9 @@ var (
 		define.METRIC_YASDB_SECURITY_AUDIT_FILE_SIZE:                                               checkAuditEnableAndDBA,
 		define.METRIC_YASDB_TABLESPACE:                                                             checkDBAPrivileges,
 		define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES:                                               checkPermission,
+		define.METRIC_YASDB_SLOW_LOG_PARAMETER:                                                     checkVParameter,
+		define.METRIC_YASDB_SLOW_LOG:                                                               checkSlowLog,
+		define.METRIC_YASDB_SLOW_LOG_FILE:                                                          checkPermission,
 		define.METRIC_YASDB_RUN_LOG_ERROR:                                                          checkPermission,
 		define.METRIC_YASDB_ALERT_LOG_ERROR:                                                        checkPermission,
 		define.METRIC_HOST_SYSTEM_LOG_ERROR:                                                        checkPermission,
@@ -136,6 +142,7 @@ var (
 		string(define.METRIC_YASDB_RUN_LOG_ERROR):            getRunLogPath,
 		string(define.METRIC_YASDB_ALERT_LOG_ERROR):          getAlertLogPath,
 		string(define.METRIC_HOST_SYSTEM_LOG_ERROR):          systemLogPath,
+		string(define.METRIC_YASDB_SLOW_LOG_FILE):            getSlowLogPath,
 	}
 )
 
@@ -212,6 +219,38 @@ func checkSysWrmSnapshot(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.
 				Name:        metric.NameAlias,
 				Error:       err,
 				Description: "需要权限访问SYS.WRM$_SNAPSHOT视图",
+			}
+		}
+		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
+		return nil
+	}
+	return nil
+}
+
+func checkVParameter(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	sql := "select * from v$parameter limit 1;"
+	if _, err := yhccommons.QueryYasdb(log, db, sql, confdef.GetYHCConf().SqlTimeout); err != nil {
+		if strings.Contains(err.Error(), YAS_USER_LACK_AUTH) || strings.Contains(err.Error(), YAS_TABLE_OR_VIEW_DOES_NOT_EXIST) {
+			return &define.NoNeedCheckMetric{
+				Name:        metric.NameAlias,
+				Error:       err,
+				Description: "需要权限访问v$parameter视图",
+			}
+		}
+		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
+		return nil
+	}
+	return nil
+}
+
+func checkSlowLog(log yaslog.YasLog, db *yasdb.YashanDB, metric *confdef.YHCMetric) *define.NoNeedCheckMetric {
+	sql := "select * from SYS.SLOW_LOG$ limit 1;"
+	if _, err := yhccommons.QueryYasdb(log, db, sql, confdef.GetYHCConf().SqlTimeout); err != nil {
+		if strings.Contains(err.Error(), YAS_USER_LACK_AUTH) || strings.Contains(err.Error(), YAS_TABLE_OR_VIEW_DOES_NOT_EXIST) {
+			return &define.NoNeedCheckMetric{
+				Name:        metric.NameAlias,
+				Error:       err,
+				Description: "需要权限访问SYS.SLOW_LOG$系统表",
 			}
 		}
 		log.Warnf("pre check %s err: %s", metric.NameAlias, err.Error())
@@ -360,5 +399,15 @@ func getAlertLogPath(log yaslog.YasLog, db *yasdb.YashanDB) (p string, err error
 
 func systemLogPath(log yaslog.YasLog, db *yasdb.YashanDB) (p string, err error) {
 	p, err = getSystemLogName()
+	return
+}
+
+func getSlowLogPath(log yaslog.YasLog, db *yasdb.YashanDB) (p string, err error) {
+	sql := fmt.Sprintf("select * from v$parameter where name = %s", SLOW_LOG_FILE_PATH)
+	res, err := yhccommons.QueryYasdb(log, db, sql, confdef.GetYHCConf().SqlTimeout)
+	if err != nil {
+		return
+	}
+	p = path.Join(strings.ReplaceAll(res[0]["VALUE"], "?", db.YasdbData), NAME_YASDB_SLOW_LOG)
 	return
 }

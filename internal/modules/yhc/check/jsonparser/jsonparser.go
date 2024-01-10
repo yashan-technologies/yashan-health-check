@@ -55,6 +55,10 @@ var _mergeMetricMap = map[define.MetricName][]define.MetricName{
 	},
 }
 
+var _fixedTableLayoutMetrics = map[define.MetricName]struct{}{
+	define.METRIC_YASDB_SLOW_LOG: {},
+}
+
 type merge struct {
 	parentModule  string
 	originMetrics []string
@@ -166,6 +170,15 @@ var _mergeOldMenuToNew []merge = []merge{
 		originMetrics: []string{
 			string(define.METRIC_HOST_HUGE_PAGE),
 			string(define.METRIC_HOST_SWAP_MEMORY),
+		},
+	},
+	{
+		parentModule: string(define.MODULE_LOG),
+		targetTitle:  "慢日志分析",
+		originMetrics: []string{
+			string(define.METRIC_YASDB_SLOW_LOG_PARAMETER),
+			string(define.METRIC_YASDB_SLOW_LOG),
+			string(define.METRIC_YASDB_SLOW_LOG_FILE),
 		},
 	},
 	{
@@ -624,6 +637,9 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_YASDB_UNDO_LOG_TOTAL_BLOCK:                                                   j.parseTable,
 		define.METRIC_YASDB_UNDO_LOG_RUNNING_TRANSACTIONS:                                          j.parseTable,
 		define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES:                                               j.parseText,
+		define.METRIC_YASDB_SLOW_LOG_PARAMETER:                                                     j.parseMap,
+		define.METRIC_YASDB_SLOW_LOG:                                                               j.parseTable,
+		define.METRIC_YASDB_SLOW_LOG_FILE:                                                          j.parseText,
 		define.METRIC_YASDB_ALERT_LOG_ERROR:                                                        j.parseText,
 		define.METRIC_HOST_DMESG_LOG_ERROR:                                                         j.parseText,
 		define.METRIC_HOST_SYSTEM_LOG_ERROR:                                                        j.parseText,
@@ -708,6 +724,9 @@ func (j *JsonParser) parseTable(menu *define.PandoraMenu, item *define.YHCItem, 
 		return fmt.Errorf("failed to parse table, unsupport data type %T", item.Details)
 	}
 	attributes.TableColumns = j.sortTableColumns(metric, attributes.TableColumns)
+	if _, ok := _fixedTableLayoutMetrics[item.Name]; ok {
+		attributes.TableLayout = define.TABLE_LAYOUT_FIXED
+	}
 	element := &define.PandoraElement{
 		MetricName:   metric.Name,
 		ElementTitle: metric.NameAlias,
