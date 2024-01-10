@@ -127,7 +127,7 @@
 [[modules]]
   name = "log_analysis"
   name_alias = "日志分析"
-  metric_names = ["yasdb_database_change","yasdb_redo_log", "yasdb_redo_log_count","yasdb_undo_size","yasdb_total_undo_block","yasdb_transactions"]
+  metric_names = ["yasdb_database_change", "yasdb_slow_log_parameter", "yasdb_slow_log", "yasdb_slow_log_file","yasdb_redo_log", "yasdb_redo_log_count","yasdb_undo_size","yasdb_total_undo_block","yasdb_transactions"]
 
   [[modules.children]]
     name = "log_error_analysis"

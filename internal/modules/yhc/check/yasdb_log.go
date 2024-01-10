@@ -38,6 +38,7 @@ const (
 
 	NAME_YASDB_RUN_LOG   = "run.log"
 	NAME_YASDB_ALERT_LOG = "alert.log"
+	NAME_YASDB_SLOW_LOG  = "slow.log"
 
 	ALERT_LOG_RISE_ACTION  = "0"
 	ALERT_LOG_ACTION_INDEX = 4
@@ -48,6 +49,7 @@ const (
 	SYSTEM_LOG_SYSLOG   = "/var/log/syslog"
 
 	STR_ERR_NOT_FOUND = "未发现明显错误"
+	STR_EMPTY_CONTENT = "暂无内容"
 )
 
 func (c *YHCChecker) GetYasdbRunLogError(name string) (err error) {
