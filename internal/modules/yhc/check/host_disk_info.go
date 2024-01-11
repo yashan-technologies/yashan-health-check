@@ -2,6 +2,7 @@ package check
 
 import (
 	"strconv"
+	"strings"
 
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
@@ -25,8 +26,9 @@ const (
 )
 
 type DiskUsage struct {
-	Device       string `json:"device"`
-	MountOptions string `json:"mountOptions"`
+	Device          string `json:"device"`
+	MountOptions    string `json:"mountOptions"`
+	IsYasdbDataDisk string `json:"isYasdbDataDisk" `
 	disk.UsageStat
 }
 
@@ -43,6 +45,12 @@ func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 		data.Error = err.Error()
 		return
 	}
+	var mountPonit string
+	for _, p := range partitions {
+		if strings.HasPrefix(c.base.DBInfo.YasdbData, p.Mountpoint) && len(p.Mountpoint) > len(mountPonit) {
+			mountPonit = p.Mountpoint
+		}
+	}
 	details := []map[string]any{}
 	for _, partition := range partitions {
 		var usageStat *disk.UsageStat
@@ -58,6 +66,9 @@ func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 			Device:       partition.Device,
 			MountOptions: partition.Opts,
 			UsageStat:    *usageStat,
+		}
+		if partition.Mountpoint == mountPonit {
+			usage.IsYasdbDataDisk = STR_TRUE
 		}
 		var detail map[string]any
 		detail, err = c.convertObjectData(usage)

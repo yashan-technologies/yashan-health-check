@@ -16,13 +16,13 @@ import (
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
+	"yhc/utils/execerutil"
 	"yhc/utils/fileutil"
 	"yhc/utils/stringutil"
 	"yhc/utils/timeutil"
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
-	"git.yasdb.com/go/yasutil/execer"
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/host"
 )
@@ -38,6 +38,7 @@ const (
 
 	NAME_YASDB_RUN_LOG   = "run.log"
 	NAME_YASDB_ALERT_LOG = "alert.log"
+	NAME_YASDB_SLOW_LOG  = "slow.log"
 
 	ALERT_LOG_RISE_ACTION  = "0"
 	ALERT_LOG_ACTION_INDEX = 4
@@ -48,6 +49,7 @@ const (
 	SYSTEM_LOG_SYSLOG   = "/var/log/syslog"
 
 	STR_ERR_NOT_FOUND = "未发现明显错误"
+	STR_EMPTY_CONTENT = "暂无内容"
 )
 
 func (c *YHCChecker) GetYasdbRunLogError(name string) (err error) {
@@ -163,7 +165,7 @@ func (c *YHCChecker) GetDmesgLog(name string) (err error) {
 	}
 	defer c.fillResult(data)
 	log := log.Module.M("get-dmesg-log")
-	exec := execer.NewExecer(log)
+	exec := execerutil.NewExecer(log)
 	tmpFileName := path.Join("/tmp", uuid.NewString()[0:6]+".log")
 	ret, _, stderr := exec.Exec(bashdef.CMD_BASH, "-c", fmt.Sprintf("%s > %s", bashdef.CMD_DMESG, tmpFileName))
 	if ret != 0 {

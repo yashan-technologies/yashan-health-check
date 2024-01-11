@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"yhc/defs/regexpdef"
+	"yhc/utils/execerutil"
 
 	"git.yasdb.com/go/yaslog"
-	"git.yasdb.com/go/yasutil/execer"
 )
 
 const (
@@ -32,7 +32,7 @@ type Device struct {
 
 func Lsblk(log yaslog.YasLog) ([]*Device, error) {
 	args := []string{"-P", "-b", "-o", column_str}
-	execer := execer.NewExecer(log, execer.WithPrintResult())
+	execer := execerutil.NewExecer(log)
 	ret, stdout, stderr := execer.Exec("lsblk", args...)
 	if ret != 0 {
 		err := fmt.Errorf("failed to exec lsblk,err: %s", stderr)

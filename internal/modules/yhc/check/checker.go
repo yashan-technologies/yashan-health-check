@@ -26,6 +26,7 @@ import (
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
+	"git.yasdb.com/go/yasutil/size"
 )
 
 const (
@@ -81,8 +82,9 @@ var SQLMap = map[define.MetricName]string{
 	define.METRIC_YASDB_ARCHIVE_LOG:                                                            define.SQL_QUERY_ARCHIVE_LOG,
 	define.METRIC_YASDB_PARAMETER:                                                              define.SQL_QUERY_PARAMETER,
 	define.METRIC_YASDB_OBJECT_COUNT:                                                           define.SQL_QUERY_TOTAL_OBJECT,
-	define.METRIC_YASDB_OBJECT_OWNER:                                                           define.SQL_QUERY_OWNER_OBJECT,
-	define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      define.SQL_QUERY_TABLESPACE_OBJECT,
+	define.METRIC_YASDB_OBJECT_SUMMARY:                                                         define.SQL_QUERY_OBJECT_SUMMARY,
+	define.METRIC_YASDB_SEGMENTS_COUNT:                                                         define.SQL_QUERY_YASDB_SEGMENTS_COUNT,
+	define.METRIC_YASDB_SEGMENTS_SUMMARY:                                                       define.SQL_QUERY_METRIC_YASDB_SEGMENTS_SUMMARY,
 	define.METRIC_YASDB_REDO_LOG:                                                               define.SQL_QUERY_LOGFILE,
 	define.METRIC_YASDB_REDO_LOG_COUNT:                                                         define.SQL_QUERY_LOGFILE_COUNT,
 	define.METRIC_YASDB_CONTROLFILE:                                                            define.SQL_QUERY_CONTROLFILE,
@@ -237,8 +239,9 @@ func (c *YHCChecker) funcMap() (res map[define.MetricName]func(string) error) {
 		define.METRIC_YASDB_REDO_LOG:                                                               c.GetYasdbMultiRowData,
 		define.METRIC_YASDB_REDO_LOG_COUNT:                                                         c.GetYasdbSingleRowData,
 		define.METRIC_YASDB_OBJECT_COUNT:                                                           c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_OBJECT_OWNER:                                                           c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_OBJECT_TABLESPACE:                                                      c.GetYasdbSingleRowData,
+		define.METRIC_YASDB_OBJECT_SUMMARY:                                                         c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_SEGMENTS_COUNT:                                                         c.GetYasdbSingleRowData,
+		define.METRIC_YASDB_SEGMENTS_SUMMARY:                                                       c.GetYasdbMultiRowData,
 		define.METRIC_YASDB_ARCHIVE_DEST_STATUS:                                                    c.GetYasdbArchiveDestStatus,
 		define.METRIC_YASDB_ARCHIVE_LOG:                                                            c.GetYasdbMultiRowData,
 		define.METRIC_YASDB_ARCHIVE_LOG_SPACE:                                                      c.GetYasdbSingleRowData,
@@ -264,6 +267,9 @@ func (c *YHCChecker) funcMap() (res map[define.MetricName]func(string) error) {
 		define.METRIC_YASDB_UNDO_LOG_TOTAL_BLOCK:                                                   c.GetYasdbMultiRowData,
 		define.METRIC_YASDB_UNDO_LOG_RUNNING_TRANSACTIONS:                                          c.GetYasdbMultiRowData,
 		define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES:                                               c.GetDatabaseChangeLog,
+		define.METRIC_YASDB_SLOW_LOG_PARAMETER:                                                     c.GetYasdbSlowLogParameter,
+		define.METRIC_YASDB_SLOW_LOG:                                                               c.GetYasdbSlowLog,
+		define.METRIC_YASDB_SLOW_LOG_FILE:                                                          c.GetYasdbSlowLogFile,
 		define.METRIC_YASDB_ALERT_LOG_ERROR:                                                        c.GetRisingAlertLog,
 		define.METRIC_HOST_DMESG_LOG_ERROR:                                                         c.GetDmesgLog,
 		define.METRIC_HOST_SYSTEM_LOG_ERROR:                                                        c.GetSystemLog,
@@ -566,6 +572,39 @@ func (c *YHCChecker) convertSqlData(metric *confdef.YHCMetric, data map[string]s
 			continue
 		}
 		res[col] = f
+	}
+	for _, col := range metric.ByteColumns {
+		value, ok := data[col]
+		if !ok {
+			log.Debugf("column %s not found, skip", col)
+			continue
+		}
+		if len(value) == 0 {
+			res[col] = 0
+			continue
+		}
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Errorf("failed to parse column %s to float64, value: %s, metric: %s, err: %v", col, value, metric.Name, err)
+			continue
+		}
+		res[col] = size.GenHumanReadableSize(f, decimal)
+	}
+	for _, col := range metric.PercentColumns {
+		value, ok := data[col]
+		if !ok {
+			log.Debugf("column %s not found, skip", col)
+			continue
+		}
+		if len(value) == 0 {
+			continue
+		}
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Errorf("failed to parse column %s to float64, value: %s, metric: %s, err: %v", col, value, metric.Name, err)
+			continue
+		}
+		res[col] = fmt.Sprintf("%.2f%%", f)
 	}
 	for k, v := range data {
 		if _, ok := res[k]; !ok {

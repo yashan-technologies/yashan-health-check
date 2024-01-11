@@ -73,7 +73,7 @@
   [[modules.children]]
     name = "object_number_count"
     name_alias = "对象数量统计"
-    metric_names = ["yasdb_object_count", "yasdb_object_owner", "yasdb_object_tablespace"]
+    metric_names = ["yasdb_object_count", "yasdb_object_summary", "yasdb_segments_count", "yasdb_segments_summary"]
 
   [[modules.children]]
     name = "object_status_check"
@@ -127,7 +127,7 @@
 [[modules]]
   name = "log_analysis"
   name_alias = "日志分析"
-  metric_names = ["yasdb_database_change","yasdb_redo_log", "yasdb_redo_log_count","yasdb_undo_size","yasdb_total_undo_block","yasdb_transactions"]
+  metric_names = ["yasdb_database_change", "yasdb_slow_log_parameter", "yasdb_slow_log", "yasdb_slow_log_file","yasdb_redo_log", "yasdb_redo_log_count","yasdb_undo_size","yasdb_total_undo_block","yasdb_transactions"]
 
   [[modules.children]]
     name = "log_error_analysis"

@@ -36,8 +36,10 @@ const (
 	_detail               = "详情"
 	_health_check_summary = "健康检查概览"
 	_tips_header          = "以下检查项,不会进行检查,详细如下"
-	_next_button_name     = "下一步"
-	_exit_button_name     = "退出"
+	_previous_button_name = "< 上一步"
+	_next_button_name     = "下一步 >"
+	_exit_button_name     = "退出 X"
+	_no_alert_rule        = "该检查项未配置告警"
 
 	// yashan health check page name
 	_yasdb   = "yasdb"
@@ -99,7 +101,7 @@ func StartTerminalView(modules []*constdef.ModuleMetrics, yasdb *yasdb.YashanDB)
 
 func captureCtrlCFunc(app *tview.Application) func(event *tcell.EventKey) *tcell.EventKey {
 	return func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlC {
+		if event.Key() == tcell.KeyCtrlC || event.Key() == tcell.KeyESC {
 			exitFunc(app, EXIT_CONTROL_C)
 		}
 		return event
@@ -117,10 +119,18 @@ func index(app *tview.Application, yasdb *yasdb.YashanDB, modules []*constdef.Mo
 
 func indexFooter(app *tview.Application, page *tview.Pages, index *tview.Flex, modules []*constdef.ModuleMetrics) *tview.Flex {
 	f := newFlex("", false, tview.FlexColumn)
+	previous := newButton(_previous_button_name, true)
+	previous.SetDisabled(true)
 	next := newButton(_next_button_name, true)
 	exit := newButton(_exit_button_name, true)
-	next.SetSelectedFunc(nextClickFunc(app, page, next, index, modules))
+	exit.SetStyle(tcell.StyleDefault.Background(tcell.ColorRed).Foreground(tcell.ColorWhite))
+	exit.SetActivatedStyle(tcell.StyleDefault.Background(tcell.ColorRed).Foreground(tcell.ColorWhite).Bold(true))
+
+	previous.SetSelectedFunc(previousClickFunc(app, page, previous, index, modules))
+	next.SetSelectedFunc(nextClickFunc(app, page, previous, index, modules))
 	exit.SetSelectedFunc(func() { exitFunc(app, EXIT_NOT_CONTINUE) })
+
+	f.AddItem(previous, 0, 1, false)
 	f.AddItem(next, 0, 1, false)
 	f.AddItem(exit, 0, 1, false)
 	return f
@@ -230,7 +240,24 @@ func itemListChangedFunc(item *confdef.YHCMetric, flex *tview.Flex) {
 	flex.AddItem(newTable, 0, 1, false)
 }
 
-func nextClickFunc(app *tview.Application, page *tview.Pages, button *tview.Button, index *tview.Flex, modules []*constdef.ModuleMetrics) func() {
+func previousClickFunc(app *tview.Application, page *tview.Pages, button *tview.Button, index *tview.Flex, modules []*constdef.ModuleMetrics) func() {
+	return func() {
+		pageName, _ := page.GetFrontPage()
+		log.Controller.Infof("current page: %s", pageName)
+		switch pageName {
+		case _summary:
+			page.SwitchToPage(_tips)
+			log.Controller.Infof("switch to previous page: %s", pageName)
+		case _tips:
+			page.SwitchToPage(_yasdb)
+			log.Controller.Infof("switch to previous page: %s", pageName)
+		case _yasdb:
+			button.SetDisabled(true)
+		}
+	}
+}
+
+func nextClickFunc(app *tview.Application, page *tview.Pages, previous *tview.Button, index *tview.Flex, modules []*constdef.ModuleMetrics) func() {
 	return func() {
 		pageName, pageView := page.GetFrontPage()
 		log.Controller.Infof("click next current page: %s", pageName)
@@ -244,19 +271,29 @@ func nextClickFunc(app *tview.Application, page *tview.Pages, button *tview.Butt
 					app.SetRoot(modal, true)
 					return
 				}
-				metricValidate(yasdbEnv, modules)
+				previous.SetDisabled(false)
+				validateMetrics(yasdbEnv, modules)
 				if len(moduleNoNeedCheckMetrics) != 0 {
 					// write no need check metrics to console.log
 					std.WriteToFile("the following metric will not be checked \n")
 					noNeedStr := genNoNeedCheckMetricsStr()
 					std.WriteToFile(noNeedStr)
+					if page.HasPage(_tips) {
+						page.SwitchToPage(_tips)
+						return
+					}
 					page.AddAndSwitchToPage(_tips, tipsPage(), true)
 					return
 				}
 			}
 		}
+		previous.SetDisabled(false)
 		if pageName == _summary {
 			exitFunc(app, EXIT_CONTINUE)
+			return
+		}
+		if page.HasPage(_summary) {
+			page.SwitchToPage(_summary)
 			return
 		}
 		page.AddAndSwitchToPage(_summary, summaryFlexPage(globalFilterModule), true)
@@ -295,6 +332,12 @@ func tipsPage() *tview.Flex {
 }
 
 func drawAlertRuleTable(table *tview.Table, alertRules map[string][]confdef.AlertDetails) {
+	if len(alertRules) == 0 {
+		cell := tview.NewTableCell(_no_alert_rule)
+		cell.SetTextColor(tcell.ColorYellow)
+		table.SetCell(0, 0, cell)
+		return
+	}
 	type rule struct {
 		Level       string
 		Expression  string
@@ -374,7 +417,7 @@ func yasdbValidate(form *tview.Form) (*yasdb.YashanDB, error) {
 
 }
 
-func metricValidate(env *yasdb.YashanDB, modules []*constdef.ModuleMetrics) {
+func validateMetrics(yasdb *yasdb.YashanDB, modules []*constdef.ModuleMetrics) {
 	log := log.Controller.M("metric validate")
 	for _, module := range modules {
 		for _, metric := range module.Metrics {
@@ -386,7 +429,7 @@ func metricValidate(env *yasdb.YashanDB, modules []*constdef.ModuleMetrics) {
 				log.Warnf("metric %s is defined in NeedCheckMetricMap, but NeedCheckMetricFuncMap is not defined", metric.Name)
 				continue
 			}
-			if noNeedCheck := check.NeedCheckMetricFuncMap[metricDefine](log, env, metric); noNeedCheck != nil {
+			if noNeedCheck := check.NeedCheckMetricFuncMap[metricDefine](log, yasdb, metric); noNeedCheck != nil {
 				if _, ok := moduleNoNeedCheckMetrics[module.Name]; !ok {
 					moduleNoNeedCheckMetrics[module.Name] = make(map[string]*define.NoNeedCheckMetric)
 				}

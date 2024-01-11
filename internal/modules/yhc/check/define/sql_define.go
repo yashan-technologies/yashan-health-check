@@ -4,16 +4,16 @@ const (
 	SQL_QUERY_CONTROLFILE           = "select  id, name, bytes/1024/1024 as MBytes from v$controlfile;"
 	SQL_QUERY_CONTROLFILE_COUNT     = "select count(*) as total from v$controlfile;"
 	SQL_QUERY_DATAFILE              = "select * from dba_data_files;"
-	SQL_QUERY_DB_ID                 = "SELECT DBID,INSTANCE_NUMBER,to_char(STARTUP_TIME,'YYYY-MM-DD HH24:MI:SS')as STARTUP_TIME FROM SYS.WRM$_DATABASE_INSTANCE;"
+	SQL_QUERY_DB_ID                 = "SELECT DBID,INSTANCE_NUMBER,to_char(STARTUP_TIME,'YYYY-MM-DD HH24:MI:SS')as STARTUP_TIME FROM SYS.WRM$_DATABASE_INSTANCE ORDER BY STARTUP_TIME DESC;"
 	SQL_QUERY_SNAPSHOT_FORMATER     = "select SNAP_ID from sys.wrm$_snapshot where (BEGIN_INTERVAL_TIME >= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME <= TIMESTAMP('%s') and BEGIN_INTERVAL_TIME >= TIMESTAMP('%s'))"
-	SQL_QUERY_BACKUP_SET            = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
+	SQL_QUERY_BACKUP_SET            = "select RECID# as RECID, to_char(START_TIME, 'YYYY-MM-DD HH24:MI:SS') as START_TIME,, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
 	SQL_QUERY_FULL_BACKUP_SET_COUNT = "select count(*) as TOTAL from dba_backup_set where date_add(COMPLETION_TIME , INTERVAL 10 DAY) >= sysdate AND type = 'FULL';"
 	SQL_QUERY_BACKUP_SET_PATH       = "select distinct(PATH) as PATH from dba_backup_set;"
-	SQL_QUERY_DATABASE              = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
+	SQL_QUERY_DATABASE              = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') create_time from v$database;"
 	SQL_QUERY_INDEX_BLEVEL          = "select OWNER, INDEX_NAME, BLEVEL from dba_indexes where BLEVEL>3;"
 	SQL_QUERY_INDEX_COLUMN          = "select INDEX_OWNER, INDEX_NAME, count(*) as column_count from dba_ind_columns group by INDEX_OWNER,INDEX_NAME having count(*) > 10;"
 	SQL_QUERY_INDEX_INVISIBLE       = "select OWNER, INDEX_NAME, TABLE_OWNER, TABLE_NAME FROM dba_indexes where owner<> 'SYS' and VISIBILITY <> 'VISIBLE';"
-	SQL_QUERY_INSTANCE              = "select status as instance_status, version, startup_time from v$instance;"
+	SQL_QUERY_INSTANCE              = "select status as instance_status, version, to_char(startup_time,'YYYY-MM-DD HH24:MI:SS') startup_time from v$instance;"
 	SQL_QUERY_LISTEN_ADDR           = `select VALUE as LISTEN_ADDR from v$parameter where name = 'LISTEN_ADDR';`
 	SQL_QUERY_SESSION               = `
     SELECT 
@@ -200,16 +200,11 @@ const (
     select USABLE_PCT,SPACE_LIMIT,NUMBER_OF_FILES,SPACE_USED,SPACE_RECLAIMABLE,ARCHIVE_DEST
     FROM usable_pct,space_limit,number_of_files,space_used,space_reclaimable,archive_dest;
     `
-	SQL_QUERY_PARAMETER    = "select name, value from v$parameter where value is not null;"
-	SQL_QUERY_TOTAL_OBJECT = "select count(*) as total_count from dba_objects;"
-	SQL_QUERY_OWNER_OBJECT = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects
-    WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%'
-    GROUP BY owner, object_type
-    ORDER BY owner,object_type;`
-	SQL_QUERY_TABLESPACE_OBJECT = `SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments
-    WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE')
-    GROUP BY tablespace_name
-    ORDER BY tablespace_name;`
+	SQL_QUERY_PARAMETER                                     = "select name, value from v$parameter where value is not null;"
+	SQL_QUERY_TOTAL_OBJECT                                  = "select count(*) as total_count from dba_objects;"
+	SQL_QUERY_OBJECT_SUMMARY                                = `SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects GROUP BY owner, object_type ORDER BY owner,object_type;`
+	SQL_QUERY_YASDB_SEGMENTS_COUNT                          = "select count(*) as total_count from dba_segments;"
+	SQL_QUERY_METRIC_YASDB_SEGMENTS_SUMMARY                 = `SELECT tablespace_name, COUNT(*) AS segment_count FROM dba_segments GROUP BY tablespace_name ORDER BY tablespace_name;`
 	SQL_QUERY_INVALID_OBJECT                                = `select OBJECT_ID, OWNER, OBJECT_NAME, OBJECT_TYPE, STATUS from dba_objects where STATUS = 'INVALID';`
 	SQL_QUERY_INVISIBLE_INDEX                               = `select OWNER,INDEX_NAME,VISIBILITY from dba_indexes where VISIBILITY !='VISIBLE';`
 	SQL_QUERY_DISABLED_CONSTRAINT                           = `select OWNER,CONSTRAINT_NAME,CONSTRAINT_TYPE,STATUS from dba_constraints where STATUS ='DISABLED';`
@@ -307,6 +302,8 @@ const (
 	SQL_QUERY_AUDIT_CLEANUP_TASK                           = `select AUDIT_TRAIL,LAST_ARCHIVE_TS,DATABASE_ID from DBA_AUDIT_MGMT_LAST_ARCH_TS;`
 	SQL_QUERY_AUDIT_FILE_SIZE                              = `select segment_name ,bytes/1024/1024/1024 as size_gb from dba_segments where segment_name like 'AUD$';`
 	/**日志分析**/
+	SQL_QUERY_SLOW_LOG_PARAMETER            = "select name,value from v$parameter where name in (%s)"
+	SQL_QUERY_SLOW_SQL                      = `select USER_NAME,to_char(START_TIME, 'YYYY-MM-DD HH24:MI:SS') AS RECORD_TIME , USER_HOST, QUERY_TIME, ROWS_SENT, SQL_ID, SQL_TEXT from sys.SLOW_LOG$ where START_TIME >= TIMESTAMP('%s') and START_TIME <= TIMESTAMP('%s') order by QUERY_TIME desc;`
 	SQL_QUERY_UNDO_LOG_SIZE                 = `SELECT round(a.USED_UBLK * b.value /1024/1024,3)  AS SIZE_MB, XID from V$TRANSACTION as a , ( SELECT to_number(decode(value, '8K','8192','16K','16384','32K','32768',value)) as VALUE FROM v$parameter WHERE NAME = 'DB_BLOCK_SIZE') as b;`
 	SQL_QUERY_UNDO_LOG_TOTAL_BLOCK          = `SELECT  SUM(USED_UBLK) as TOTAL_BLOCK from V$TRANSACTION ;`
 	SQL_QUERY_UNDO_LOG_RUNNING_TRANSACTIONS = `SELECT XID, SID,XRMID,XEXT, XNODE,XSN,STATUS,RESIDUAL, USED_UBLK, FIRST_UBAFIL,FIRST_UBABLK,FIRST_UBAVER ,FIRST_UBAREC,LAST_UBAFIL,LAST_UBABLK, PTX_XID, START_DATE,ISOLATION_LEVEL from V$TRANSACTION ;`

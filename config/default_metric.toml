@@ -67,6 +67,7 @@
   default = true
   enabled = true
   column_order = ["device","path","fstype","mountOptions","total","free","used","usedPercent","inodesTotal","inodesFree","inodesUsed","inodesUsedPercent"]
+  hidden_columns = ["isYasdbDataDisk"]
   labels = ["device"]
   [metrics.column_alias]
     device = "设备名称"
@@ -78,15 +79,16 @@
     used = "已使用空间"
     usedPercent = "磁盘空间使用率(%)"
     inodesTotal = "i节点总数"
-    inodesUsed = "已使用i节点数量"
-    inodesFree = "空闲i节点数量"
+    inodesUsed = "已使用i节点"
+    inodesFree = "空闲i节点"
     inodesUsedPercent = "i节点使用率(%)"
   [metrics.item_names]
     fstype = "disk_fstype"
+    isYasdbDataDisk = "is_yasdb_data_disk"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.info]]
-      expression = "disk_fstype != 'ext4' && disk_fstype != 'xfs'"
+      expression = "is_yasdb_data_disk == 'TRUE' && disk_fstype != 'ext4' && disk_fstype != 'xfs'"
       description = "磁盘文件系统检查"
       suggestion = "数据库文件所在的分区的文件系统的版本不符合要求"
 
@@ -163,7 +165,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select status as instance_status, version, startup_time from v$instance;"
+  sql = "select status as instance_status, version, to_char(startup_time, 'yyyy-mm-dd hh24:mi:ss') startup_time from v$instance;"
   [metrics.column_alias]
     INSTANCE_STATUS = "数据库实例状态"
     STARTUP_TIME = "数据库实例启动时间"
@@ -196,7 +198,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, create_time from v$database;"
+  sql = "select database_name, status as database_status, log_mode, open_mode, database_role, protection_mode, protection_level, to_char(create_time, 'yyyy-mm-dd hh24:mi:ss') create_time from v$database;"
   [metrics.column_alias]
     CREATE_TIME = "数据库创建时间"
     DATABASE_NAME = "数据库名称"
@@ -481,10 +483,12 @@
   metric_type = "sql"
   default = true
   enabled = true
-  column_order = ["TABLESPACE_NAME", "CONTENTS", "STATUS", "ALLOCATION_TYPE", "USED_GBYTES", "TOTAL_GBYTES", "USED_RATE", "DATA_PERCENTAGE"]
+  column_order = ["TABLESPACE_NAME", "CONTENTS", "STATUS", "ALLOCATION_TYPE", "USED_BYTES", "TOTAL_BYTES", "USED_RATE", "DATA_PERCENTAGE"]
   number_columns = ["USED_RATE","USED_BYTES","TOTAL_BYTES"]
+  byte_columns = ["USED_BYTES","TOTAL_BYTES"]
+  percent_columns = ["USED_RATE","DATA_PERCENTAGE"]
   labels = ["TABLESPACE_NAME"]
-  sql = '''SELECT A.TABLESPACE_NAME, A.CONTENTS, A.STATUS, A.ALLOCATION_TYPE, round(A.USED_BYTES/1024/1024,3) as USED_GBYTES, round(A.TOTAL_BYTES/1024/1024,3) as TOTAL_GBYTES, A.USED_RATE,B.DATA_PERCENTAGE
+  sql = '''SELECT A.TABLESPACE_NAME, A.CONTENTS, A.STATUS, A.ALLOCATION_TYPE, A.USED_BYTES, A.TOTAL_BYTES, A.USED_RATE,B.DATA_PERCENTAGE
     FROM (  
         SELECT T.TABLESPACE_NAME, T.CONTENTS, T.STATUS, T.ALLOCATION_TYPE, T.TOTAL_BYTES - T.USER_BYTES AS USED_BYTES, T.TOTAL_BYTES, round((T.TOTAL_BYTES - T.USER_BYTES) / T.TOTAL_BYTES * 100,3) AS USED_RATE
         FROM SYS.DBA_TABLESPACES T ) A
@@ -498,14 +502,15 @@
     CONTENTS = "表空间类型"
     STATUS = "表空间状态"
     ALLOCATION_TYPE = "EXTEND分配方式"
-    USED_GBYTES = "已使用(GB)"
-    TOTAL_GBYTES = "总大小(GB)"
-    USED_RATE = "使用率(%)"
-    DATA_PERCENTAGE = "数据段使用占比(%)"
+    USED_BYTES = "已使用"
+    TOTAL_BYTES = "总大小"
+    USED_RATE = "使用率"
+    DATA_PERCENTAGE = "数据段使用占比"
   [metrics.item_names]
     STATUS = "tablespace_status"
     ALLOCATION_TYPE = "allocation_type"
     USED_RATE = "tablespace_used_rate"
+    TABLESPACE_NAME = "tablespace_name"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
@@ -513,18 +518,18 @@
       description = "表空间状态检查"
       suggestion = "表空间状态不正常，建议检查表空间状态，确认异常原因"
 
-    [[metrics.alert_rules.warning]]
-      expression = "allocation_type == 'AUTO'"
+    [[metrics.alert_rules.info]]
+      expression = "allocation_type == 'AUTO' && tablespace_name == 'UNDO'"
       description = "表空间开启自动扩展"
       suggestion = "建议关闭此功能，避免有事务占用过多的UNDO导致磁盘空间不可用"
 
     [[metrics.alert_rules.warning]]
-      expression = "tablespace_used_rate >= 80 && tablespace_used_rate < 90"
+      expression = "tablespace_used_rate >= 80 && tablespace_used_rate < 90 && allocation_type != 'AUTO'"
       description = "表空间使用率"
       suggestion = "表空间使用率过高，建议检查表空间使用情况并通过清理空间或者增加数据文件的方法降低表空间使用率，表空间完全满之后可能导致业务挂起或者数据库挂起"
 
     [[metrics.alert_rules.critical]]
-      expression = "tablespace_used_rate >= 90"
+      expression = "tablespace_used_rate >= 90 && allocation_type != 'AUTO'"
       description = "表空间使用率"
       suggestion = "表空间使用率过高，建议检查表空间使用情况并通过清理空间或者增加数据文件的方法降低表空间使用率，表空间完全满之后可能导致业务挂起或者数据库挂起"
 
@@ -621,7 +626,7 @@
   metric_type = "sql"
   default = true
   enabled = true
-  sql = "select RECID# as RECID, START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
+  sql = "select RECID# as RECID, to_char(START_TIME, 'YYYY-MM-DD HH24:MI:SS') as START_TIME, TYPE, decode(COMPLETION_TIME > sysdate, FALSE, TRUE) as SUCCESS from dba_backup_set;"
   column_order = ["RECID","START_TIME","TYPE","SUCCESS"]
   [metrics.column_alias]
     RECID = "备份集编号"
@@ -690,12 +695,13 @@
         ( SELECT COUNT(*) AS BACKGROUND_SESSIONS FROM V$SESSION WHERE TYPE = 'BACKGROUND') C;
     '''
   column_order = ["BACKGROUND_SESSIONS","USER_SESSIONS","MAX_SESSIONS","SESSION_USAGE"]
+  percent_columns = ["SESSION_USAGE"]
   [metrics.column_alias]
     USER_SESSIONS = "用户会话数"
     BACKGROUND_SESSIONS = "系统会话数"
     TOTAL_SESSIONS = "总会话数"
     MAX_SESSIONS = "最大会话数"
-    SESSION_USAGE = "会话使用率(%)"
+    SESSION_USAGE = "会话使用率"
   [metrics.item_names]
     SESSION_USAGE = "session_session_usage"
   [metrics.alert_rules]
@@ -816,8 +822,9 @@
 '''
   column_order = ["ARCHIVE_DEST","NUMBER_OF_FILES","SPACE_LIMIT","SPACE_USED","SPACE_RECLAIMABLE"]
   number_columns = ["USED_PCT"]
+  percent_columns = ["USED_PCT"]
   [metrics.column_alias]
-    USED_PCT = "已用空间百分比(%)"
+    USED_PCT = "已用空间百分比"
     SPACE_USED = "归档已用空间(GB)"
     NUMBER_OF_FILES = "归档文件数量"
     SPACE_LIMIT = "归档最大空间(GB)"
@@ -883,8 +890,9 @@
   enabled = true
   sql = "select round((sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0)) - sum(decode(NAME, 'DISK READS', VALUE, 0))) / (sum(decode(NAME, 'BUFFER GETS', VALUE, 0)) + sum(decode(NAME, 'BUFFER CR GETS', VALUE, 0))) * 100,3) AS HIT_RATE FROM v$sysstat;"
   number_columns = ["HIT_RATE"]
+  percent_columns = ["HIT_RATE"]
   [metrics.column_alias]
-    HIT_RATE = "当前命中率（%）"
+    HIT_RATE = "当前命中率"
 
   [metrics.item_names]
     HIT_RATE = "buffer_hit_rate"
@@ -1111,7 +1119,7 @@
 
 [[metrics]]
   name = "yasdb_object_count"
-  name_alias = "对象总数"
+  name_alias = "对象数量"
   module_name = "object_check"
   metric_type = "sql"
   default = true
@@ -1121,31 +1129,42 @@
     TOTAL_COUNT = "对象总数"
 
 [[metrics]]
-  name = "yasdb_object_owner"
+  name = "yasdb_object_summary"
   name_alias = "各owner对象统计"
   module_name = "object_check"
   metric_type = "sql"
   default = true
   enabled = true
   column_order = ["OWNER","OBJECT_TYPE","OWNER_OBJECT_COUNT"]
-  sql = "SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects WHERE owner NOT IN ('SYS', 'SYSTEM') AND object_type NOT LIKE 'BIN$%' GROUP BY owner, object_type ORDER BY owner,object_type;"
+  sql = "SELECT owner, object_type, COUNT(*) AS owner_object_count FROM dba_objects GROUP BY owner, object_type ORDER BY owner,object_type;"
   [metrics.column_alias]
     OWNER = "owner名称"
     OBJECT_TYPE = "对象类型"
-    OWNER_OBJECT_COUNT = "owner拥有对象数"
+    OWNER_OBJECT_COUNT = "对象数量"
 
 [[metrics]]
-  name = "yasdb_object_tablespace"
-  name_alias = "各tablespace对象统计"
+  name = "yasdb_segments_count"
+  name_alias = "segment总数"
   module_name = "object_check"
   metric_type = "sql"
   default = true
   enabled = true
-  column_order = ["TABLESPACE_NAME","TABLESPACE_OBJECT_COUNT"]
-  sql = "SELECT tablespace_name, COUNT(*) AS tablespace_object_count FROM dba_segments WHERE segment_type IN ('TABLE', 'INDEX', 'VIEW', 'SEQUENCE') GROUP BY tablespace_name ORDER BY tablespace_name;"
+  sql = "select count(*) as total_count from dba_segments;"
   [metrics.column_alias]
-    TABLESPACE_NAME = "表空间名称"
-    TABLESPACE_OBJECT_COUNT = "表空间拥有对象数"
+    TOTAL_COUNT = "数据段总数"
+
+[[metrics]]
+  name = "yasdb_segments_summary"
+  name_alias = "各表空间segment统计"
+  module_name = "object_check"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  column_order = ["TABLESPACE_NAME","SEGMENT_COUNT"]
+  sql = "SELECT tablespace_name, COUNT(*) AS segment_count FROM dba_segments GROUP BY tablespace_name ORDER BY tablespace_name;"
+  [metrics.column_alias]
+    TABLESPACE_NAME = "所属表空间"
+    SEGMENT_COUNT = "分配的segment数量"
 
 [[metrics]]
   name = "yasdb_invalid_object"
@@ -1521,6 +1540,7 @@
   number_columns = ["IND_BYTES","TAB_BYTES"]
   labels = ["IND_NAME"]
   column_order = ["IND_NAME","IND_OWNER","IND_SEGMENT_TYPE","IND_BYTES","TAB_NAME","TAB_OWNER","TAB_SEGMENT_TYPE","TAB_BYTES"]
+  byte_columns = ["IND_BYTES", "TAB_BYTES"]
   [metrics.column_alias]
     IND_OWNER = "索引用户"
     TAB_OWNER = "表用户"
@@ -1528,15 +1548,15 @@
     TAB_NAME = "表名称"
     TAB_SEGMENT_TYPE = "表段类型"
     IND_SEGMENT_TYPE = "索引段类型"
-    IND_BYTES = "索引大小(字节)"
-    TAB_BYTES = "表大小(字节)"
+    IND_BYTES = "索引大小"
+    TAB_BYTES = "表大小"
   [metrics.item_names]
     IND_BYTES = "yasdb_index_bytes"
     TAB_BYTES = "yasdb_table_bytes"
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_index_bytes>yasdb_table_bytes"
+      expression = "yasdb_index_bytes{IND_NAME ~= '^(?!.*(^WRH\\$_.*|I_HISTGRM1)).*$'}>yasdb_table_bytes"
       description = "存在索引过大的情况"
       suggestion = "存在索引过大的情况，需审视是否需要该索引，或者是否该索引碎片过多"
 
@@ -1574,10 +1594,11 @@
   enabled = true
   sql = "SELECT SEQUENCE_OWNER ,SEQUENCE_NAME ,LAST_NUMBER / MAX_VALUE * 100 as USED_RATE FROM DBA_SEQUENCES ds WHERE LAST_NUMBER / MAX_VALUE > 7/10;"
   number_columns = ["USED_RATE"]
+  percent_columns = ["USED_RATE"]
   [metrics.column_alias]
     SEQUENCE_OWNER = "序列用户"
     SEQUENCE_NAME = "序列名称"
-    USED_RATE = "使用率(%)"
+    USED_RATE = "使用率"
   [metrics.item_names]
     USED_RATE = "yasdb_sequence_used_rate"
   [metrics.alert_rules]
@@ -1685,7 +1706,7 @@
     ACCOUNT_STATUS = "yasdb_user_account_status"
   [metrics.alert_rules]
 
-    [[metrics.alert_rules.warning]]
+    [[metrics.alert_rules.info]]
       expression = "yasdb_user_account_status != 'OPEN'"
       description = "存在非OPEN状态的用户"
       suggestion = "如应用账户被锁定，应及时解锁。"
@@ -1727,7 +1748,7 @@
   [metrics.alert_rules] 
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_user_with_dba_role != 'SYS'"
+      expression = "yasdb_user_with_dba_role != 'SYS' && yasdb_user_with_dba_role != 'YASOM'"
       description = "非SYS用户拥有DBA角色"
       suggestion = "谨慎为普通用户授予管理数据库的DBA角色"
 
@@ -1747,7 +1768,7 @@
   [metrics.alert_rules]
 
     [[metrics.alert_rules.warning]]
-      expression = "yasdb_user_all_privilege_or_system_privileges != 'SYS'"
+      expression = "yasdb_user_all_privilege_or_system_privileges != 'SYS' && yasdb_user_all_privilege_or_system_privileges != 'YASOM'"
       description = "非sys用户拥有ALL PRIVILEGE或者SYSTEM权限"
       suggestion = "谨慎为普通用户授予管理数据库的系统权限"
 
@@ -1817,6 +1838,40 @@
 [[metrics]]
   name = "yasdb_database_change"
   name_alias = "数据库变更日志"
+  module_name = "log_analysis"
+  metric_type = "bash"
+  default = true
+  enabled = true
+
+
+[[metrics]]
+  name = "yasdb_slow_log_parameter"
+  name_alias = "慢日志相关配置"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+
+[[metrics]]
+  name = "yasdb_slow_log"
+  name_alias = "慢日志系统表"
+  module_name = "log_analysis"
+  metric_type = "sql"
+  default = true
+  enabled = true
+  column_order = ["RECORD_TIME","QUERY_TIME","ROWS_SENT","USER_NAME","USER_HOST","SQL_ID","SQL_TEXT"]
+  [metrics.column_alias]
+    RECORD_TIME = "时间"
+    QUERY_TIME = "执行时间(ms)"
+    ROWS_SENT = "返回数据行数"  
+    USER_NAME = "用户名"
+    USER_HOST = "用户主机"
+    SQL_ID = "SQL ID"
+    SQL_TEXT = "SQL文本"
+
+[[metrics]]
+  name = "yasdb_slow_log_file"
+  name_alias = "慢日志文件"
   module_name = "log_analysis"
   metric_type = "bash"
   default = true

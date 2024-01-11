@@ -25,7 +25,7 @@ const (
 	NAME_FREE_MEMORY = "free memory"
 )
 
-const decimal = 3
+const decimal = 2
 
 func (c *YHCChecker) GetYasdbSharePool(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_SHARE_POOL}
