@@ -11,12 +11,24 @@ import (
 	"git.yasdb.com/pandora/yasqlgo"
 )
 
+type NodeInfo struct {
+	DatabaseName string
+	NodeID       string
+	ListenAddr   string
+	Role         string
+	Connected    bool
+	User         string
+	Password     string
+	Check        bool
+}
+
 type YashanDB struct {
 	YasdbHome     string
 	YasdbData     string
 	YasdbUser     string
 	YasdbPassword string
 	ListenAddr    string
+	DatabaseName  string
 }
 
 func (y *YashanDB) ValidHome() error {

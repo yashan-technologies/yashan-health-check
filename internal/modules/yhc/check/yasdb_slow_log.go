@@ -12,7 +12,6 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/stringutil"
-	"yhc/utils/yasdbutil"
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
@@ -36,48 +35,58 @@ var _slowParameter = []string{
 }
 
 func (c *YHCChecker) GetYasdbSlowLogParameter(name string) (err error) {
-	data := &define.YHCItem{Name: define.METRIC_YASDB_SLOW_LOG_PARAMETER}
-	defer c.fillResult(data)
+	var datas []*define.YHCItem
+	defer c.fillResults(datas...)
 
 	logger := log.Module.M(string(define.METRIC_YASDB_SLOW_LOG_PARAMETER))
-	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
-	sql := fmt.Sprintf(define.SQL_QUERY_SLOW_LOG_PARAMETER, strings.Join(_slowParameter, stringutil.STR_COMMA))
-	parameters, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		logger.Error(err)
-		data.Error = err.Error()
-		return
+	for _, yasdb := range c.GetCheckNodes(logger) {
+		data := &define.YHCItem{Name: define.METRIC_YASDB_SLOW_LOG_PARAMETER, NodeID: yasdb.NodeID}
+		datas = append(datas, data)
+
+		var parameters []map[string]string
+		sql := fmt.Sprintf(define.SQL_QUERY_SLOW_LOG_PARAMETER, strings.Join(_slowParameter, stringutil.STR_COMMA))
+		parameters, err = yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
+		if err != nil {
+			err = yaserr.Wrap(err)
+			logger.Error(err)
+			data.Error = err.Error()
+			continue
+		}
+		pmap := make(map[string]string)
+		for _, p := range parameters {
+			pmap[p[KEY_PARAMETER_NAME]] = p[KEY_PARAMETER_VALUE]
+		}
+		data.Details = pmap
 	}
-	pmap := make(map[string]string)
-	for _, p := range parameters {
-		pmap[p[KEY_PARAMETER_NAME]] = p[KEY_PARAMETER_VALUE]
-	}
-	data.Details = pmap
 	return
 }
 
 func (c *YHCChecker) GetYasdbSlowLog(name string) (err error) {
-	data := &define.YHCItem{Name: define.METRIC_YASDB_SLOW_LOG}
-	defer c.fillResult(data)
+	var datas []*define.YHCItem
+	defer c.fillResults(datas...)
 
 	logger := log.Module.M(string(define.METRIC_YASDB_SLOW_LOG))
-	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
-	sql := fmt.Sprintf(define.SQL_QUERY_SLOW_SQL, c.base.Start.Format(timedef.TIME_FORMAT), c.base.End.Format(timedef.TIME_FORMAT))
-	slowSQLs, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		logger.Error(err)
-		data.Error = err.Error()
-		return
+	for _, yasdb := range c.GetCheckNodes(logger) {
+		data := &define.YHCItem{Name: define.METRIC_YASDB_SLOW_LOG, NodeID: yasdb.NodeID}
+		datas = append(datas, data)
+
+		var slowSQLs []map[string]string
+		sql := fmt.Sprintf(define.SQL_QUERY_SLOW_SQL, c.base.Start.Format(timedef.TIME_FORMAT), c.base.End.Format(timedef.TIME_FORMAT))
+		slowSQLs, err = yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
+		if err != nil {
+			err = yaserr.Wrap(err)
+			logger.Error(err)
+			data.Error = err.Error()
+			continue
+		}
+		data.Details = slowSQLs
 	}
-	data.Details = slowSQLs
 	return
 }
 
 func (c *YHCChecker) GetYasdbSlowLogFile(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_SLOW_LOG_FILE}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	logger := log.Module.M(string(define.METRIC_YASDB_SLOW_LOG_FILE))
 	slowLogPath, err := getSlowLogPath(logger, c.base.DBInfo)

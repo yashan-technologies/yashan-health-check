@@ -11,7 +11,7 @@ func (c *YHCChecker) GetHostHistoryMemoryUsage(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_HISTORY_MEMORY_USAGE,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_HISTORY_MEMORY_USAGE))
 	resp, err := c.hostHistoryWorkload(log, define.METRIC_HOST_HISTORY_MEMORY_USAGE)
@@ -30,7 +30,7 @@ func (c *YHCChecker) GetHostCurrentMemoryUsage(name string) (err error) {
 		Name:     define.METRIC_HOST_CURRENT_MEMORY_USAGE,
 		DataType: define.DATATYPE_SAR,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_CURRENT_MEMORY_USAGE))
 	hasSar := c.CheckSarAccess() == nil

@@ -70,6 +70,7 @@ func (c *CheckHandler) preCheck() error {
 		}
 	}
 	c.reporter.BeginTime = time.Now()
+	yhccheck.CheckMutipleNodes = c.base.MultipleNodes
 	return nil
 }
 
@@ -123,7 +124,7 @@ func (c *CheckHandler) newProgress(moduleCheckFunc map[string]map[string]func(st
 	return progress
 }
 
-func (c *CheckHandler) getResults(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport, map[define.MetricName]string) {
+func (c *CheckHandler) getResults(startCheck, endCheck time.Time) (map[define.MetricName][]*define.YHCItem, *define.PandoraReport, map[define.MetricName][]*define.YHCItem) {
 	return c.checker.GetResult(startCheck, endCheck)
 }
 

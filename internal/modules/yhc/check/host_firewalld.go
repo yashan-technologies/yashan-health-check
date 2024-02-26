@@ -26,7 +26,7 @@ func (c *YHCChecker) GetHostFirewalldStatus(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_FIREWALLD,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_FIREWALLD))
 	osRelease := runtimedef.GetOSRelease()
@@ -56,7 +56,7 @@ func (c *YHCChecker) GetHostIPTables(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_IPTABLES,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_IPTABLES))
 	execer := execerutil.NewExecer(log)

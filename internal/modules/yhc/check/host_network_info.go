@@ -25,7 +25,7 @@ func (c *YHCChecker) GetHostNetworkInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_NETWORK_INFO,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_NETWORK_INFO))
 	netInfo, err := net.Interfaces()

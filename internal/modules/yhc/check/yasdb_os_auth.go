@@ -30,7 +30,7 @@ func (c *YHCChecker) GetYasdbOSAuth(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_OS_AUTH,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_OS_AUTH))
 	yasdbNetIniPath := path.Join(c.base.DBInfo.YasdbData, DIR_CONFIG, FILE_YASDB_NET_INI)

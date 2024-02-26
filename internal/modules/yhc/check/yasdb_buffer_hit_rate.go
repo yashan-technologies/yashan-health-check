@@ -8,7 +8,6 @@ import (
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
-	"yhc/utils/yasdbutil"
 
 	"git.yasdb.com/go/yaserr"
 )
@@ -18,31 +17,36 @@ const (
 )
 
 func (c *YHCChecker) GetYasdbHistoryBufferHitRate(name string) (err error) {
-	data := &define.YHCItem{Name: define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE}
-	defer c.fillResult(data)
+	var datas []*define.YHCItem
+	defer c.fillResults(datas...)
 
 	logger := log.Module.M(string(define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE))
-	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
-	dbTimes, err := yasdb.QueryMultiRows(
-		fmt.Sprintf(define.SQL_QUERY_HISTORY_BUFFER_HIT_RATE,
-			c.formatFunc(c.base.Start),
-			c.formatFunc(c.base.End)),
-		confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		logger.Error(err)
-		data.Error = err.Error()
-		return
-	}
-	content := make(define.WorkloadOutput)
-	for _, row := range dbTimes {
-		t, err := time.ParseInLocation(timedef.TIME_FORMAT, row[KEY_SNAP_TIME], time.Local)
+	for _, yasdb := range c.GetCheckNodes(logger) {
+		data := &define.YHCItem{Name: define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE, NodeID: yasdb.NodeID}
+		datas = append(datas, data)
+
+		var dbTimes []map[string]string
+		dbTimes, err = yasdb.QueryMultiRows(
+			fmt.Sprintf(define.SQL_QUERY_HISTORY_BUFFER_HIT_RATE,
+				c.formatFunc(c.base.Start),
+				c.formatFunc(c.base.End)),
+			confdef.GetYHCConf().SqlTimeout)
 		if err != nil {
-			logger.Errorf("parse time %s failed: %s", row[KEY_SNAP_TIME], err)
+			err = yaserr.Wrap(err)
+			logger.Error(err)
+			data.Error = err.Error()
 			continue
 		}
-		content[t.Unix()] = define.WorkloadItem{KEY_HIT_RATE: row}
+		content := make(define.WorkloadOutput)
+		for _, row := range dbTimes {
+			t, err := time.ParseInLocation(timedef.TIME_FORMAT, row[KEY_SNAP_TIME], time.Local)
+			if err != nil {
+				logger.Errorf("parse time %s failed: %s", row[KEY_SNAP_TIME], err)
+				continue
+			}
+			content[t.Unix()] = define.WorkloadItem{KEY_HIT_RATE: row}
+		}
+		data.Details = content
 	}
-	data.Details = content
 	return
 }

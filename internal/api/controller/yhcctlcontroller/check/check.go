@@ -4,8 +4,10 @@ import (
 	"errors"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"yhc/commons/std"
@@ -29,6 +31,7 @@ type CheckGlobal struct {
 	End                string `name:"end"                 short:"e"          help:"The end timestamp of the check, such as 'yyyy-MM-dd', 'yyyy-MM-dd-hh', 'yyyy-MM-dd-hh-mm', default value is current datetime."`
 	Output             string `name:"output"              short:"o"          help:"The output dir of the check."`
 	DisableInteraction bool   `name:"disable-interaction" short:"d"          help:"Disable interaction."`
+	MultipleNodes      bool   `name:"multiple-nodes"      short:"m"          help:"Check multiple nodes."`
 	YasdbHome          string `name:"yasdb-home"          help:"Home path of YashanDB(env: YASDB_HOME)."`
 	YasdbData          string `name:"yasdb-data"          help:"Data path of YashanDB(env: YASDB_DATA)."`
 	YasdbUser          string `name:"user"          short:"u"          help:"YashanDB user for checking."`
@@ -46,28 +49,40 @@ func (c *CheckCmd) Run() error {
 		return err
 	}
 	log.Controller.Debugf("module report: %s", jsonutil.ToJSONString(confdef.GetModuleConf()))
+	var modules []*constdef.ModuleMetrics
 	yasdb, modules := c.getViewModels()
-	c.fillYasdbFromFlags(yasdb)
+	globalYasdb = &YashanDB{
+		YashanDB:    yasdb,
+		Mutex:       sync.Mutex{},
+		checkStatus: STATUS_NOT_CHECK,
+	}
+	c.fillYasdbFromFlags(globalYasdb.YashanDB)
 	if c.DisableInteraction {
-		validateMetrics(yasdb, modules)
+		// use yasql query LISTEN_ADDR and fill yasdb
+		if err := fillListenAddrAndDBName(globalYasdb.YashanDB); err != nil {
+			log.Controller.Errorf("fill listen addr err: %s", err.Error())
+			return err
+		}
+		if c.MultipleNodes {
+			fillNodeInfos(globalYasdb)
+			if err := validateCheckedNodes(); err != nil {
+				return errors.New("no node can be checked")
+			}
+		}
+		validateMetrics(globalYasdb.YashanDB, modules)
 		if len(moduleNoNeedCheckMetrics) != 0 {
 			std.WriteToFile("the following metric will not be checked \n")
 			noNeedStr := genNoNeedCheckMetricsStr()
 			std.WriteToFile(noNeedStr)
 		}
 	} else {
-		StartTerminalView(modules, yasdb)
+		StartTerminalView(modules, globalYasdb, c.MultipleNodes)
 	}
 	// globalExitCode will be fill after terminal view exit
 	if globalExitCode != EXIT_CONTINUE {
 		return errors.New(exitCodeMap[globalExitCode])
 	}
-	// use yasql query LISTEN_ADDR and fill yasdb
-	if err := fillListenAddr(yasdb); err != nil {
-		log.Controller.Errorf("fill listen addr err: %s", err.Error())
-		return err
-	}
-	checkerBase := c.genCheckBase(yasdb)
+	checkerBase := c.genCheckBase(globalYasdb, c.MultipleNodes)
 	// write user choose yashan health check to console.log
 	c.writeUserChoose()
 	// globalFilterModule will be fill after user choose metrics
@@ -165,13 +180,24 @@ func (c *CheckCmd) newYasdb() *yasdb.YashanDB {
 	return yasdb
 }
 
-func (c *CheckCmd) genCheckBase(db *yasdb.YashanDB) *define.CheckerBase {
+func (c *CheckCmd) genCheckBase(db *YashanDB, multipleNodes bool) *define.CheckerBase {
 	start, end, _ := c.getStartAndEnd()
+	var nodes []*yasdb.NodeInfo
+	for _, node := range db.Nodes {
+		if node.Check && node.Connected {
+			nodes = append(nodes, node)
+		}
+	}
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].NodeID < nodes[j].NodeID
+	})
 	return &define.CheckerBase{
-		DBInfo: db,
-		Start:  start,
-		End:    end,
-		Output: c.Output,
+		DBInfo:        db.YashanDB,
+		Start:         start,
+		End:           end,
+		Output:        c.Output,
+		NodeInfos:     nodes,
+		MultipleNodes: multipleNodes,
 	}
 }
 

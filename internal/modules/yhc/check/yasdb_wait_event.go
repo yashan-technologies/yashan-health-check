@@ -62,7 +62,7 @@ var waitEventHeaderAlias = map[string]string{
 
 func (c *YHCChecker) GetYasdbWaitEvent(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_WAIT_EVENT}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_WAIT_EVENT))
 	path, err := c.createYasdbEventSqlFile(log)

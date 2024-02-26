@@ -63,8 +63,10 @@ func (y *YashanDB) genArgs(cmdType, sql string, timeout int) []string {
 		"-p", y.YasdbPassword,
 		"-s", sql,
 		"-a", y.ListenAddr,
-		"-d", y.YasdbData,
 		"--timeout=" + strconv.FormatInt(int64(timeout), constants.BASE_DECIMAL),
+	}
+	if len(y.YasdbData) != 0 {
+		args = append(args, "-d", y.YasdbData)
 	}
 	return args
 }

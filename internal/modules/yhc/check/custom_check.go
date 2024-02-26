@@ -29,7 +29,7 @@ func (c *YHCChecker) genCustomBashFunc(metric *confdef.YHCMetric) (fn func(strin
 		data := &define.YHCItem{
 			Name: define.MetricName(metric.Name),
 		}
-		defer c.fillResult(data)
+		defer c.fillResults(data)
 
 		log := log.Module.M(metric.Name)
 		execer := execerutil.NewExecer(log)
@@ -48,9 +48,7 @@ func (c *YHCChecker) genCustomBashFunc(metric *confdef.YHCMetric) (fn func(strin
 
 func (c *YHCChecker) genCustomSQLFunc(metric *confdef.YHCMetric) (fn func(string) error) {
 	fn = func(string) (err error) {
-		data, err := c.queryMultiRows(define.MetricName(metric.Name))
-		defer c.fillResult(data)
-		return
+		return c.GetNodesMultiRowData(metric.Name)
 	}
 	return
 }

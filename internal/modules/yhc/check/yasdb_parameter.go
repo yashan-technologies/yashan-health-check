@@ -18,7 +18,7 @@ func (c *YHCChecker) GetYasdbParameter(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_PARAMETER,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 	log := log.Module.M(string(define.METRIC_YASDB_PARAMETER))
 	sql, err := c.getSQL(define.METRIC_YASDB_PARAMETER)
 	if err != nil {

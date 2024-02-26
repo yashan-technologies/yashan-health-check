@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	_ok = "OK"
+	_ok       = "OK"
+	_previous = "<-"
+	_next     = "->"
 )
 
 func newCheckedList(title string, border bool) *tview.CheckList {
