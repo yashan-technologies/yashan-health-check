@@ -26,7 +26,7 @@ func (c *YHCChecker) GetHostMemoryInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_MEMORY_INFO,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_MEMORY_INFO))
 	memInfo, err := mem.VirtualMemory()

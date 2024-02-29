@@ -36,7 +36,7 @@ func (c *YHCChecker) GetHostDiskInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_DISK_INFO,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_DISK_INFO))
 	partitions, err := disk.Partitions(false)
@@ -114,7 +114,7 @@ func (c *YHCChecker) GetHostDiskBlockInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_DISK_BLOCK_INFO,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_DISK_BLOCK_INFO))
 	devices, err := osutil.Lsblk(log)

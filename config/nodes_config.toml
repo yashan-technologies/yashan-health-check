@@ -1,0 +1,12 @@
+# you can add nodes you want check just like this:
+# that means you want check the node whose listen_addr is '127.0.0.1:1688'
+# [[nodes]]
+#   listen_addr = "127.0.0.1:1688"
+
+
+# you can also check nodes in other clusters if you fill the user and password
+# 
+# [[nodes]]
+#   listen_addr = "127.0.0.1:1688"
+#   user = "test"
+#   password = "test"

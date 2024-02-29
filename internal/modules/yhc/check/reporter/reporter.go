@@ -42,20 +42,20 @@ const (
 )
 
 type YHCReport struct {
-	YHCHome    string                                `json:"YHCHome"`
-	BeginTime  time.Time                             `json:"beginTime"`
-	EndTime    time.Time                             `json:"endTime"`
-	CheckBase  *define.CheckerBase                   `json:"checkBase"`
-	Items      map[define.MetricName]*define.YHCItem `json:"items"`
+	YHCHome    string                                  `json:"YHCHome"`
+	BeginTime  time.Time                               `json:"beginTime"`
+	EndTime    time.Time                               `json:"endTime"`
+	CheckBase  *define.CheckerBase                     `json:"checkBase"`
+	Items      map[define.MetricName][]*define.YHCItem `json:"items"`
 	Report     *define.PandoraReport
-	FailedItem map[define.MetricName]string
+	FailedItem map[define.MetricName][]*define.YHCItem
 }
 
 func NewYHCReport(yhcHome string, checkBase *define.CheckerBase) *YHCReport {
 	return &YHCReport{
 		YHCHome:   yhcHome,
 		CheckBase: checkBase,
-		Items:     map[define.MetricName]*define.YHCItem{},
+		Items:     map[define.MetricName][]*define.YHCItem{},
 	}
 }
 

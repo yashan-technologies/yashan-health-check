@@ -7,6 +7,7 @@ import "fmt"
 const (
 	CMD_BASH          = "bash"
 	CMD_SUDO          = "/usr/bin/sudo"
+	CMD_SU            = "su"
 	CMD_CAT_BY_REGEXP = "cat %s | grep -v grep | grep -E '%s'"
 	CMD_TAR           = "tar"
 	CMD_YASDB         = "yasdb"
@@ -21,6 +22,7 @@ const (
 	CMD_DMIDECODE     = "dmidecode"
 	CMD_IPTABLES      = "iptables"
 	CMD_GREP          = "grep"
+	CMD_YASBOOT       = "yasboot"
 )
 
 const (

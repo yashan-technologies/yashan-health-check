@@ -6,7 +6,6 @@ import (
 	"yhc/defs/confdef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
-	"yhc/utils/yasdbutil"
 
 	"git.yasdb.com/go/yaserr"
 )
@@ -18,41 +17,45 @@ const (
 )
 
 func (c *YHCChecker) GetYasdbDataFile(name string) (err error) {
-	data := &define.YHCItem{
-		Name: define.METRIC_YASDB_DATAFILE,
-	}
-	defer c.fillResult(data)
-
 	log := log.Module.M(string(define.METRIC_YASDB_DATAFILE))
 	sql, err := c.getSQL(define.METRIC_YASDB_DATAFILE)
 	if err != nil {
 		err = yaserr.Wrap(err)
 		log.Error(err)
-		data.Error = err.Error()
 		return
 	}
 	metric, err := c.getMetric(define.METRIC_YASDB_DATAFILE)
 	if err != nil {
 		log.Errorf("failed to get metric by name %s, err: %v", define.METRIC_YASDB_DATAFILE, err)
-		data.Error = err.Error()
 		return
 	}
-	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
-	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return
-	}
-	for _, r := range res {
-		dataFile := r[KEY_FILE_NAME]
-		if fileInfo, err := os.Stat(dataFile); err != nil {
-			r[KEY_FILE_PERMISSION] = err.Error()
-		} else {
-			r[KEY_FILE_PERMISSION] = fileInfo.Mode().String()
+
+	var datas []*define.YHCItem
+	for _, yasdb := range c.GetCheckNodes(log) {
+		data := &define.YHCItem{Name: define.METRIC_YASDB_DATAFILE, NodeID: yasdb.NodeID}
+		var res []map[string]string
+		res, err = yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
+		if err != nil {
+			err = yaserr.Wrap(err)
+			log.Error(err)
+			data.Error = err.Error()
+			continue
 		}
+		for _, r := range res {
+			if yasdb.IsLocal {
+				dataFile := r[KEY_FILE_NAME]
+				if fileInfo, err := os.Stat(dataFile); err != nil {
+					r[KEY_FILE_PERMISSION] = err.Error()
+				} else {
+					r[KEY_FILE_PERMISSION] = fileInfo.Mode().String()
+				}
+			} else {
+				r[KEY_FILE_PERMISSION] = "未知"
+			}
+		}
+		data.Details = c.convertMultiSqlData(metric, res)
+		datas = append(datas, data)
 	}
-	data.Details = c.convertMultiSqlData(metric, res)
+	c.fillResults(datas...)
 	return
 }

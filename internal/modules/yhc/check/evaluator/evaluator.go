@@ -10,12 +10,12 @@ import (
 
 type Evaluator struct {
 	log           yaslog.YasLog
-	result        map[define.MetricName]*define.YHCItem
-	failedItem    map[define.MetricName]string
+	result        map[define.MetricName][]*define.YHCItem
+	failedItem    map[define.MetricName][]*define.YHCItem
 	evaluateModel *confdef.EvaluateModel
 }
 
-func NewEvaluator(log yaslog.YasLog, result map[define.MetricName]*define.YHCItem, failedItem map[define.MetricName]string) *Evaluator {
+func NewEvaluator(log yaslog.YasLog, result map[define.MetricName][]*define.YHCItem, failedItem map[define.MetricName][]*define.YHCItem) *Evaluator {
 	return &Evaluator{
 		result:        result,
 		failedItem:    failedItem,
@@ -69,34 +69,38 @@ func (e *Evaluator) getHealthStatus(score float64) string {
 func (e *Evaluator) getAlertSummary() *define.AlertSummary {
 	res := &define.AlertSummary{}
 	for _, result := range e.result {
-		for level, alerts := range result.Alerts {
-			switch level {
-			case confdef.AL_INFO:
-				res.InfoCount += len(alerts)
-			case confdef.AL_WARNING:
-				res.WarningCount += len(alerts)
-			case confdef.AL_CRITICAL:
-				res.CriticalCount += len(alerts)
-			default:
-				e.log.Debugf("invalid alert level %s, skip", level)
+		for _, item := range result {
+			for level, alerts := range item.Alerts {
+				switch level {
+				case confdef.AL_INFO:
+					res.InfoCount += len(alerts)
+				case confdef.AL_WARNING:
+					res.WarningCount += len(alerts)
+				case confdef.AL_CRITICAL:
+					res.CriticalCount += len(alerts)
+				default:
+					e.log.Debugf("invalid alert level %s, skip", level)
+				}
 			}
 		}
 	}
 	return res
 }
 
-func (e *Evaluator) getAlertWeight(item *define.YHCItem) (float64, map[string]float64) {
+func (e *Evaluator) getAlertWeight(items []*define.YHCItem) (float64, map[string]float64) {
 	var totalWeight float64
 	res := map[string]float64{}
-	for alertLevel, alertDetail := range item.Alerts {
-		weight, ok := e.evaluateModel.AlertsWeight[alertLevel]
-		if !ok {
-			e.log.Debugf("failed to find alert weight of %s, skip alert %s", alertLevel, jsonutil.ToJSONString(alertDetail))
-		}
-		totalWeight += weight
-		res[alertLevel] = totalWeight
-		if e.evaluateModel.IgnoreSameAlert {
-			continue
+	for _, item := range items {
+		for alertLevel, alertDetail := range item.Alerts {
+			weight, ok := e.evaluateModel.AlertsWeight[alertLevel]
+			if !ok {
+				e.log.Debugf("failed to find alert weight of %s, skip alert %s", alertLevel, jsonutil.ToJSONString(alertDetail))
+			}
+			totalWeight += weight
+			res[alertLevel] = totalWeight
+			if e.evaluateModel.IgnoreSameAlert {
+				continue
+			}
 		}
 	}
 	return totalWeight, res

@@ -17,7 +17,7 @@ func (c *YHCChecker) GetYasdbFilePermission(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_FILE_PERMISSION,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_FILE_PERMISSION))
 	permissionMap, errs := fileutil.GetFilesAccess(c.base.DBInfo.YasdbData)

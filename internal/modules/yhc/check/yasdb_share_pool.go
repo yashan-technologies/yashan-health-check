@@ -7,7 +7,6 @@ import (
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
 	"yhc/utils/mathutil"
-	"yhc/utils/yasdbutil"
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yasutil/size"
@@ -28,42 +27,44 @@ const (
 const decimal = 2
 
 func (c *YHCChecker) GetYasdbSharePool(name string) (err error) {
-	data := &define.YHCItem{Name: define.METRIC_YASDB_SHARE_POOL}
-	defer c.fillResult(data)
-
 	logger := log.Module.M(string(define.METRIC_YASDB_SHARE_POOL))
-	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
-	sharePoolData, err := yasdb.QueryMultiRows(define.SQL_QUERY_SHARE_POOL, confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		logger.Error(err)
-		data.Error = err.Error()
-		return
-	}
 
-	var totalBytes, freeBytes float64
-	for _, row := range sharePoolData {
-		bytes, e := strconv.ParseFloat(row[COLUMN_BYTES], 64)
+	var datas []*define.YHCItem
+	for _, yasdb := range c.GetCheckNodes(logger) {
+		data := &define.YHCItem{Name: define.METRIC_YASDB_SHARE_POOL, NodeID: yasdb.NodeID}
+		var sharePoolData []map[string]string
+		sharePoolData, err = yasdb.QueryMultiRows(define.SQL_QUERY_SHARE_POOL, confdef.GetYHCConf().SqlTimeout)
 		if err != nil {
-			err = yaserr.Wrap(e)
+			err = yaserr.Wrap(err)
 			logger.Error(err)
 			data.Error = err.Error()
-			return
+			continue
 		}
-		totalBytes += bytes
-		if row[COLUMN_NAME] == NAME_FREE_MEMORY {
-			freeBytes = bytes
+		var totalBytes, freeBytes float64
+		for _, row := range sharePoolData {
+			bytes, e := strconv.ParseFloat(row[COLUMN_BYTES], 64)
+			if err != nil {
+				err = yaserr.Wrap(e)
+				logger.Error(err)
+				data.Error = err.Error()
+				return
+			}
+			totalBytes += bytes
+			if row[COLUMN_NAME] == NAME_FREE_MEMORY {
+				freeBytes = bytes
+			}
 		}
+		usedBytes := totalBytes - freeBytes
+		usedPercentage := usedBytes / totalBytes * 100
+		content := map[string]interface{}{
+			KEY_TOTAL_SIZE:      size.GenHumanReadableSize(totalBytes, decimal),
+			KYE_FREE_SIZE:       size.GenHumanReadableSize(freeBytes, decimal),
+			KEY_USED_SIZE:       size.GenHumanReadableSize(usedBytes, decimal),
+			KEY_USED_PERCENTAGE: mathutil.Round(usedPercentage, decimal),
+		}
+		data.Details = content
+		datas = append(datas, data)
 	}
-	usedBytes := totalBytes - freeBytes
-	usedPercentage := usedBytes / totalBytes * 100
-	content := map[string]interface{}{
-		KEY_TOTAL_SIZE:      size.GenHumanReadableSize(totalBytes, decimal),
-		KYE_FREE_SIZE:       size.GenHumanReadableSize(freeBytes, decimal),
-		KEY_USED_SIZE:       size.GenHumanReadableSize(usedBytes, decimal),
-		KEY_USED_PERCENTAGE: mathutil.Round(usedPercentage, decimal),
-	}
-	data.Details = content
-
+	c.fillResults(datas...)
 	return
 }

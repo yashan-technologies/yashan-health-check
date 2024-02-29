@@ -43,12 +43,12 @@
   [[modules.children]]
     name = "yasdb_controlfile_check"
     name_alias = "控制文件检查"
-    metric_names = ["yasdb_controlfile", "yasdb_controlfile_count"]
+    metric_names = ["yasdb_controlfile_count","yasdb_controlfile"]
 
   [[modules.children]]
     name = "yasdb_backup_check"
     name_alias = "备份检查"
-    metric_names = ["yasdb_backup_set", "yasdb_full_backup_set_count", "yasdb_backup_set_path"]
+    metric_names = [ "yasdb_full_backup_set_count", "yasdb_backup_set", "yasdb_backup_set_path"]
 
   [[modules.children]]
     name = "yasdb_workload_check"

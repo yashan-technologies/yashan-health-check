@@ -24,14 +24,14 @@ func (c *YHCChecker) GetYasdbArchiveDestStatus(name string) (err error) {
 	log := log.Module.M(string(define.METRIC_YASDB_ARCHIVE_DEST_STATUS))
 	role, err := c.getNodeRole(log)
 	if err != nil {
-		c.fillResult(&define.YHCItem{
+		c.fillResults(&define.YHCItem{
 			Name:  define.METRIC_YASDB_ARCHIVE_DEST_STATUS,
 			Error: err.Error(),
 		})
 		return
 	}
 	if role == DATABASE_ROLE_PRIMARY {
-		return c.GetYasdbMultiRowData(string(define.METRIC_YASDB_ARCHIVE_DEST_STATUS))
+		return c.GetPrimaryMultiRowData(string(define.METRIC_YASDB_ARCHIVE_DEST_STATUS))
 	}
 	return c.getYasdbReplicationStatus(log)
 }
@@ -53,7 +53,7 @@ func (c *YHCChecker) getNodeRole(log yaslog.YasLog) (string, error) {
 
 func (c *YHCChecker) getYasdbReplicationStatus(log yaslog.YasLog) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_ARCHIVE_DEST_STATUS}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
 	res, err := yasdb.QueryMultiRows(define.SQL_QUERY_REPLICATION_STATUS, confdef.GetYHCConf().SqlTimeout)

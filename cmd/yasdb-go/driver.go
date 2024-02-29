@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/user"
+	"strings"
 	"time"
 
 	"yhc/db"
@@ -35,7 +36,7 @@ func NewYashanDB(yasdbUser, yasdbPassword, listenAddr, dataPath string) *YashanD
 }
 
 func (y *YashanDB) Driver() (*db.YasDBDriver, error) {
-	if y.isUdsOpen() {
+	if y.isUdsOpen() && len(strings.TrimSpace(y.DataPath)) != 0 {
 		driver, err := y.udsDriver()
 		if err != nil {
 			return y.tcpDriver()

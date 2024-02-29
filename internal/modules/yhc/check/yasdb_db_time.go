@@ -10,7 +10,6 @@ import (
 	"yhc/defs/timedef"
 	"yhc/internal/modules/yhc/check/define"
 	"yhc/log"
-	"yhc/utils/yasdbutil"
 
 	"git.yasdb.com/go/yaserr"
 	"git.yasdb.com/go/yaslog"
@@ -23,25 +22,29 @@ const (
 )
 
 func (c *YHCChecker) GetYasdbHistoryDBTime(name string) (err error) {
-	data := &define.YHCItem{Name: define.METRIC_YASDB_HISTORY_DB_TIME}
-	defer c.fillResult(data)
-
+	var datas []*define.YHCItem
 	logger := log.Module.M(string(define.METRIC_YASDB_HISTORY_DB_TIME))
-	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)
-	dbTimes, err := yasdb.QueryMultiRows(fmt.Sprintf(define.SQL_QUERY_SNAP_DB_TIMES, c.formatFunc(c.base.Start), c.formatFunc(c.base.End)), confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		logger.Errorf("failed to get data with sql %s, err: %v", define.SQL_QUERY_SNAP_DB_TIMES, err)
-		data.Error = err.Error()
-		return
+	for _, yasdb := range c.GetCheckNodes(logger) {
+		data := &define.YHCItem{Name: define.METRIC_YASDB_HISTORY_DB_TIME, NodeID: yasdb.NodeID}
+		datas = append(datas, data)
+
+		var dbTimes []map[string]string
+		dbTimes, err = yasdb.QueryMultiRows(fmt.Sprintf(define.SQL_QUERY_SNAP_DB_TIMES, c.formatFunc(c.base.Start), c.formatFunc(c.base.End)), confdef.GetYHCConf().SqlTimeout)
+		if err != nil {
+			logger.Errorf("failed to get data with sql %s, err: %v", define.SQL_QUERY_SNAP_DB_TIMES, err)
+			data.Error = err.Error()
+			continue
+		}
+		content, e := c.getDBTimes(logger, dbTimes)
+		if e != nil {
+			err = yaserr.Wrap(e)
+			logger.Error(err)
+			data.Error = err.Error()
+			continue
+		}
+		data.Details = content
 	}
-	content, e := c.getDBTimes(logger, dbTimes)
-	if e != nil {
-		err = yaserr.Wrap(e)
-		logger.Error(err)
-		data.Error = err.Error()
-		return
-	}
-	data.Details = content
+	c.fillResults(datas...)
 	return
 }
 

@@ -23,6 +23,9 @@ func InitYHCConf(yhcConf string) error {
 	if err := initEvaluateModel(_yhcConf.EvaluateModelPath); err != nil {
 		return err
 	}
+	if err := initNodesConfig(_yhcConf.NodesConfigPath); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -35,7 +35,7 @@ func (c *YHCChecker) GetHostCPUInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_CPU_INFO,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_CPU_INFO))
 	cpuInfos, err := cpu.Info()
