@@ -15,10 +15,10 @@ import (
 type AlertGenner struct {
 	log     yaslog.YasLog
 	metrics []*confdef.YHCMetric
-	result  map[define.MetricName]*define.YHCItem
+	result  map[define.MetricName][]*define.YHCItem
 }
 
-func NewAlterGenner(log yaslog.YasLog, metrics []*confdef.YHCMetric, result map[define.MetricName]*define.YHCItem) *AlertGenner {
+func NewAlterGenner(log yaslog.YasLog, metrics []*confdef.YHCMetric, result map[define.MetricName][]*define.YHCItem) *AlertGenner {
 	genner := &AlertGenner{
 		log:     log,
 		metrics: metrics,
@@ -27,10 +27,9 @@ func NewAlterGenner(log yaslog.YasLog, metrics []*confdef.YHCMetric, result map[
 	return genner
 }
 
-func (a *AlertGenner) GenAlerts() map[define.MetricName]*define.YHCItem {
+func (a *AlertGenner) GenAlerts() map[define.MetricName][]*define.YHCItem {
 	data := a.genMetricsData()
 	for _, metric := range a.metrics {
-		item := a.result[define.MetricName(metric.Name)]
 		for alertLevel, alertRules := range metric.AlertRules {
 			for _, rule := range alertRules {
 				expression := rule.Expression
@@ -51,10 +50,12 @@ func (a *AlertGenner) GenAlerts() map[define.MetricName]*define.YHCItem {
 						Labels:       alert.Labels,
 						AlertDetails: rule,
 					}
-					if item.Alerts == nil {
-						item.Alerts = make(map[string][]*define.YHCAlert)
+					for _, item := range a.result[define.MetricName(metric.Name)] {
+						if item.Alerts == nil {
+							item.Alerts = make(map[string][]*define.YHCAlert)
+						}
+						item.Alerts[yhcAlert.Level] = append(item.Alerts[yhcAlert.Level], yhcAlert)
 					}
-					item.Alerts[yhcAlert.Level] = append(item.Alerts[yhcAlert.Level], yhcAlert)
 				}
 			}
 		}
@@ -75,34 +76,32 @@ func (a *AlertGenner) genMetricsData() map[string]interface{} {
 	return data
 }
 
-func (a *AlertGenner) dealItem(pool *metricdef.MetricsPool, metric *confdef.YHCMetric, item *define.YHCItem) {
-	if item == nil {
+func (a *AlertGenner) dealItem(pool *metricdef.MetricsPool, metric *confdef.YHCMetric, items []*define.YHCItem) {
+	if items == nil {
 		return
 	}
-	details := item.Details
-	switch detailsType := details.(type) {
-	case []string:
-		a.log.Debugf("unsupport alert type []string, skip")
-	case []interface{}:
-		a.log.Debugf("unsupport alert type []interface{}, skip")
-	case map[string]string:
-		data := details.(map[string]string)
-		a.dealSingleStringRow(pool, metric, data)
-	case []map[string]string:
-		datas := details.([]map[string]string)
-		for _, data := range datas {
-			a.dealSingleStringRow(pool, metric, data)
+	for _, item := range items {
+		details := item.Details
+		switch detail := details.(type) {
+		case []string:
+			a.log.Debugf("unsupport alert type []string, skip")
+		case []interface{}:
+			a.log.Debugf("unsupport alert type []interface{}, skip")
+		case map[string]string:
+			a.dealSingleStringRow(pool, metric, detail)
+		case []map[string]string:
+			for _, data := range detail {
+				a.dealSingleStringRow(pool, metric, data)
+			}
+		case map[string]interface{}:
+			a.dealSingleAnyRow(pool, metric, detail)
+		case []map[string]any:
+			for _, data := range detail {
+				a.dealSingleAnyRow(pool, metric, data)
+			}
+		default:
+			a.log.Errorf("unsupport data type %T", detail)
 		}
-	case map[string]interface{}:
-		data := details.(map[string]interface{})
-		a.dealSingleAnyRow(pool, metric, data)
-	case []map[string]any:
-		datas := details.([]map[string]interface{})
-		for _, data := range datas {
-			a.dealSingleAnyRow(pool, metric, data)
-		}
-	default:
-		a.log.Errorf("unsupport data type %T", detailsType)
 	}
 }
 

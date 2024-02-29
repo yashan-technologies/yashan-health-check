@@ -22,7 +22,7 @@ const (
 
 func (c *YHCChecker) GetHugePageEnabled(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_HOST_HUGE_PAGE}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	command := bashdef.CMD_GREP + ` -oP '(?<=\[).+?(?=\])' /sys/kernel/mm/transparent_hugepage/enabled`
 	logger := log.Module.M(string(define.METRIC_HOST_HUGE_PAGE))
@@ -46,7 +46,7 @@ func (c *YHCChecker) GetHugePageEnabled(name string) (err error) {
 
 func (c *YHCChecker) GetSwapMemoryEnabled(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_HOST_SWAP_MEMORY}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	logger := log.Module.M(string(define.METRIC_HOST_SWAP_MEMORY))
 

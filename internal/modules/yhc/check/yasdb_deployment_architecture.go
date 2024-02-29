@@ -17,7 +17,7 @@ func (c *YHCChecker) GetYasdbDeploymentArchitecture(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE))
 	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)

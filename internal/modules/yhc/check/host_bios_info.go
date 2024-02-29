@@ -22,7 +22,7 @@ func (c *YHCChecker) GetHostBIOSInfo(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_BIOS_INFO,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_BIOS_INFO))
 	execer := execerutil.NewExecer(log)

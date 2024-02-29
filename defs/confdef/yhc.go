@@ -24,6 +24,7 @@ type YHC struct {
 	MetricPaths       []string `toml:"metric_paths"`
 	DefaultModulePath string   `toml:"default_module_path"`
 	EvaluateModelPath string   `toml:"evaluate_model_path"`
+	NodesConfigPath   string   `toml:"nodes_config_path"`
 	NetworkIODiscard  string   `toml:"network_io_discard"`
 	SkipGenWordReport bool     `toml:"skip_gen_word_report"`
 	SkipGenHtmlReport bool     `toml:"skip_gen_html_report"`

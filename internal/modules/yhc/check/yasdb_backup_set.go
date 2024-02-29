@@ -20,7 +20,7 @@ const (
 
 func (c *YHCChecker) GetYasdbBackupSetPath(name string) (err error) {
 	data := &define.YHCItem{Name: define.METRIC_YASDB_BACKUP_SET_PATH}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	logger := log.Module.M(string(define.METRIC_YASDB_BACKUP_SET_PATH))
 	yasdb := yasdbutil.NewYashanDB(logger, c.base.DBInfo)

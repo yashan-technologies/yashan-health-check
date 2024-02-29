@@ -38,6 +38,8 @@ const (
 	KEY_HISTORY = "history"
 )
 
+var CheckMutipleNodes = false
+
 var _envs = []string{"LANG=en_US.UTF-8", "LC_TIME=en_US.UTF-8"}
 
 var MetricNameToWorkloadTypeMap = map[define.MetricName]define.WorkloadType{
@@ -118,29 +120,29 @@ type logPredicate func(line string) bool
 
 type Checker interface {
 	CheckFuncs(metrics []*confdef.YHCMetric) map[string]func(string) error
-	GetResult(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport, map[define.MetricName]string)
+	GetResult(startCheck, endCheck time.Time) (map[define.MetricName][]*define.YHCItem, *define.PandoraReport, map[define.MetricName][]*define.YHCItem)
 }
 
 type YHCChecker struct {
 	mtx            sync.RWMutex
 	base           *define.CheckerBase
 	metrics        []*confdef.YHCMetric
-	Result         map[define.MetricName]*define.YHCItem
+	Result         map[define.MetricName][]*define.YHCItem
 	evaluateResult *define.EvaluateResult
-	FailedItem     map[define.MetricName]string
+	FailedItem     map[define.MetricName][]*define.YHCItem
 }
 
 func NewYHCChecker(base *define.CheckerBase, metrics []*confdef.YHCMetric) *YHCChecker {
 	return &YHCChecker{
 		base:       base,
 		metrics:    metrics,
-		Result:     map[define.MetricName]*define.YHCItem{},
-		FailedItem: map[define.MetricName]string{},
+		Result:     map[define.MetricName][]*define.YHCItem{},
+		FailedItem: map[define.MetricName][]*define.YHCItem{},
 	}
 }
 
 // [Interface Func]
-func (c *YHCChecker) GetResult(startCheck, endCheck time.Time) (map[define.MetricName]*define.YHCItem, *define.PandoraReport, map[define.MetricName]string) {
+func (c *YHCChecker) GetResult(startCheck, endCheck time.Time) (map[define.MetricName][]*define.YHCItem, *define.PandoraReport, map[define.MetricName][]*define.YHCItem) {
 	c.filterFailed()
 	c.genAlerts()
 	c.evaluate()
@@ -168,15 +170,19 @@ func (c *YHCChecker) evaluate() {
 func (c *YHCChecker) filterFailed() {
 	for _, metric := range c.metrics {
 		name := define.MetricName(metric.Name)
-		item, ok := c.Result[name]
+		items, ok := c.Result[name]
 		if !ok {
-			c.FailedItem[name] = fmt.Sprintf("could not find result of metric %s", name)
 			continue
 		}
-		if !stringutil.IsEmpty(item.Error) {
-			delete(c.Result, name)
-			c.FailedItem[name] = item.Error
+		result := []*define.YHCItem{}
+		for _, item := range items {
+			if !stringutil.IsEmpty(item.Error) {
+				c.FailedItem[name] = append(c.FailedItem[name], item)
+			} else {
+				result = append(result, item)
+			}
 		}
+		c.Result[name] = result
 	}
 }
 
@@ -223,49 +229,49 @@ func (c *YHCChecker) funcMap() (res map[define.MetricName]func(string) error) {
 		define.METRIC_HOST_HISTORY_MEMORY_USAGE:                                                    c.GetHostHistoryMemoryUsage,
 		define.METRIC_HOST_CURRENT_NETWORK_IO:                                                      c.GetHostCurrentNetworkIO,
 		define.METRIC_HOST_HISTORY_NETWORK_IO:                                                      c.GetHostHistoryNetworkIO,
-		define.METRIC_YASDB_CONTROLFILE:                                                            c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_CONTROLFILE_COUNT:                                                      c.GetYasdbSingleRowData,
+		define.METRIC_YASDB_CONTROLFILE:                                                            c.GetNodesMultiRowData,
+		define.METRIC_YASDB_CONTROLFILE_COUNT:                                                      c.GetPrimarySingleRowData,
 		define.METRIC_YASDB_DATAFILE:                                                               c.GetYasdbDataFile,
-		define.METRIC_YASDB_DATABASE:                                                               c.GetYasdbSingleRowData,
+		define.METRIC_YASDB_DATABASE:                                                               c.GetPrimarySingleRowData,
 		define.METRIC_YASDB_DEPLOYMENT_ARCHITECTURE:                                                c.GetYasdbDeploymentArchitecture,
 		define.METRIC_YASDB_FILE_PERMISSION:                                                        c.GetYasdbFilePermission,
-		define.METRIC_YASDB_INDEX_BLEVEL:                                                           c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_INDEX_COLUMN:                                                           c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_INDEX_INVISIBLE:                                                        c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_INSTANCE:                                                               c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_LISTEN_ADDR:                                                            c.GetYasdbSingleRowData,
+		define.METRIC_YASDB_INDEX_BLEVEL:                                                           c.GetNodesMultiRowData,
+		define.METRIC_YASDB_INDEX_COLUMN:                                                           c.GetNodesMultiRowData,
+		define.METRIC_YASDB_INDEX_INVISIBLE:                                                        c.GetNodesMultiRowData,
+		define.METRIC_YASDB_INSTANCE:                                                               c.GetPrimarySingleRowData,
+		define.METRIC_YASDB_LISTEN_ADDR:                                                            c.GetPrimarySingleRowData,
 		define.METRIC_YASDB_OS_AUTH:                                                                c.GetYasdbOSAuth,
 		define.METRIC_YASDB_RUN_LOG_ERROR:                                                          c.GetYasdbRunLogError,
-		define.METRIC_YASDB_REDO_LOG:                                                               c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_REDO_LOG_COUNT:                                                         c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_OBJECT_COUNT:                                                           c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_OBJECT_SUMMARY:                                                         c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SEGMENTS_COUNT:                                                         c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_SEGMENTS_SUMMARY:                                                       c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_REDO_LOG:                                                               c.GetNodesMultiRowData,
+		define.METRIC_YASDB_REDO_LOG_COUNT:                                                         c.GetPrimarySingleRowData,
+		define.METRIC_YASDB_OBJECT_COUNT:                                                           c.GetNodesSingleRowData,
+		define.METRIC_YASDB_OBJECT_SUMMARY:                                                         c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SEGMENTS_COUNT:                                                         c.GetNodesSingleRowData,
+		define.METRIC_YASDB_SEGMENTS_SUMMARY:                                                       c.GetNodesMultiRowData,
 		define.METRIC_YASDB_ARCHIVE_DEST_STATUS:                                                    c.GetYasdbArchiveDestStatus,
-		define.METRIC_YASDB_ARCHIVE_LOG:                                                            c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_ARCHIVE_LOG_SPACE:                                                      c.GetYasdbSingleRowData,
+		define.METRIC_YASDB_ARCHIVE_LOG:                                                            c.GetNodesMultiRowData,
+		define.METRIC_YASDB_ARCHIVE_LOG_SPACE:                                                      c.GetNodesSingleRowData,
 		define.METRIC_YASDB_PARAMETER:                                                              c.GetYasdbParameter,
-		define.METRIC_YASDB_SESSION:                                                                c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_TABLESPACE:                                                             c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_SESSION:                                                                c.GetNodesSingleRowData,
+		define.METRIC_YASDB_TABLESPACE:                                                             c.GetNodesMultiRowData,
 		define.METRIC_YASDB_WAIT_EVENT:                                                             c.GetYasdbWaitEvent,
-		define.METRIC_YASDB_INDEX_TABLE_INDEX_NOT_TOGETHER:                                         c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_INDEX_OVERSIZED:                                                        c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SEQUENCE_NO_AVAILABLE:                                                  c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_TASK_RUNNING:                                                           c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_PACKAGE_NO_PACKAGE_PACKAGE_BODY:                                        c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_LOGIN_PASSWORD_STRENGTH:                                       c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_SECURITY_LOGIN_MAXIMUM_LOGIN_ATTEMPTS:                                  c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_USER_NO_OPEN:                                                  c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_USER_WITH_SYSTEM_TABLE_PRIVILEGES:                             c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_USER_WITH_DBA_ROLE:                                            c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_USER_ALL_PRIVILEGE_OR_SYSTEM_PRIVILEGES:                       c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_USER_USE_SYSTEM_TABLESPACE:                                    c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_AUDIT_CLEANUP_TASK:                                            c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_SECURITY_AUDIT_FILE_SIZE:                                               c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_UNDO_LOG_SIZE:                                                          c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_UNDO_LOG_TOTAL_BLOCK:                                                   c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_UNDO_LOG_RUNNING_TRANSACTIONS:                                          c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_INDEX_TABLE_INDEX_NOT_TOGETHER:                                         c.GetNodesMultiRowData,
+		define.METRIC_YASDB_INDEX_OVERSIZED:                                                        c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SEQUENCE_NO_AVAILABLE:                                                  c.GetNodesMultiRowData,
+		define.METRIC_YASDB_TASK_RUNNING:                                                           c.GetNodesMultiRowData,
+		define.METRIC_YASDB_PACKAGE_NO_PACKAGE_PACKAGE_BODY:                                        c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_LOGIN_PASSWORD_STRENGTH:                                       c.GetNodesSingleRowData,
+		define.METRIC_YASDB_SECURITY_LOGIN_MAXIMUM_LOGIN_ATTEMPTS:                                  c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_USER_NO_OPEN:                                                  c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_USER_WITH_SYSTEM_TABLE_PRIVILEGES:                             c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_USER_WITH_DBA_ROLE:                                            c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_USER_ALL_PRIVILEGE_OR_SYSTEM_PRIVILEGES:                       c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_USER_USE_SYSTEM_TABLESPACE:                                    c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_AUDIT_CLEANUP_TASK:                                            c.GetNodesMultiRowData,
+		define.METRIC_YASDB_SECURITY_AUDIT_FILE_SIZE:                                               c.GetNodesMultiRowData,
+		define.METRIC_YASDB_UNDO_LOG_SIZE:                                                          c.GetNodesMultiRowData,
+		define.METRIC_YASDB_UNDO_LOG_TOTAL_BLOCK:                                                   c.GetNodesMultiRowData,
+		define.METRIC_YASDB_UNDO_LOG_RUNNING_TRANSACTIONS:                                          c.GetNodesMultiRowData,
 		define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES:                                               c.GetDatabaseChangeLog,
 		define.METRIC_YASDB_SLOW_LOG_PARAMETER:                                                     c.GetYasdbSlowLogParameter,
 		define.METRIC_YASDB_SLOW_LOG:                                                               c.GetYasdbSlowLog,
@@ -273,110 +279,44 @@ func (c *YHCChecker) funcMap() (res map[define.MetricName]func(string) error) {
 		define.METRIC_YASDB_ALERT_LOG_ERROR:                                                        c.GetRisingAlertLog,
 		define.METRIC_HOST_DMESG_LOG_ERROR:                                                         c.GetDmesgLog,
 		define.METRIC_HOST_SYSTEM_LOG_ERROR:                                                        c.GetSystemLog,
-		define.METRIC_YASDB_BACKUP_SET:                                                             c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_FULL_BACKUP_SET_COUNT:                                                  c.GetYasdbSingleRowData,
+		define.METRIC_YASDB_BACKUP_SET:                                                             c.GetNodesMultiRowData,
+		define.METRIC_YASDB_FULL_BACKUP_SET_COUNT:                                                  c.GetNodesSingleRowData,
 		define.METRIC_YASDB_BACKUP_SET_PATH:                                                        c.GetYasdbBackupSetPath,
-		define.METRIC_YASDB_INVALID_OBJECT:                                                         c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_INVISIBLE_INDEX:                                                        c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_DISABLED_CONSTRAINT:                                                    c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_TABLE_WITH_TOO_MUCH_COLUMNS:                                            c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_TABLE_WITH_TOO_MUCH_INDEXES:                                            c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_PARTITIONED_TABLE_WITHOUT_PARTITIONED_INDEXES:                          c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_PARTITIONED_TABLE_WITH_NUMBER_OF_HASH_PARTITIONS_IS_NOT_A_POWER_OF_TWO: c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_FOREIGN_KEYS_WITHOUT_INDEXES:                                           c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_FOREIGN_KEYS_WITH_IMPLICIT_DATA_TYPE_CONVERSION:                        c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_TABLE_WITH_ROW_SIZE_EXCEEDS_BLOCK_SIZE:                                 c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_INVALID_OBJECT:                                                         c.GetNodesMultiRowData,
+		define.METRIC_YASDB_INVISIBLE_INDEX:                                                        c.GetNodesMultiRowData,
+		define.METRIC_YASDB_DISABLED_CONSTRAINT:                                                    c.GetNodesMultiRowData,
+		define.METRIC_YASDB_TABLE_WITH_TOO_MUCH_COLUMNS:                                            c.GetNodesMultiRowData,
+		define.METRIC_YASDB_TABLE_WITH_TOO_MUCH_INDEXES:                                            c.GetNodesMultiRowData,
+		define.METRIC_YASDB_PARTITIONED_TABLE_WITHOUT_PARTITIONED_INDEXES:                          c.GetNodesMultiRowData,
+		define.METRIC_YASDB_PARTITIONED_TABLE_WITH_NUMBER_OF_HASH_PARTITIONS_IS_NOT_A_POWER_OF_TWO: c.GetNodesMultiRowData,
+		define.METRIC_YASDB_FOREIGN_KEYS_WITHOUT_INDEXES:                                           c.GetNodesMultiRowData,
+		define.METRIC_YASDB_FOREIGN_KEYS_WITH_IMPLICIT_DATA_TYPE_CONVERSION:                        c.GetNodesMultiRowData,
+		define.METRIC_YASDB_TABLE_WITH_ROW_SIZE_EXCEEDS_BLOCK_SIZE:                                 c.GetNodesMultiRowData,
 		define.METRIC_YASDB_SHARE_POOL:                                                             c.GetYasdbSharePool,
-		define.METRIC_YASDB_VM_SWAP_RATE:                                                           c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_TOP_SQL_BY_CPU_TIME:                                                    c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_TOP_SQL_BY_BUFFER_GETS:                                                 c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_TOP_SQL_BY_DISK_READS:                                                  c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_TOP_SQL_BY_PARSE_CALLS:                                                 c.GetYasdbMultiRowData,
-		define.METRIC_YASDB_HIGH_FREQUENCY_SQL:                                                     c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_VM_SWAP_RATE:                                                           c.GetNodesSingleRowData,
+		define.METRIC_YASDB_TOP_SQL_BY_CPU_TIME:                                                    c.GetNodesMultiRowData,
+		define.METRIC_YASDB_TOP_SQL_BY_BUFFER_GETS:                                                 c.GetNodesMultiRowData,
+		define.METRIC_YASDB_TOP_SQL_BY_DISK_READS:                                                  c.GetNodesMultiRowData,
+		define.METRIC_YASDB_TOP_SQL_BY_PARSE_CALLS:                                                 c.GetNodesMultiRowData,
+		define.METRIC_YASDB_HIGH_FREQUENCY_SQL:                                                     c.GetNodesMultiRowData,
 		define.METRIC_YASDB_HISTORY_DB_TIME:                                                        c.GetYasdbHistoryDBTime,
 		define.METRIC_YASDB_HISTORY_BUFFER_HIT_RATE:                                                c.GetYasdbHistoryBufferHitRate,
 		define.METRIC_HOST_HUGE_PAGE:                                                               c.GetHugePageEnabled,
 		define.METRIC_HOST_SWAP_MEMORY:                                                             c.GetSwapMemoryEnabled,
-		define.METRIC_YASDB_BUFFER_HIT_RATE:                                                        c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_TABLE_LOCK_WAIT:                                                        c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_ROW_LOCK_WAIT:                                                          c.GetYasdbSingleRowData,
-		define.METRIC_YASDB_LONG_RUNNING_TRANSACTION:                                               c.GetYasdbMultiRowData,
+		define.METRIC_YASDB_BUFFER_HIT_RATE:                                                        c.GetNodesSingleRowData,
+		define.METRIC_YASDB_TABLE_LOCK_WAIT:                                                        c.GetNodesSingleRowData,
+		define.METRIC_YASDB_ROW_LOCK_WAIT:                                                          c.GetNodesSingleRowData,
+		define.METRIC_YASDB_LONG_RUNNING_TRANSACTION:                                               c.GetNodesMultiRowData,
 	}
 	return
 }
 
-func (c *YHCChecker) fillResult(data *define.YHCItem) {
+func (c *YHCChecker) fillResults(datas ...*define.YHCItem) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
-	c.Result[data.Name] = data
-}
-
-func (c *YHCChecker) querySingleRow(name define.MetricName) (*define.YHCItem, error) {
-	data := &define.YHCItem{
-		Name: name,
+	for _, data := range datas {
+		c.Result[data.Name] = append(c.Result[data.Name], data)
 	}
-	log := log.Module.M(string(name))
-	sql, err := c.getSQL(name)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return data, err
-	}
-	metric, err := c.getMetric(name)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return data, err
-	}
-	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
-	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return data, err
-	}
-	if len(res) == 0 {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return data, err
-	}
-	data.Details = c.convertSqlData(metric, res[0])
-	return data, nil
-}
-
-func (c *YHCChecker) queryMultiRows(name define.MetricName) (*define.YHCItem, error) {
-	data := &define.YHCItem{
-		Name: name,
-	}
-	log := log.Module.M(string(name))
-	sql, err := c.getSQL(name)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return data, err
-	}
-	metric, err := c.getMetric(name)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return data, err
-	}
-	yasdb := yasdbutil.NewYashanDB(log, c.base.DBInfo)
-	res, err := yasdb.QueryMultiRows(sql, confdef.GetYHCConf().SqlTimeout)
-	if err != nil {
-		err = yaserr.Wrap(err)
-		log.Error(err)
-		data.Error = err.Error()
-		return data, err
-	}
-	data.Details = c.convertMultiSqlData(metric, res)
-	return data, nil
 }
 
 func (c *YHCChecker) querySingleParameter(log yaslog.YasLog, name string) (string, error) {

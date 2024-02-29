@@ -12,7 +12,7 @@ func (c *YHCChecker) GetHostHistoryNetworkIO(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_HISTORY_NETWORK_IO,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_HISTORY_NETWORK_IO))
 	resp, err := c.hostHistoryWorkload(log, define.METRIC_HOST_HISTORY_NETWORK_IO)
@@ -31,7 +31,7 @@ func (c *YHCChecker) GetHostCurrentNetworkIO(name string) (err error) {
 		Name:     define.METRIC_HOST_CURRENT_NETWORK_IO,
 		DataType: define.DATATYPE_SAR,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_HOST_CURRENT_NETWORK_IO))
 	hasSar := c.CheckSarAccess() == nil

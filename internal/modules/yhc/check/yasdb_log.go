@@ -56,7 +56,7 @@ func (c *YHCChecker) GetYasdbRunLogError(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_RUN_LOG_ERROR,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 
 	log := log.Module.M(string(define.METRIC_YASDB_RUN_LOG_ERROR))
 	var res []string
@@ -126,7 +126,7 @@ func (c *YHCChecker) GetRisingAlertLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_ALERT_LOG_ERROR,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 	alertLogPredicateFunc := func(line string) bool {
 		fields := strings.Split(line, stringutil.STR_BAR)
 		// Action 在第五列
@@ -163,7 +163,7 @@ func (c *YHCChecker) GetDmesgLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_DMESG_LOG_ERROR,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 	log := log.Module.M("get-dmesg-log")
 	exec := execerutil.NewExecer(log)
 	tmpFileName := path.Join("/tmp", uuid.NewString()[0:6]+".log")
@@ -242,7 +242,7 @@ func (c *YHCChecker) GetSystemLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_HOST_SYSTEM_LOG_ERROR,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 	log := log.Module.M("get-system-log")
 	logName, err := getSystemLogName()
 	if err != nil {
@@ -475,7 +475,7 @@ func (c *YHCChecker) GetDatabaseChangeLog(name string) (err error) {
 	data := &define.YHCItem{
 		Name: define.METRIC_YASDB_RUN_LOG_DATABASE_CHANGES,
 	}
-	defer c.fillResult(data)
+	defer c.fillResults(data)
 	log := log.Module.M("run-log-database-change")
 	runLogPath, err := c.getRunLogPath(log)
 	if err != nil {

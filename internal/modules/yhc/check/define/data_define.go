@@ -35,6 +35,7 @@ type HostWorkResponse struct {
 
 type YHCItem struct {
 	Name     MetricName             `json:"-"` // 检查项名称
+	NodeID   string                 `json:"nodeID,omitempty"`
 	Error    string                 `json:"error,omitempty"`
 	Details  interface{}            `json:"details,omitempty"`  // 每个检查项包含的数据
 	DataType DataType               `json:"datatype,omitempty"` // 数据类型，在Details可能使用多种数据时使用
@@ -60,4 +61,6 @@ type CheckerBase struct {
 	End    time.Time
 	Output string
 	// TODO: add other struct which checker needed
+	NodeInfos     []*yasdb.NodeInfo
+	MultipleNodes bool
 }
