@@ -22,6 +22,8 @@ GO_BUILD_WITH_INFO=$(GO_BUILD) -ldflags "\
 # package defines
 PKG_PERFIX=yashan-health-check-$(VERSION)
 PKG=$(PKG_PERFIX)-$(OS)-$(ARCH).tar.gz
+MINI_PKG_PERFIX=yashan-health-check-mini-$(VERSION)
+MINI_PKG=$(MINI_PKG_PERFIX)-$(OS)-$(ARCH).tar.gz
 
 BUILD_PATH=./build
 PKG_PATH=$(BUILD_PATH)/$(PKG_PERFIX)
@@ -53,7 +55,6 @@ WORD_GENNER_DIST=$(WORD_GENNER_PATH)/dist/wordgenner
 
 build: pre_build go_build
 	@cp ./template.html $(HTML_PATH)/
-	@cp -r ./yhc-doc $(DOCS_PATH)/markdown
 	@cp ./yhc.pdf $(DOCS_PATH)
 	@mv $(BIN_FILES) $(BIN_PATH)
 	@mv $(SCRIPTS_FILES) $(SCRIPTS_PATH)
@@ -61,6 +62,11 @@ build: pre_build go_build
 	@> $(LOG_PATH)/console.out
 	@cd $(PKG_PATH);ln -s ./bin/yhcctl ./yhcctl
 	@cd $(BUILD_PATH);tar -cvzf $(PKG) $(PKG_PERFIX)/
+	@cp -rf $(BUILD_PATH)/$(PKG_PERFIX) $(BUILD_PATH)/$(MINI_PKG_PERFIX)
+	@rm -rf $(BUILD_PATH)/$(MINI_PKG_PERFIX)/scripts/$(WORD_GENNER_PATH)
+	@echo "skip_gen_word_report = true" >> $(BUILD_PATH)/$(MINI_PKG_PERFIX)/config/yhc.toml
+	@cd $(BUILD_PATH);tar -cvzf $(MINI_PKG) $(MINI_PKG_PERFIX)/
+	@rm -rf $(BUILD_PATH)/$(MINI_PKG_PERFIX)
 
 clean:
 	rm -rf $(BUILD_PATH)
