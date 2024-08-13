@@ -43,7 +43,7 @@ func (c *YHCChecker) GetYasdbSharePool(name string) (err error) {
 		var totalBytes, freeBytes float64
 		for _, row := range sharePoolData {
 			bytes, e := strconv.ParseFloat(row[COLUMN_BYTES], 64)
-			if err != nil {
+			if e != nil {
 				err = yaserr.Wrap(e)
 				logger.Error(err)
 				data.Error = err.Error()

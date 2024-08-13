@@ -12,22 +12,24 @@ import (
 var _yhcConf YHC
 
 type YHC struct {
-	LogLevel          string   `toml:"log_level"`
-	Range             string   `toml:"range"`
-	MaxDuration       string   `toml:"max_duration"`
-	MinDuration       string   `toml:"min_duration"`
-	SqlTimeout        int      `toml:"sql_timeout"`
-	SarDir            string   `toml:"sar_dir"`
-	ScrapeInterval    int      `toml:"scrape_interval"`
-	ScrapeTimes       int      `toml:"scrape_times"`
-	Output            string   `toml:"output"`
-	MetricPaths       []string `toml:"metric_paths"`
-	DefaultModulePath string   `toml:"default_module_path"`
-	EvaluateModelPath string   `toml:"evaluate_model_path"`
-	NodesConfigPath   string   `toml:"nodes_config_path"`
-	NetworkIODiscard  string   `toml:"network_io_discard"`
-	SkipGenWordReport bool     `toml:"skip_gen_word_report"`
-	SkipGenHtmlReport bool     `toml:"skip_gen_html_report"`
+	LogLevel               string   `toml:"log_level"`
+	Range                  string   `toml:"range"`
+	MaxDuration            string   `toml:"max_duration"`
+	MinDuration            string   `toml:"min_duration"`
+	SqlTimeout             int      `toml:"sql_timeout"`
+	SarDir                 string   `toml:"sar_dir"`
+	ScrapeInterval         int      `toml:"scrape_interval"`
+	ScrapeTimes            int      `toml:"scrape_times"`
+	Output                 string   `toml:"output"`
+	MetricPaths            []string `toml:"metric_paths"`
+	DefaultModulePath      string   `toml:"default_module_path"`
+	EvaluateModelPath      string   `toml:"evaluate_model_path"`
+	AfterInstallMetricPath []string `toml:"after_install_metric_path"`
+	AfterInstallModulePath string   `toml:"after_install_module_path"`
+	NodesConfigPath        string   `toml:"nodes_config_path"`
+	NetworkIODiscard       string   `toml:"network_io_discard"`
+	SkipGenWordReport      bool     `toml:"skip_gen_word_report"`
+	SkipGenHtmlReport      bool     `toml:"skip_gen_html_report"`
 }
 
 func GetYHCConf() YHC {

@@ -73,7 +73,7 @@ var AlertLevelMap = map[string]string{
 	AL_CRITICAL: "严重",
 }
 
-func initMetricConf(paths []string) error {
+func InitMetricConf(paths []string) error {
 	conf := YHCMetricConfig{}
 	for _, p := range paths {
 		if !path.IsAbs(p) {

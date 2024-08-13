@@ -50,7 +50,7 @@ FILE_TO_COPY=./config ./scripts
 
 WORD_GENNER_PATH=./wordgenner
 WORD_GENNER_DIST=$(WORD_GENNER_PATH)/dist/wordgenner
-
+ 
 .PHONY: clean force go_build
 
 build: pre_build go_build

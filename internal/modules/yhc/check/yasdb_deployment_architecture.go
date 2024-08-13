@@ -34,7 +34,7 @@ func (c *YHCChecker) GetYasdbDeploymentArchitecture(name string) (err error) {
 		return
 	}
 	detail := map[string]interface{}{
-		KEY_NODE_NUM: fmt.Sprintf("1主 %s备", res[0][KEY_NODE_NUM]),
+		KEY_NODE_NUM: fmt.Sprintf("1主%s备", res[0][KEY_NODE_NUM]),
 	}
 	data.Details = detail
 	return
