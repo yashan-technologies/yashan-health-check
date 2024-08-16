@@ -1,7 +1,10 @@
 package confdef
 
 import (
+	"path"
+
 	"yhc/defs/errdef"
+	"yhc/defs/runtimedef"
 
 	"git.yasdb.com/go/yasutil/fs"
 	"github.com/BurntSushi/toml"
@@ -25,6 +28,9 @@ func GetNodesConfig() *NodesConfig {
 
 func initNodesConfig(p string) error {
 	conf := &NodesConfig{}
+	if !path.IsAbs(p) {
+		p = path.Join(runtimedef.GetYHCHome(), p)
+	}
 	if !fs.IsFileExist(p) {
 		return &errdef.ErrFileNotFound{FName: p}
 	}

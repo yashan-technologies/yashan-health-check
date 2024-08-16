@@ -10,4 +10,6 @@ metric_paths = ["./config/default_metric.toml", "./config/custom_metric.toml"]
 evaluate_model_path = "./config/evaluate_model.toml"
 nodes_config_path = "./config/nodes_config.toml"
 default_module_path = "./config/report_module.toml"
-network_io_discard = "^lo$,^veth.*,^virbr.*,^br.*,^tap.*,^tun.*,^docker.*,^flannel.*"
+after_install_metric_path = ["./config/afterinstall/after_install_default_metric.toml","./config/afterinstall/after_install_custom_metric.toml"]
+after_install_module_path = "./config/afterinstall/after_install_report_module.toml"
+network_io_discard = "^lo$,^veth.*,^virbr.*,^br.*,^tap.*,^tun.*,^docker.*,^flannel.*" 
