@@ -298,7 +298,7 @@ func (c *YHCChecker) collectHostLogWithoutSetDateext(log yaslog.YasLog, src stri
 		log.Infof("log %s last modify time is %s, skip", src, srcModTime)
 		return
 	}
-	return c.reverseCollectLog(log, src, srcModTime, c.hostLogTimeParse)
+	return c.reverseCollectLog(src, srcModTime, c.hostLogTimeParse)
 }
 
 func (c *YHCChecker) collectHostLogWithSetDateext(log yaslog.YasLog, src, prefix string) (res []string, err error) {
@@ -367,7 +367,7 @@ func (c *YHCChecker) collectHostLogWithSetDateext(log yaslog.YasLog, src, prefix
 	return
 }
 
-func (c *YHCChecker) reverseCollectLog(log yaslog.YasLog, src string, date time.Time, timeParseFunc logTimeParseFunc) (res []string, err error) {
+func (c *YHCChecker) reverseCollectLog(src string, date time.Time, timeParseFunc logTimeParseFunc) (res []string, err error) {
 	reverseSrcFile, err := fileutil.NewReverseFile(src)
 	if err != nil {
 		return

@@ -29,7 +29,7 @@ type YHCModuleNode struct {
 	MetricNames []string         `toml:"metric_names"`
 }
 
-func initModuleConf(p string) error {
+func InitModuleConf(p string) error {
 	if !path.IsAbs(p) {
 		p = path.Join(runtimedef.GetYHCHome(), p)
 	}

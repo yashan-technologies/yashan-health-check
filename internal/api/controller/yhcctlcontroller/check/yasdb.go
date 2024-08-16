@@ -3,6 +3,7 @@ package checkcontroller
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -10,10 +11,13 @@ import (
 	"yhc/commons/yasdb"
 	"yhc/defs/bashdef"
 	"yhc/defs/confdef"
+	constdef "yhc/defs/constants"
 	yhcyasdb "yhc/internal/modules/yhc/yasdb"
 	"yhc/log"
 	"yhc/utils/execerutil"
 	"yhc/utils/fileutil"
+	"yhc/utils/processutil"
+	"yhc/utils/stringutil"
 	"yhc/utils/userutil"
 	"yhc/utils/yasdbutil"
 
@@ -258,4 +262,54 @@ func getConnectedInfo(log yaslog.YasLog, yasdbHome, user, password, listenAddr s
 		connected = true
 	}
 	return databaseName, role, connected
+}
+
+func getYasdbPath() (yasdbHome, yasdbData string) {
+	yasdbData = os.Getenv(constdef.YASDB_DATA)
+	yasdbHome = os.Getenv(constdef.YASDB_HOME)
+	processYasdbHome, processYasdbData := getYasdbPathFromProcess()
+	if stringutil.IsEmpty(yasdbHome) {
+		yasdbHome = processYasdbHome
+	}
+	if stringutil.IsEmpty(yasdbData) {
+		yasdbData = processYasdbData
+	}
+	return
+}
+
+func getYasdbPathFromProcess() (yasdbHome, yasdbData string) {
+	log := log.Controller.M("get yasdb process from cmdline")
+	processes, err := processutil.ListAnyUserProcessByCmdline(_base_yasdb_process_format, true)
+	if err != nil {
+		log.Errorf("get process err: %s", err.Error())
+		return
+	}
+	if len(processes) == 0 {
+		log.Infof("process result is empty")
+		return
+	}
+	for _, p := range processes {
+		fields := strings.Split(p.ReadableCmdline, "-D")
+		if len(fields) < 2 {
+			log.Infof("process cmdline: %s format err, skip", p.ReadableCmdline)
+			continue
+		}
+		yasdbData = trimSpace(fields[1])
+		full := trimSpace(p.FullCommand)
+		if !path.IsAbs(full) {
+			return
+		}
+		yasdbHome = path.Dir(path.Dir(full))
+		return
+	}
+	return
+}
+
+func newYasdb() *yasdb.YashanDB {
+	home, data := getYasdbPath()
+	yasdb := &yasdb.YashanDB{
+		YasdbData: data,
+		YasdbHome: home,
+	}
+	return yasdb
 }

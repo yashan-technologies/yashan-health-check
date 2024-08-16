@@ -123,6 +123,7 @@ var _mergeOldMenuToNew []merge = []merge{
 		targetTitle:  "数据库信息",
 		originMetrics: []string{
 			string(define.METRIC_YASDB_DATABASE),
+			string(define.METRIC_YASDB_ARCHIVE_THRESHOLD),
 			string(define.METRIC_YASDB_FILE_PERMISSION),
 		},
 	},
@@ -520,7 +521,9 @@ func (j *JsonParser) moduleSummary(menu *define.PandoraMenu) {
 	}
 	for _, module := range modules {
 		element := j.genModuleElement(module)
-		menu.Elements = append(menu.Elements, element)
+		if element != nil {
+			menu.Elements = append(menu.Elements, element)
+		}
 	}
 }
 
@@ -548,6 +551,9 @@ func (j *JsonParser) genModuleElement(module string) *define.PandoraElement {
 			}
 			res = append(res, data)
 		}
+	}
+	if len(res) == 0 {
+		return nil
 	}
 	sort.Slice(res, func(i, j int) bool {
 		return res[i][_alert_number].(int) > res[j][_alert_number].(int)
@@ -639,6 +645,7 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_YASDB_DATABASE:                                                               j.parseMap,
 		define.METRIC_YASDB_FILE_PERMISSION:                                                        j.parseTable,
 		define.METRIC_YASDB_LISTEN_ADDR:                                                            j.parseMap,
+		define.METRIC_YASDB_ARCHIVE_THRESHOLD:                                                      j.parseTable,
 		define.METRIC_YASDB_OS_AUTH:                                                                j.parseMap,
 		define.METRIC_HOST_INFO:                                                                    j.parseMap,
 		define.METRIC_HOST_FIREWALLD:                                                               j.parseMap,
@@ -684,6 +691,7 @@ func (j *JsonParser) genDefaultMetricParseFunc(metric *confdef.YHCMetric) (Metri
 		define.METRIC_YASDB_TASK_RUNNING:                                                           j.parseTable,
 		define.METRIC_YASDB_PACKAGE_NO_PACKAGE_PACKAGE_BODY:                                        j.parseTable,
 		define.METRIC_YASDB_SECURITY_LOGIN_PASSWORD_STRENGTH:                                       j.parseMap,
+		define.METRIC_YASDB_AUDITINT_CHECK:                                                         j.parseMap,
 		define.METRIC_YASDB_SECURITY_LOGIN_MAXIMUM_LOGIN_ATTEMPTS:                                  j.parseTable,
 		define.METRIC_YASDB_SECURITY_USER_NO_OPEN:                                                  j.parseTable,
 		define.METRIC_YASDB_SECURITY_USER_WITH_SYSTEM_TABLE_PRIVILEGES:                             j.parseTable,
@@ -1150,7 +1158,7 @@ func (j *JsonParser) mergeMetric(to define.MetricName, froms []define.MetricName
 		return
 	}
 	for _, result := range toResult {
-		nodeMap[string(to)+result.NodeID] = &nodeRelation{to: result, froms: make([]*define.YHCItem, 0)}
+		nodeMap[result.NodeID] = &nodeRelation{to: result, froms: make([]*define.YHCItem, 0)}
 	}
 	// 遍历froms
 	for _, from := range froms {
@@ -1159,7 +1167,7 @@ func (j *JsonParser) mergeMetric(to define.MetricName, froms []define.MetricName
 			continue
 		}
 		for _, fromResult := range fromResults {
-			node, ok := nodeMap[string(from)+fromResult.NodeID]
+			node, ok := nodeMap[fromResult.NodeID]
 			if !ok {
 				continue
 			}
